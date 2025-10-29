@@ -1,0 +1,155 @@
+<!-- Панель редактирования товаров -->
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/suser_panel.css') }}">
+{% endblock %}
+
+{% block title %}Панель управления товарами{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-panel">
+    <div class="info-suser">
+        <div class="info-panel">
+            <h2>Меню управления товарами</h2>
+        </div>
+
+        <div class="user_info">
+            <p>user_id: {{ user_id }}</p>
+            <p>role: {{ role }}</p>
+        </div>
+    </div>
+
+    
+
+    <!-- Фильтры и сортировка -->
+    <div class="filters-section">
+        <form id="filter-form" class="filters-form">
+            <!-- Сортировка -->
+            <label>
+                Сортировка:
+                <select name="sort" id="sort-select">
+                    <option value="">-- Выберите поле --</option>
+                    <option value="title_asc">Название (А→Я)</option>
+                    <option value="title_desc">Название (Я→А)</option>
+                    <option value="article_num_asc">Артикул (↑)</option>
+                    <option value="article_num_desc">Артикул (↓)</option>
+                    <option value="price_asc">Цена (↑)</option>
+                    <option value="price_desc">Цена (↓)</option>
+                    <option value="quantity_asc">Количество на скл. (↑)</option>
+                    <option value="quantity_desc">Количество на скл. (↓)</option>
+                    <option value="created_at_asc">Дата (сначала старые)</option>
+                    <option value="created_at_desc">Дата (сначала новые)</option>
+                </select>
+            </label>
+
+            <!-- Выбор категории -->
+            <label>
+                Категория:
+                <select name="category" id="category-select">
+                    <option value="">Все категории</option>
+                    <option value="Мотоциклы">Мотоциклы</option>
+                    <option value="Квадроциклы">Квадроциклы</option>
+                    <option value="Снегоходы">Снегоходы</option>
+                    <option value="Мотоблоки">Мотоблоки</option>
+                    <option value="Бензо-инструмент">Бензо-инструмент</option>
+                    <option value="Запчасти">Запчасти</option>
+                </select>
+            </label>
+
+            <!-- Поиск -->
+            <label>
+                Поиск:
+                <input type="text" name="search" id="search-input" class="search-input" placeholder="Поиск по названию...">
+            </label>
+
+            <!-- Чекбокс: только распродажа -->
+            <div class="checkbox_container">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="sale_only" id="sale-only-checkbox">Только товары со скидкой
+                </label>
+            </div>
+
+            <button type="submit">Применить</button>
+        </form>
+    </div>
+
+    <!-- Информационная панель: сообщения и счётчик -->
+    <div id="info-panel" class="info-messages hidden"></div>
+
+    <!-- Сетка товаров (CSS Grid) -->
+    <div class="table-container">
+        <div class="products-grid-table">
+            <div class="grid-header">
+                <div class="header-actions">
+                    <a href="/add-product" class="add-btn" title="Добавить новый товар">+</a>
+                </div>
+                <div>ID</div>
+                <div>art.</div>
+                <div>uid</div>
+                <div></div> <!-- Изображение -->
+                <div>Название</div>
+                <div>Цена</div>
+                <div>Кол-во</div>
+                <div>Категория</div>
+                <div>Дата создания</div>
+                <div>SALE</div>
+            </div>
+
+            <div class="grid-body" id="products-grid-body"></div>
+        </div>
+    </div>
+
+
+    <template id="product-row-template">
+        <div class="product-row">
+            <!-- Действия -->
+            <div class="actions-cell">
+                <a href="#" class="edit-icon" title="Редактировать карточку">
+                    <img class="img_c" src="{{ url_for('static', filename='img/other/edit_product.png') }}" alt="Edit" width="25" height="25">
+                </a>
+                <a href="#" class="remove-icon" title="Удалить карточку">
+                    <img class="img_c" src="{{ url_for('static', filename='img/other/delete_product.png') }}" alt="Remove" width="25" height="25">
+                </a>
+            </div>
+
+            <div class="cell id-cell"></div>
+            <div class="cell article-cell"></div>
+            <div class="cell seller-id-cell"></div>
+            <div class="cell image-cell">
+                <img class="img_cont thumbnail" alt="">
+            </div>
+            <div class="cell name-cell">
+                <a href="#" class="product-name-link"></a>
+            </div>
+            <div class="cell price-cell"></div>
+            <div class="cell quantity-cell"></div>
+            <div class="cell category-cell"></div>
+            <div class="cell created-at-cell"></div>
+            <span class="badge_edit"></span>
+            </div>
+        </div>
+    </template>
+
+    <div id="pagination-state" data-page="1" data-has-more="true" class="hidden"></div>
+</div>
+
+
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/suser_panel.js') }}"></script>
+<script>
+    window.CURRENT_USER_ID = "{{ user_id }}";
+    window.CURRENT_USER_ROLE = "{{ role }}";
+</script>
+{% endblock %}

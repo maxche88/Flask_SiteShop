@@ -1,0 +1,46 @@
+a {
+    text-decoration: none;
+}
+
+.content_order {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.title_order {
+    color: black;
+    padding-bottom: 15px;
+}
+
+.cart_empty {
+    text-align: center;
+    color: #464646;
+    margin-top: 20px;
+}
+
+.btn_order {
+    padding-top: 30px;
+}
+
+.quantity-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.qty-input {
+    width: 40px;
+    text-align: center;
+    font-size: 14px;
+    border: 1px solid #aaa; /* чуть темнее */
+    border-radius: 4px;
+    background: #fff;
+    padding: 2px;
+}
+
+.qty-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+}

@@ -1,0 +1,338 @@
+/* Основной контейнер панели */
+.container-panel {
+    max-width: 1400px;
+    margin: 20px auto;
+    padding: 0 15px;
+}
+
+/*Контейнер с информацией о пользователе и заголовок*/
+.info-suser {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+/* Заголовок панели */
+.info-panel {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 14px;
+}
+
+.user_info {
+    background-color: #4CAF50;
+    padding: 3px;
+}
+
+/* Фильтры */
+.filters-section {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.filters-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: end;
+}
+
+.filters-form label {
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.filters-form select,
+.filters-form input {
+    margin-top: 5px;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.filters-form .search-input {
+    width: 300px;
+    box-sizing: border-box;
+}
+
+.filters-form button {
+    padding: 9px 15px;
+    background-color: #464545;
+    color: rgb(255, 255, 255);
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.filters-form button:hover {
+    background-color: #4CAF50;
+}
+
+.checkbox_container {
+    display: flex;
+    width: 200px;
+    height: 30px;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Стиль для чекбокса в фильтрах */
+.filters-form .checkbox-label {
+    display: flex;
+    align-items: center;
+    font-weight: normal;
+    gap: 6px;
+    margin-top: 5px;
+    cursor: pointer;
+    flex-direction: row;
+}
+
+
+.filters-form .checkbox-label input[type="checkbox"] {
+    margin: 0;
+    transform: scale(1.1);
+}
+
+/* Информационные сообщения */
+.info-messages {
+    margin: 15px 0;
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+    min-height: 24px;
+}
+
+.info-messages.info {
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+.info-messages.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.info-messages.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.info-messages.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.info-messages.hidden,
+.hidden {
+    display: none !important;
+}
+
+/*Grid-таблица товаров для суперпользователя и админа*/
+.products-grid-table {
+    width: 100%;
+    font-family: Arial, sans-serif;
+    margin: 20px 0;
+}
+
+/* Заголовок таблицы */
+.grid-header {
+    display: grid;
+    /* Колонки */
+    grid-template-columns:
+        [actions] 80px
+        [id] 30px
+        [article] 100px
+        [seller] 50px
+        [image] 60px
+        [name] minmax(100px, 1fr)
+        [price] 90px
+        [qty] 80px
+        [category] 120px
+        [date] 140px
+        [sale] 90px;
+    gap: 0;
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+    padding: 12px 0;
+    align-items: center;
+}
+
+.grid-header > div {
+    padding: 0 8px;
+    text-align: center;
+    font-size: 14px;
+    /* Добавлено для синхронизации с ячейками строк */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Тело таблицы */
+.grid-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Строка товара */
+.product-row {
+    display: grid;
+    grid-template-columns:
+        [actions] 80px
+        [id] 30px
+        [article] 100px
+        [seller] 50px
+        [image] 60px
+        [name] minmax(100px, 1fr)
+        [price] 90px
+        [qty] 80px
+        [category] 120px
+        [date] 140px
+        [sale] 90px;
+    gap: 0;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    background-color: #fff;
+    transition: background-color 0.2s;
+}
+
+.product-row:hover {
+    background-color: #f9f9f9;
+}
+
+/* Общие ячейки */
+.product-row > .cell,
+.product-row > .actions-cell,
+.product-row > .image-cell {
+    padding: 0 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    color: #333;
+}
+
+/* Ячейка с изображением */
+.image-cell {
+    display: flex;
+    justify-content: center;
+}
+
+.image-cell .img_cont {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #eee;
+}
+
+/* Название товара — как в карточке */
+.name-cell a {
+    font-weight: bold;
+    text-decoration: none;
+    color: #333;
+    /* Добавлено, чтобы не ломалось при узкой колонке */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
+
+.name-cell a:hover {
+    color: #e91e63;
+}
+
+/* Цена */
+.price-cell {
+    color: #e91e63;
+    font-weight: bold;
+    font-size: 1.05em;
+    text-align: center;
+}
+
+/* Артикул и кол-во — мелкий текст */
+.article-cell,
+.quantity-cell,
+.seller-id-cell {
+    font-size: 0.9em;
+    color: #777;
+    text-align: center;
+}
+
+/* Бейдж "SALE" */
+.badge_edit {
+    display: none; /* по умолчанию скрыт */
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #000;
+    background-color: #ffeb3b;
+    border-radius: 3px;
+    white-space: nowrap;
+    text-align: center;
+}
+
+
+/* Кнопки действий */
+.actions-cell {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+.actions-cell .edit-icon img,
+.actions-cell .remove-icon img {
+    width: 25px;
+    height: 25px;
+    transition: filter 0.2s;
+}
+
+.actions-cell .edit-icon img:hover,
+.actions-cell .remove-icon img:hover {
+    filter: invert(28%) sepia(97%) saturate(1800%) hue-rotate(355deg) brightness(100%) contrast(100%);
+}
+
+/* Кнопка добавления в товара */
+.header-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 32px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #464545;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: background-color 0.2s;
+}
+
+.add-btn:hover {
+    background-color: #4CAF50;
+    color: #fff;
+}

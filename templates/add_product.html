@@ -1,0 +1,98 @@
+<!-- Добавление товара -->
+{% extends 'base.html' %}
+
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/add_products_form.css') }}">
+{% endblock %}
+
+{% block title %}
+Добавить товар
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/suser-panel" title="Вернуться назад">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px"
+            height="35px">
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="conteiner_forms">
+    <form id="productForm" class="content_add_product" method="post" enctype="multipart/form-data">
+        <br>
+        <h2 class="title">Добавить товар</h2>
+
+        <div class="form_add_product">
+
+            <!-- Артикул товара -->
+            <div class="form-group">
+                <input type="text" class="product_form" id="article-number" name="article-number" placeholder="Артикул товара" required>
+            </div>
+
+            <!-- Название товара -->
+            <div class="form-group">
+                <input type="text" class="product_form" id="product-name" name="name" placeholder="Название товара" required>
+            </div>
+
+            <!-- Цена и количество -->
+            <div class="form-group form_add">
+                <input type="number" class="product_form" id="product-price" name="price" placeholder="Цена" min="0" step="0.01" required>
+                <input type="number" class="product_form" id="product-quantity" name="quantity" placeholder="Кол-во" min="0" step="1" required>
+            </div>
+
+            <!-- Выбор категории -->
+            <div class="form-group">
+                <div class="custom-select" id="category-select">
+                    <div class="select-header">Выберите категорию</div>
+                    <ul class="select-options" id="category-options">
+                        <li data-value="Мотоциклы">Мотоциклы</li>
+                        <li data-value="Квадроциклы">Квадроциклы</li>
+                        <li data-value="Снегоходы">Снегоходы</li>
+                        <li data-value="Мотоблоки">Мотоблоки</li>
+                        <li data-value="Бензо-инструмент">Бензо-инструмент</li>
+                        <li data-value="Запчасти">Запчасти</li>
+                    </ul>
+                </div>
+                <input type="hidden" id="product-category" name="category" required>
+            </div>
+
+            <!-- Описание товара -->
+            <div class="form-group">
+                <textarea class="product_form product-description" id="product-description" name="description" placeholder="Описание товара" required></textarea>
+            </div>
+
+            <!-- SALE -->
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="product-sale" name="sale" class="checkbox-input">
+                    <span class="checkbox-custom"></span>
+                    Товар участвует в акции
+                </label>
+            </div>
+
+            <!-- Загрузка изображения -->
+            <div class="form-group">
+                <label class="file-upload-label">
+                    <input type="file" id="product-image" name="image" class="file-input" accept=".jpg, .jpeg, .png" />
+                    <button type="button" class="custom-file-button">Загрузить фото товара</button>
+                </label>
+                <span id="file-name" class="file-name">Фото не выбрано</span>
+            </div>
+
+            <!-- Сообщения об ошибках -->
+            <div class="error" id="errorMessages"></div>
+
+            <!-- Кнопка -->
+            <button class="bt reg_bt" id="submitBtn" type="submit">Добавить товар</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/add_products.js') }}"></script>
+{% endblock %}

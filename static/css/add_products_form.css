@@ -1,0 +1,454 @@
+/* === Общие стили формы === */
+
+.content_add_product {
+    background-color: rgb(73, 73, 73);
+    border-radius: 10px;
+    width: 500px;
+    padding: 20px;
+}
+
+.form_add {
+    display: flex;
+    gap: 10px;
+}
+
+.form_add_product {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0;
+}
+
+
+/* Переключатель отображения превью (toggle switch) */
+.toggle-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    background-color: #ccc;
+    border-radius: 26px;
+    transition: 0.3s;
+}
+
+.slider::before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+/* Включённое состояние */
+.toggle-switch input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+.toggle-switch input:checked + .slider::before {
+    transform: translateX(24px);
+}
+
+/* Подпись рядом с переключателем */
+.toggle-label {
+    font-weight: normal;
+}
+
+
+/* === Общие стили для всех полей ввода === */
+
+.product_form,
+.select-header,
+.product-description,
+.custom-file-button {
+    width: 100%;
+    height: 44px;
+    padding: 10px 15px;
+    box-sizing: border-box;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+.product_form::placeholder,
+.select-header::placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+.product_form:focus,
+.select-header:focus,
+.product-description:focus {
+    border-color: #007bff;
+    background-color: #f9f9f9;
+}
+
+/* === Стили аккордеона === */
+
+.custom-select {
+    position: relative;
+    width: 100%;
+    color: #000;
+}
+
+.select-header {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    font-size: 14px;
+}
+
+.select-header::after {
+    content: '▼';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s;
+}
+
+.select-header.active::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.select-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    border-top: none;
+    background-color: white;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    z-index: 100;
+    display: none;
+}
+
+.select-options.show {
+    display: block;
+}
+
+.select-options li {
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+.select-options li:hover {
+    background-color: #f0f0f0;
+}
+
+/* === Стили textarea === */
+
+.product-description {
+    height: auto;
+    min-height: 44px;
+    resize: vertical;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* === Кнопка загрузки файла === */
+
+.file-upload-label {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.file-input {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.custom-file-button {
+    display: block;
+    width: 100%;
+    height: 44px;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.custom-file-button:hover {
+    background-color: #0056b3;
+}
+
+.custom-file-button:active {
+    background-color: #004494;
+    transform: scale(0.98);
+}
+
+.file-name {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+    color: #929292;
+    text-align: center;
+}
+
+/*Чек бокс SALE*/
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    position: relative;
+    padding-left: 25px;
+    color: #ffffff;
+}
+
+.checkbox-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Стиль кастомного чекбокса */
+.checkbox-custom {
+    position: absolute;
+    left: 0;
+    height: 16px;
+    width: 16px;
+    background-color: #eee;
+    border-radius: 3px;
+    transition: all 0.2s ease-in-out;
+}
+
+/* При наведении */
+.checkbox-label:hover .checkbox-custom {
+    background-color: #ccc;
+}
+
+/* Когда чекбокс отмечен */
+.checkbox-input:checked ~ .checkbox-custom {
+    background-color: #007bff;
+}
+
+/* Показываем галочку */
+.checkbox-input:checked ~ .checkbox-custom::after {
+    content: '\2713'; /* Символ ✓ */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Центруем символ */
+    font-size: 14px;
+    color: #fff;
+}
+
+/* === Сообщения об ошибках === */
+
+.error {
+    margin-top: 15px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.error-message, .success-message {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin: 0 auto 15px auto;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.success-message {
+    color: #11a834;
+}
+
+.error-message {
+    color: #d80b20;
+}
+
+/* === Отступы между полями === */
+
+.form-group {
+    margin-bottom: 10px;
+    color: #f3f3f3;
+}
+
+/* === Карточка товара на странице редактирования === */
+
+.conteiner_title {
+    padding-top: 30px;
+}
+
+.product-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    max-width: 320px;
+    width: 100%;
+    margin: 0 auto;
+    height: 400px;
+    max-height: 400px;
+    position: relative;
+}
+
+.img_container {
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.img_container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+}
+
+.info_product {
+    display: flex;
+    padding: 15px;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 180px;
+    overflow: hidden;
+}
+
+.content_title {
+    height: 75px;
+}
+
+.title_product a {
+    font-weight: bold;
+    text-decoration: none;
+    color: #333;
+}
+
+.description {
+    font-size: 0.9em;
+    color: #464545;
+    margin-top: 5px;
+}
+
+.price_product p {
+    margin: 10px 0 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #e91e63;
+}
+
+.quantity {
+    font-size: 0.9em;
+    color: #777;
+}
+
+/* Треугольный бейдж "Акция" */
+.badge {
+    user-select: none;
+    cursor: default;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: #ffcc00;
+    color: #000;
+    font-weight: bold;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transform: translate(50px, -50px) rotate(45deg);
+    overflow: hidden;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    padding: 70px 0 0 27px; /* верх, право, низ, лево */
+    box-sizing: border-box;
+}
+
+
+
+/* Блок покупки - Не активный*/
+.user-actions.disabled {
+    pointer-events: none; /* отключает все клики и hover-эффекты */
+    cursor: default; /* курсор остаётся стрелкой, не меняется на "руку" */
+}
+
+.block_buy {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Артикул */
+.article_num p {
+    font-size: 12px;
+}
+
+/* === Сетка — только для главной страницы === */
+.products-section {
+    font-family: Arial, sans-serif;
+}
+
+.products-section .product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
