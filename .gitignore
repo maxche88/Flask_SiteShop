@@ -1,0 +1,46 @@
+# Виртуальное окружение
+venv/
+env/
+myenv/
+.venv
+
+# Локальная БД (SQLite)
+database.db
+*.db
+
+# Переменные окружения
+.env
+.env.local
+.env.*.local
+
+# Логи
+logs/
+*.log
+
+# Кэш Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.ipynb_checkpoints
+
+# IDE / редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ОС
+.DS_Store
+Thumbs.db
+
+# Тесты и покрытие
+.htmlcov
+.coverage
+.pytest_cache/
+
+# Доп. каталоги
+INFO/
+static/img/products/*
+!static/img/products/.gitkeep

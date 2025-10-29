@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block link %}
+<!-- Подключаем общий CSS, где описаны стили карточек -->
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/base.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/view_product.css') }}">
+{% endblock %}
+
+{% block title %}
+{{ product.title }} — {{ product.article_num }}
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="product-detail-page">
+    <div class="product-card">
+
+        <!-- Контейнер изображения -->
+        <div class="product-image-wrapper">
+            <img class="product-image" src="/static{{ product.link_img }}" alt="{{ product.title }}">
+        </div>
+
+        <!-- Информационная панель товара -->
+        <div class="product-info">
+
+            <!-- Артикул -->
+            <div class="product-article">
+                Артикул: <span class="article-value">{{ product.article_num }}</span>
+            </div>
+
+            <!-- Название товара -->
+            <h1 class="product-title">{{ product.title }}</h1>
+
+            <!-- Описание -->
+            <div class="product-description">
+                {{ product.description }}
+            </div>
+
+            <!-- Блок скидки (если есть) -->
+            {% if product.sale %}
+                <div class="product-sale-badge">
+                    Скидка
+                </div>
+            {% endif %}
+            
+            <!-- Блок цены и корзины -->
+            <div class="product-actions">
+                <div class="price_product">
+                    <p class="price-value">{{ product.price }} ₽</p>
+                </div>
+
+                <!-- Кнопки для корзины (видимость управляется JS) -->
+                <div class="user-actions">
+                    <div class="btn_buy" data-product-id="{{ product.id }}">
+                        <div class="btn_text"></div>
+                        Купить
+                    </div>
+                    <a href="#" class="cart-icon" data-product-id="{{ product.id }}" title="Добавить в корзину">
+                        <img class="img_c" 
+                             src="{{ url_for('static', filename='img/other/cart-add-mini.svg') }}" 
+                             alt="В корзину" width="25" height="25">
+                    </a>
+                </div>
+            </div>
+
+            <!-- Характеристики -->
+            <div class="product-specs">
+                <div class="product-category">
+                    <strong>Категория:</strong> <span class="category-value">{{ product.category }}</span>
+                </div>
+                <div class="product-availability">
+                    <strong>В наличии:</strong> <span class="availability-value">{{ product.quantity }} шт.</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    // Передаём роль пользователя в JavaScript
+    window.userRole = "{{ role }}";
+</script>
+<script src="{{ url_for('static', filename='js/cart_core.js') }}"></script>
+{% endblock %}

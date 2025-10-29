@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/add_products_form.css') }}">
+{% endblock %}
+
+{% block title %}
+Редактирование товара
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/suser-panel" title="Вернуться назад">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px"
+            height="35px">
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="conteiner_forms">
+    <!-- Форма редактирования -->
+    <form id="productForm" class="content_add_product" data-product-id="{{ product.id }}">
+
+        <!-- Чекбокс ВНЕ превью -->
+        <div class="form-group">
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-preview">
+                <span class="slider"></span>
+                <span class="toggle-label">Показать превью товара</span>
+            </label>
+        </div>
+
+        <!-- Превью карточки -->
+        <div id="product-card-preview-wrapper" class="product-card-preview hidden">
+            <div class="product-card">
+                <div class="img_container">
+                    <img class="img_cont" src="/static{{ product.link_img }}" alt="Фото товара">
+                    <div class="badge">Акция</div>
+                </div>
+
+                <div class="info_product">
+                    <div class="article_num">
+                        <p>Артикул: <span id="preview-article">{{ product.article_num }}</span></p>
+                    </div>
+                    <div class="content_title">
+                        <div class="title_product">
+                            <a href="javascript:void(0)" id="preview-title-link">{{ product.title }}</a>
+                        </div>
+                        <div class="description">
+                            <p id="preview-description">{{ product.description }}</p>
+                        </div>
+                    </div>
+
+                    <div class="block_buy">
+                        <div class="price_product">
+                            <p id="preview-price">{{ product.price }} ₽</p>
+                        </div>
+
+                        <div class="user-actions disabled">
+                            <div class="btn_buy" data-product-id="">
+                                <div class="btn_text"></div>
+                                Купить
+                            </div>
+                            <div class="cart-icon" title="Добавить в корзину">
+                                <img class="img_c" src="{{ url_for('static', filename='img/other/cart-add-mini.svg') }}"
+                                    alt="В корзину" width="25" height="25">
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="conteiner_title">
+            <h2 class="title">Редактировать товар</h2>
+        </div>
+
+        <div class="form_add_product">
+            <!-- Артикул товара -->
+            <div class="form-group">
+                <p>Артикул товара</p>
+                <input type="text" class="product_form" id="article-number" name="article_num"
+                    placeholder="Артикул товара" value="{{ product.article_num }}" required>
+            </div>
+
+            <!-- Название товара -->
+            <div class="form-group">
+                <p>Название товара</p>
+                <input type="text" class="product_form" id="product-name" name="title" placeholder="Название товара"
+                    value="{{ product.title }}" required>
+            </div>
+
+            <!-- Цена и количество -->
+            <div class="form-group form_add">
+                <div>
+                    <p>Цена</p>
+                    <input type="number" class="product_form" id="product-price" name="price" placeholder="Цена" min="0"
+                        step="0.01" value="{{ product.price }}" required>
+                </div>
+
+                <div>
+                    <p>Кол-во</p>
+                    <input type="number" class="product_form" id="product-quantity" name="quantity" placeholder="Кол-во"
+                        min="0" step="1" value="{{ product.quantity }}" required>
+                </div>
+            </div>
+
+            <!-- Выбор категории -->
+            <div class="form-group">
+                <p>Выбор категории товара</p>
+                <div class="custom-select" id="category-select">
+                    <div class="select-header">
+                        {{ product.category }}
+                    </div>
+                    <ul class="select-options" id="category-options">
+                        <li data-value="Мотоциклы">Мотоциклы</li>
+                        <li data-value="Квадроциклы">Квадроциклы</li>
+                        <li data-value="Снегоходы">Снегоходы</li>
+                        <li data-value="Мотоблоки">Мотоблоки</li>
+                        <li data-value="Бензо-инструмент">Бензо-инструмент</li>
+                        <li data-value="Запчасти">Запчасти</li>
+                    </ul>
+                </div>
+                <input type="hidden" id="product-category" name="category" value="{{ product.category }}" required>
+            </div>
+
+            <!-- Описание товара -->
+            <div class="form-group">
+                <p>Описание товара</p>
+                <textarea class="product_form product-description" id="product-description" name="description"
+                    placeholder="Описание товара" required>{{ product.description }}</textarea>
+            </div>
+
+            <!-- SALE -->
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="product-sale" name="sale" class="checkbox-input" {% if product.sale
+                        %}checked{% endif %}>
+                    <span class="checkbox-custom"></span>
+                    Товар участвует в акции
+                </label>
+            </div>
+
+            <!-- Загрузка изображения -->
+            <div class="form-group">
+                <label class="file-upload-label">
+                    <input type="file" id="product-image" name="image" class="file-input" accept=".jpg,.jpeg,.png">
+                    <button type="button" class="custom-file-button">Загрузить фото товара</button>
+                </label>
+                <span id="file-name" class="file-name">Фото не выбрано</span>
+            </div>
+
+            <!-- Сообщения об ошибках -->
+            <div class="error" id="errorMessages"></div>
+
+            <!-- Кнопка отправки -->
+            <button class="bt reg_bt" type="submit">Сохранить изменения</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/form_edit_products.js') }}"></script>
+{% endblock %}

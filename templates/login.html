@@ -1,0 +1,59 @@
+<!-- Форма входа -->
+{% extends 'base.html' %}
+
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+{% endblock %}
+
+{% block title %}
+Вход
+{% endblock %}
+
+{% block header %}
+    <div class="back">
+        <a href="/" title="Вернуться назад">
+            <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="conteiner_forms">
+    <form id="loginForm" class="content_reg" method="post">
+        <h2 class="title">Вход</h2>
+
+        <div class="reg_in">
+            <!-- Логин -->
+            <input type="text" class="login_form" id="username" name="username" placeholder="Имя пользователя или Email" required>
+
+            <!-- Пароль -->
+            <div class="password_item">
+                <input type="password" class="pass_form" id="password" name="password" placeholder="Пароль" required>
+                <img src="{{ url_for('static', filename='img/other/eyeclose.png') }}" alt="Скрыть" class="eye_close"
+                     onclick="togglePassword('password', this)">
+                <img src="{{ url_for('static', filename='img/other/eyeopen.png') }}" alt="Показать" class="eye_open"
+                     style="display: none;" onclick="togglePassword('password', this)">
+            </div>
+
+            <!-- Блок ошибок -->
+            <div class="error">
+                <div id="errorMessages"></div>
+            </div>
+
+            <!-- Кнопка отправки -->
+            <button class="bt reg_bt" id="submitBtn" type="submit">Войти</button>
+
+            <!-- Ссылка "Забыли пароль?" -->
+             <div class="forgot_pass">
+                <a href="{{ url_for('session.reset_password_') }}">Забыли пароль?</a>
+             </div>
+                
+            </div>
+        </div>
+    </form>
+</div>
+
+<script src="/static/js/toggle_eye.js"></script>
+<script type="module" src="/static/js/login.js"></script>
+{% endblock %}

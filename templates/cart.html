@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cart_form.css') }}">
+{% endblock %}
+
+{% block title %}
+Корзина
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="conteiner_forms">
+    <div class="content_order">
+        <h2 class="title_order">Ваша корзина</h2>
+
+        {% if cart_items %}
+        <table class="styled-table" id="cart-table">
+            <thead>
+                <tr>
+                    <th>Товар</th>
+                    <th>Цена</th>
+                    <th>Кол-во</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody id="cart-table-body">
+                {% for item in cart_items %}
+                <tr data-item-id="{{ item.id }}">
+                    <td>{{ item.product.title }}</td>
+                    <td>{{ item.product.price }} ₽</td>
+                    <td>
+                        <div class="quantity-control">
+                            <input type="number" class="qty-input" value="{{ item.quantity }}" min="1"
+                                    data-item-id="{{ item.id }}" data-product-id="{{ item.product_id }}">
+                        </div>
+                    </td>
+                    <td>
+                        <button class="delete-btn bt reg_bt" data-id="{{ item.id }}">Удалить</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Кнопка оформления заказа -->
+        <div class="btn_order">
+            <a href="#" class="bt reg_bt" id="checkout-button">Оформить заказ</a>
+        </div>
+
+        {% else %}
+            <p class="cart_empty">Корзина пуста</p>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- Передаем флаг наличия товаров в data-атрибуте -->
+<div id="cart-info" data-cart-empty="{{ 'true' if not cart_items else 'false' }}"></div>
+{% endblock %}
+
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+{% endblock %}

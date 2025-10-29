@@ -1,0 +1,30 @@
+<!-- Личный кабинет suser -->
+{% extends 'base.html' %}
+
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+{% endblock %}
+
+{% block title %}
+super panel
+{% endblock %}
+
+{% block header %}
+    <div class="back">
+        <a href="/" title="Вернуться назад">
+            <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="conteiner_forms">
+    <div class="info_panel">
+        <h3>Личный кабинет</h3><br>
+    </div>
+
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,201 @@
+.back {
+  padding-right: 10px;
+}
+
+/* =============== Общая обёртка =============== */
+.product-detail-page {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 15px;
+}
+
+/* =============== Карточка товара =============== */
+.product-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+/* =============== Изображение =============== */
+.product-image-wrapper {
+    width: 100%;
+    background-color: #f9f9f9;
+    text-align: center;
+    padding: 25px 20px;
+}
+
+.product-image {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    cursor: zoom-in;
+}
+
+.product-image:hover {
+    transform: scale(1.1);
+}
+
+/* =============== Информационная панель =============== */
+.product-info {
+    padding: 25px 20px;
+}
+
+/* Артикул */
+.product-article {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 16px;
+}
+
+.article-value {
+    font-weight: 600;
+    color: #333;
+}
+
+/* Название товара */
+.product-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 16px 0;
+}
+
+/* Описание */
+.product-description {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+/* Бейдж скидки */
+.product-sale-badge {
+    display: inline-block;
+    background-color: #eeff00;
+    color: rgb(46, 46, 46);
+    font-size: 13px;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+/* =============== Блок действий (цена + корзина) =============== */
+.product-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+/* Цена */
+.product-price {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2e7d32;
+}
+
+/* Кнопка добавления в корзину */
+.add-to-cart-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: #f1f8e9;
+    border-radius: 50%;
+    transition: background-color 0.2s, transform 0.2s;
+    text-decoration: none;
+}
+
+.add-to-cart-button:hover {
+    background-color: #c8e6c9;
+    transform: scale(1.08);
+}
+
+.cart-icon-image {
+    width: 25px;
+    height: 25px;
+    filter: brightness(0) saturate(100%) invert(48%) sepia(99%) saturate(2476%) hue-rotate(86deg) brightness(85%) contrast(95%);
+    transition: filter 0.2s;
+}
+
+.add-to-cart-button:hover .cart-icon-image {
+    filter: brightness(0) saturate(100%) invert(48%) sepia(99%) saturate(2476%) hue-rotate(86deg) brightness(100%) contrast(100%);
+}
+
+/* =============== Характеристики =============== */
+.product-specs {
+    font-size: 15px;
+    color: #444;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.product-category,
+.product-availability {
+    margin: 0;
+}
+
+.product-specs strong {
+    color: #333;
+}
+
+/* =============== Адаптивность =============== */
+
+/* Планшеты и маленькие десктопы (768px – 991px) */
+@media (min-width: 768px) {
+    .product-info {
+        padding: 30px 25px;
+    }
+
+    .product-title {
+        font-size: 26px;
+    }
+
+    .product-price {
+        font-size: 26px;
+    }
+
+    /* На средних экранах всё ещё вертикально */
+    .product-card {
+        flex-direction: column;
+    }
+}
+
+/* Десктопы (992px и шире) */
+@media (min-width: 992px) {
+    .product-card {
+        flex-direction: row;
+    }
+
+    .product-image-wrapper {
+        flex: 0 0 50%;
+        padding: 40px 30px;
+    }
+
+    .product-info {
+        flex: 0 0 50%;
+        padding: 40px 30px;
+    }
+}
+
+/* Мобильные устройства */
+@media (max-width: 767px) {
+    .product-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .add-to-cart-button {
+        align-self: flex-end;
+    }
+}

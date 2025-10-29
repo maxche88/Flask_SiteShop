@@ -1,0 +1,65 @@
+<!-- Форма регистрации пользователя -->
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+{% endblock %}
+
+{% block title %}
+Регистрация
+{% endblock %}
+
+{% block header %}
+    <div class="back">
+        <a href="{{ url_for('main.index') }}" title="Вернуться назад">
+            <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+        </a>
+    </div>
+{% endblock %}
+
+{% block content %}
+<div class="conteiner_forms">
+    <form id="registerForm" class="content_reg" method="post">
+        <h2 class="title">Регистрация</h2>
+
+        <div class="reg_in">
+            <!-- Имя -->
+            <input type="text" class="login_form" id="username" name="username" placeholder="Имя" required>
+
+            <!-- Email -->
+            <input type="email" class="mail_form" id="email" name="email" placeholder="Электронная почта" required>
+
+            <!-- Пароль -->
+            <div class="password_item">
+                <input type="password" class="pass_form" id="password" name="password" placeholder="Введите пароль" required>
+                <img src="{{ url_for('static', filename='img/other/eyeclose.png') }}" alt="Скрыть" class="eye_close"
+                     onclick="togglePassword('password', this)">
+                <img src="{{ url_for('static', filename='img/other/eyeopen.png') }}" alt="Показать" class="eye_open"
+                     style="display: none;" onclick="togglePassword('password', this)">
+            </div>
+
+            <!-- Повторите пароль -->
+            <div class="password_item">
+                <input type="password" class="pass_form" id="confirm_password" name="confirm_password" placeholder="Повторите пароль" required>
+                <img src="{{ url_for('static', filename='img/other/eyeclose.png') }}" alt="Скрыть" class="eye_close"
+                     onclick="togglePassword('confirm_password', this)">
+                <img src="{{ url_for('static', filename='img/other/eyeopen.png') }}" alt="Показать" class="eye_open"
+                     style="display: none;" onclick="togglePassword('confirm_password', this)">
+                <img src="{{ url_for('static', filename='img/other/ok.svg') }}" alt="OK" class="check_pass" id="passwordCheckIcon" style="display: none;">
+            </div>
+            
+            <div class="error">
+                <div id="errorMessages"></div>
+            </div>
+
+            <!-- Кнопка отправки -->
+            <button class="bt reg_bt" id="submitBtn" type="submit">Отправить</button>
+        </div>
+        
+    </form>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/toggle_eye.js') }}"></script>
+<script src="{{ url_for('static', filename='js/reg_field.js') }}"></script>
+{% endblock %}
