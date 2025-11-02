@@ -100,21 +100,13 @@
 <!-- Основной блок поиска -->
 <div class="container_info_search">
     <div class="search_top">
-        <button id="categories-button" class="product_category_btn" aria-expanded="false">Категории</button>
-        <div id="categories-menu" class="category_menu dropdown-menu">
-            <a href="#" data-category="">Все категории</a>
-            <hr>
-            <a href="#" data-category="Мотоциклы">Мотоциклы</a>
-            <a href="#" data-category="Квадроциклы">Квадроциклы</a>
-            <a href="#" data-category="Снегоходы">Снегоходы</a>
-            <a href="#" data-category="Мотоблоки">Мотоблоки</a>
-            <a href="#" data-category="Бензо-инструмент">Бензо-инструмент</a>
-            <a href="#" data-category="Запчасти">Запчасти</a>
+        <div class="search_input_group">
+            <input type="text" id="search-input" placeholder="Что ищете?" />
+            <button class="search_btn" id="search-btn">Поиск</button>
         </div>
-        <input type="text" id="search-input" placeholder="Что ищете?" />
-        <button class="search_btn" id="search-btn">Поиск</button>
         <button class="filter_toggle" id="toggle-filters">
-            <img src="{{ url_for('static', filename='img/other/filter.png') }}" alt="filter" class="btn-icon"></button>
+            <img src="{{ url_for('static', filename='img/other/filter.png') }}" alt="filter" class="btn-icon">
+        </button>
     </div>
 
     <!-- Отображение активных фильтров -->
@@ -122,15 +114,31 @@
 
     <!-- Форма расширенных фильтров -->
     <div class="advanced_filters" id="advanced-filters">
-        <p>Цена</p>
-        <div class="block_info_price">
-            <p>от:</p>
-            <p>до:</p>
+
+        <div class="conteiner_category">
+            <p><strong>Категории</strong></p>
+            <div class="filter_group">
+                <label><input type="checkbox" name="category" value="Мотоциклы"> Мотоциклы</label>
+                <label><input type="checkbox" name="category" value="Квадроциклы"> Квадроциклы</label>
+                <label><input type="checkbox" name="category" value="Снегоходы"> Снегоходы</label>
+                <label><input type="checkbox" name="category" value="Мотоблоки"> Мотоблоки</label>
+                <label><input type="checkbox" name="category" value="Бензо-инструмент"> Бензо-инструмент</label>
+                <label><input type="checkbox" name="category" value="Запчасти"> Запчасти</label>
+            </div>
         </div>
-        <div class="block_field_price">
-            <input type="number" id="price_min" placeholder="Руб." />
-            <input type="number" id="price_max" placeholder="Руб." />
+        
+        <div class="conteiner_price">
+            <p><strong>Цена</strong></p>
+            <div class="block_info_price">
+                <p>от:</p>
+                <p>до:</p>
+            </div>
+            <div class="block_field_price">
+                <input type="number" id="price_min" placeholder="Руб." />
+                <input type="number" id="price_max" placeholder="Руб." />
+            </div>
         </div>
+        
 
         <div class="filter_group check_box_sale">
             <label><input type="checkbox" id="sale_checkbox"> Только акции</label>
