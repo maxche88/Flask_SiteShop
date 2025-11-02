@@ -49,9 +49,12 @@ def get_all_products():
         query = query.filter(Shop.user_id == user_id_param)
 
     # === Фильтр по категории ===
-    category = args.get('category')
-    if category:
-        query = query.filter(Shop.category.ilike(f"%{category}%"))
+    categories = args.getlist('category')
+    if categories:
+        # Очистка: удаляем пустые и лишние пробелы
+        clean_categories = [c.strip() for c in categories if c.strip()]
+        if clean_categories:
+            query = query.filter(Shop.category.in_(clean_categories))
 
     # === Фильтр по названию ===
     title = args.get('title')
