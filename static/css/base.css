@@ -137,15 +137,23 @@ html, body {
 .container_info_search {
     padding: 10px;
     border-bottom: 1px solid #ccc;
-    
 }
 
 .search_top {
     display: flex;
     align-items: center;
     gap: 10px;
+    width: 100%;
     margin-bottom: 10px;
+    flex-wrap: wrap;
     position: relative;
+}
+
+.search_input_group {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
 }
 
 /*Кнопка выбора категории*/
@@ -164,18 +172,39 @@ html, body {
     flex: 1;
     padding: 8px;
     font-size: 14px;
+    min-width: 150px;
+}
+
+.search_btn {
+    white-space: nowrap; /* чтобы текст "Поиск" не переносился */
+    padding: 8px 16px;
 }
 
 /*Меню фильтра*/
-.search_btn, .filter_toggle, .clear_filters, .product_category_btn {
+.conteiner_category {
+    display: flex;
+    gap: 15px;
+}
+
+.conteiner_price {
+    display: flex;
+    gap: 15px;
+}
+
+.search_btn, .filter_toggle, .clear_filters {
     padding: 8px 12px;
+    white-space: nowrap;
     cursor: pointer;
 }
 
+.clear_filters {
+    height: 50px;
+}
+
 .filter_toggle {
-    width: 35px;
-    height: 35px;
-    padding: 0;
+    width: auto;
+    height: auto;
+    padding: 6px;
     margin: 0;
     display: flex;
     align-items: center;
@@ -205,6 +234,8 @@ html, body {
 }
 
 .filter_group {
+    display: flex;
+    flex-direction: column;
     margin-bottom: 10px;
 }
 
@@ -417,4 +448,8 @@ html, body {
     contrast(98%);
 }
 
-
+@media (max-width: 767px) {
+    .description-value {
+        display: none !important;
+    }
+}
