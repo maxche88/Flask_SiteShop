@@ -1,76 +1,51 @@
 // filters_category.js
-// Только фильтрация и загрузка товаров
+// Фильтрация товаров с поддержкой множественного выбора категорий через чекбоксы
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Проверяем, есть ли элементы главной страницы
     const productContainer = document.getElementById('product-container');
-    if (!productContainer) return; // Если нет — выходим (не главная страница)
+    if (!productContainer) return;
 
     const searchBtn = document.getElementById('search-btn');
     const filtersToggle = document.getElementById('toggle-filters');
     const advancedFilters = document.getElementById('advanced-filters');
-    const activeFilters = document.getElementById('active-filters');
-    const categoriesMenu = document.getElementById('categories-menu');
-    const categoriesButton = document.getElementById('categories-button');
     const clearFiltersBtn = document.getElementById('clear-filters');
+    const activeFilters = document.getElementById('active-filters');
 
-    let currentCategory = '';
+    // Получаем все чекбоксы категорий
+    const categoryCheckboxes = document.querySelectorAll('input[name="category"]');
+
     let appliedFilters = {};
 
-    // --- Меню категорий ---
-    categoriesButton?.addEventListener('click', () => {
-        categoriesMenu.style.display = categoriesMenu.style.display === 'block' ? 'none' : 'block';
-    });
-
-    categoriesMenu?.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', function (e) {
-            e.preventDefault();
-            currentCategory = this.dataset.category || '';
-            updateActiveFilters();
-            categoriesMenu.style.display = 'none';
-        });
-    });
-
-    // --- Фильтры ---
+    // --- Переключение видимости расширенных фильтров ---
     filtersToggle?.addEventListener('click', () => {
         advancedFilters.classList.toggle('advanced_filters--visible');
     });
 
+    // --- Очистка всех фильтров ---
     clearFiltersBtn?.addEventListener('click', () => {
+        // Сбрасываем поля
+        document.getElementById('search-input').value = '';
         document.getElementById('price_min').value = '';
         document.getElementById('price_max').value = '';
         document.getElementById('sale_checkbox').checked = false;
-        currentCategory = '';
+
+        // Сбрасываем чекбоксы категорий
+        categoryCheckboxes.forEach(cb => cb.checked = false);
+
         appliedFilters = {};
-        activeFilters.innerHTML = '';
+        activeFilters.textContent = '';
         loadProducts(1);
     });
 
-    function updateActiveFilters() {
-        appliedFilters = {
-            category: currentCategory,
-            title: document.getElementById('search-input')?.value.trim(),
-            price_min: parseInputNumber('price_min'),
-            price_max: parseInputNumber('price_max'),
-            sale: document.getElementById('sale_checkbox')?.checked
-        };
+    // --- Обработчики чекбоксов категорий ---
+    categoryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateActiveFilters);
+    });
 
-        const labels = [];
-        if (appliedFilters.category) labels.push(`Категория: ${appliedFilters.category}`);
-        if (appliedFilters.title) labels.push(`Поиск: ${appliedFilters.title}`);
-        if (appliedFilters.price_min !== undefined) labels.push(`Цена от: ${appliedFilters.price_min}`);
-        if (appliedFilters.price_max !== undefined) labels.push(`Цена до: ${appliedFilters.price_max}`);
-        if (appliedFilters.sale) labels.push('Только акции');
+    // --- Обработчик чекбокса "Только акции" ---
+    document.getElementById('sale_checkbox')?.addEventListener('change', updateActiveFilters);
 
-        activeFilters.textContent = labels.join(', ');
-    }
-
-    function parseInputNumber(id) {
-        const value = parseFloat(document.getElementById(id)?.value);
-        return isNaN(value) ? undefined : value;
-    }
-
-    // --- Поиск ---
+    // --- Поиск по кнопке и Enter ---
     searchBtn?.addEventListener('click', () => {
         updateActiveFilters();
         loadProducts(1);
@@ -83,28 +58,78 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    document.getElementById('sale_checkbox')?.addEventListener('change', () => {
-        updateActiveFilters();
-    });
+    // --- Обновление активных фильтров ---
+    function updateActiveFilters() {
+        // Собираем выбранные категории
+        const selectedCategories = Array.from(categoryCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
 
+        appliedFilters = {
+            categories: selectedCategories.length ? selectedCategories : null,
+            title: document.getElementById('search-input')?.value.trim(),
+            price_min: parseInputNumber('price_min'),
+            price_max: parseInputNumber('price_max'),
+            sale: document.getElementById('sale_checkbox')?.checked
+        };
+
+        // Формируем метки для отображения
+        const labels = [];
+        if (appliedFilters.categories) {
+            labels.push(`Категории: ${appliedFilters.categories.join(', ')}`);
+        }
+        if (appliedFilters.title) {
+            labels.push(`Поиск: ${appliedFilters.title}`);
+        }
+        if (appliedFilters.price_min !== undefined) {
+            labels.push(`Цена от: ${appliedFilters.price_min}`);
+        }
+        if (appliedFilters.price_max !== undefined) {
+            labels.push(`Цена до: ${appliedFilters.price_max}`);
+        }
+        if (appliedFilters.sale) {
+            labels.push('Только акции');
+        }
+
+        activeFilters.textContent = labels.join(', ');
+    }
+
+    // --- Вспомогательная функция: парсинг чисел ---
+    function parseInputNumber(id) {
+        const el = document.getElementById(id);
+        if (!el) return undefined;
+        const value = parseFloat(el.value);
+        return isNaN(value) ? undefined : value;
+    }
+
+    // --- Обрезка текста ---
     function truncateText(text, maxChars = 100) {
         if (!text) return '';
         if (text.length <= maxChars) return text;
         const truncated = text.substring(0, maxChars);
         const lastSpace = truncated.lastIndexOf(' ');
-        const cutIndex = lastSpace > maxChars * 0.7 ? lastSpace : maxChars; // не резать слишком рано
+        const cutIndex = lastSpace > maxChars * 0.7 ? lastSpace : maxChars;
         return truncated.substring(0, cutIndex).trim() + '…';
     }
 
-    // --- Загрузка товаров ---
+    // --- Загрузка товаров с фильтрацией ---
     async function loadProducts(page = 1) {
         try {
             const params = new URLSearchParams();
-            if (appliedFilters.category) params.append('category', appliedFilters.category);
+
+            // Передаём каждую выбранную категорию отдельно
+            if (appliedFilters.categories) {
+                appliedFilters.categories.forEach(cat => {
+                    params.append('category', cat);
+                });
+            }
+
+            // Остальные фильтры
             if (appliedFilters.title) params.append('title', appliedFilters.title);
             if (appliedFilters.price_min !== undefined) params.append('price_min', appliedFilters.price_min);
             if (appliedFilters.price_max !== undefined) params.append('price_max', appliedFilters.price_max);
             if (appliedFilters.sale) params.append('sale', appliedFilters.sale);
+
             params.append('page', page);
             params.append('per_page', 100);
 
@@ -128,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const price = clone.querySelector('.price_product p');
                 const badge = clone.querySelector('.badge');
 
-                // Заполняем данные
                 img.src = `/static${product.img_url}`;
                 img.alt = product.title;
                 articleNum.textContent = `Артикул: ${product.article_num}`;
@@ -137,26 +161,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 price.textContent = `${product.price} ₽`;
                 description.textContent = truncateText(product.description, 100);
 
-                if (product.sale) {
-                    badge.style.display = 'flex';
-                } else {
-                    badge.style.display = 'none';
-                }
+                badge.style.display = product.sale ? 'flex' : 'none';
 
-                // === ДОБАВЛЯЕМ КНОПКИ КОРЗИНЫ ===
+                // === Кнопки корзины ===
                 const blockBuy = clone.querySelector('.block_buy');
                 if (blockBuy) {
-                    // Создаём блок .user-actions
                     const userActions = document.createElement('div');
                     userActions.className = 'user-actions';
-                    
-                    // Кнопка "Купить"
+
                     const buyBtn = document.createElement('div');
                     buyBtn.className = 'btn_buy';
                     buyBtn.dataset.productId = product.id;
                     buyBtn.innerHTML = '<div class="btn_text"></div>Купить';
 
-                    // Иконка корзины
                     const cartLink = document.createElement('a');
                     cartLink.href = '#';
                     cartLink.className = 'cart-icon';
@@ -164,17 +181,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     cartLink.dataset.productId = product.id;
                     cartLink.innerHTML = `<img class="img_c" src="/static/img/other/cart-add-mini.svg" alt="В корзину" width="25" height="25">`;
 
-                    // Собираем блок
                     userActions.appendChild(buyBtn);
                     userActions.appendChild(cartLink);
                     blockBuy.appendChild(userActions);
 
-                    // Управление видимостью
-                    if (window.userRole === 'user') {
-                        userActions.style.display = ''; // показываем
-                    } else {
-                        userActions.style.display = 'none'; // скрываем
-                    }
+                    userActions.style.display = (window.userRole === 'user') ? '' : 'none';
                 }
 
                 productContainer.appendChild(clone);
