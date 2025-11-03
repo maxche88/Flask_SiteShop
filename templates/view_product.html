@@ -87,8 +87,7 @@
 
 {% block js %}
 <script>
-    // Передаём роль пользователя в JavaScript
     window.userRole = "{{ role }}";
 </script>
-<script src="{{ url_for('static', filename='js/cart_core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cart-ui.js') }}"></script>
 {% endblock %}

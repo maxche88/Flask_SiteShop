@@ -61,6 +61,8 @@
             </g>
         </svg>
 
+        <span class="cart-badge" id="cart-count-badge">3</span>
+        
         <svg class="account" id="account-button" width="40" height="40" viewBox="0 0 4000 4000" aria-hidden="true">
             <path fill="currentColor" stroke="currentColor" stroke-width="50" fill-rule="evenodd"
                 d="M798.109 3192.949c-0.068-0.068-0.125-0.125-0.193-0.193-294.716-302.469-476.27-715.757-476.27-1171.437 0-927.153 751.613-1678.766 1678.766-1678.766 927.152 0 1678.765 751.613 1678.765 1678.766 0 456.794-182.452 870.981-478.452 1173.665-0.08-0.034-0.159-0.068-0.239-0.114-172.232-91.129-274.559-132.487-475.905-205.791-216.342-78.772-326.104-101.804-326.104-355.605 0-96.597 226.948-412.867 286.473-517.65 100.429-117.618 97.405-204.916 37.186-281.505l10.039-311.427c88.037-551.005-255.21-872.254-694.93-858.885l-39.767 0-39.766 0c-439.72-13.369-782.967 307.88-694.93 858.885l10.038 311.427c-60.218 76.589-63.242 163.887 37.187 281.505 59.525 104.783 286.473 421.053 286.473 517.65 0 253.801-109.762 276.833-326.104 355.605-199.925 72.792-302.23 114.082-472.267 203.87zm1202.303-3016.909c1019.123 0 1845.278 826.155 1845.278 1845.279 0 1019.123-826.155 1845.278-1845.278 1845.278-1019.124 0-1845.279-826.155-1845.279-1845.278 0-1019.124 826.155-1845.279 1845.279-1845.279z" />
@@ -175,6 +177,7 @@
             </div>
 
             <div class="block_buy">
+                
                 <div class="price_product">
                     <div class="background_gradient">
                         <p class="price-value"></p>
@@ -182,14 +185,16 @@
                 </div>
 
                 <div class="user-actions" style="display: none;">
-                    <div class="btn_buy" data-product-id="">
-                        <div class="btn_text"></div>
-                        Купить
-                    </div>
                     <a href="#" class="cart-icon" title="Добавить в корзину">
                         <img class="img_c" src="{{ url_for('static', filename='img/other/cart-add-mini.svg') }}"
                             alt="В корзину" width="25" height="25">
                     </a>
+                    <div class="btn_buy" data-product-id="">
+                        <div class="btn_text">
+                            Купить
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
         </div>
@@ -202,8 +207,7 @@
     window.userRole = "{{ role }}";
 </script>
 <script src="{{ url_for('static', filename='js/main_menu.js') }}"></script>
-<script src="{{ url_for('static', filename='js/cart_core.js') }}"></script>
+<script src="{{ url_for('static', filename='js/cart-ui.js') }}"></script>
 <script src="{{ url_for('static', filename='js/filters_category.js') }}"></script>
 <script src="{{ url_for('static', filename='js/menu_category.js') }}"></script>
-<script src="{{ url_for('static', filename='js/cart_add_product.js') }}"></script>
 {% endblock %}
