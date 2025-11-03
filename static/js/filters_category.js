@@ -1,5 +1,4 @@
-// filters_category.js
-// Фильтрация товаров с поддержкой множественного выбора категорий через чекбоксы
+// Фильтрация товаров
 
 document.addEventListener('DOMContentLoaded', function () {
     const productContainer = document.getElementById('product-container');
