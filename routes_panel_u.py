@@ -10,7 +10,7 @@ user_bp = Blueprint('user', __name__, url_prefix='/user')
 @user_bp.route('/user_acaunt')
 @jwt_required()
 def user_acaunt():
-    return render_template('user_acaunt.html')
+    return render_template('user/user_acaunt.html')
 
 @user_bp.route('/cart', methods=['GET', 'POST', 'DELETE'])
 @jwt_required()
@@ -103,7 +103,7 @@ def cart():
             user_id=user.id,
             is_purchased=False
         ).all()
-        return render_template('cart.html', cart_items=cart_items)
+        return render_template('user/cart.html', cart_items=cart_items)
     
 
 @user_bp.route('/checkout', methods=['POST'])
