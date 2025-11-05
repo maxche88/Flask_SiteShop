@@ -86,7 +86,7 @@ def register():
             db.session.rollback()
             return jsonify({'success': False, 'errors': ['Ошибка при регистрации.']})
 
-    return render_template('register.html')
+    return render_template('auth/register.html')
 
 
 # Роутер для подтверждения учётной записи.
@@ -96,7 +96,7 @@ def confirm_email():
 
     if not token:
         if 'text/html' in request.accept_mimetypes:
-            return render_template('confirm_email.html', error="Токен не предоставлен.")
+            return render_template('auth/confirm_email.html', error="Токен не предоставлен.")
         else:
             return jsonify({
                 'success': False,
@@ -108,7 +108,7 @@ def confirm_email():
 
         if decoded_token.get('type') != 'email_confirmation':
             if 'text/html' in request.accept_mimetypes:
-                return render_template('confirm_email.html', error="Недопустимый тип токена.")
+                return render_template('auth/confirm_email.html', error="Недопустимый тип токена.")
             else:
                 return jsonify({
                     'success': False,
@@ -120,7 +120,7 @@ def confirm_email():
 
         if not user:
             if 'text/html' in request.accept_mimetypes:
-                return render_template('confirm_email.html', error="Пользователь не найден.")
+                return render_template('auth/confirm_email.html', error="Пользователь не найден.")
             else:
                 return jsonify({
                     'success': False,
@@ -129,7 +129,7 @@ def confirm_email():
 
         if user.confirm_email:
             if 'text/html' in request.accept_mimetypes:
-                return render_template('confirm_email.html', message="Email уже подтверждён.")
+                return render_template('auth/confirm_email.html', message="Email уже подтверждён.")
             else:
                 return jsonify({
                     'success': True,
@@ -141,7 +141,7 @@ def confirm_email():
         db.session.commit()
 
         if 'text/html' in request.accept_mimetypes:
-            return render_template('confirm_email.html', message="Email успешно подтверждён!")
+            return render_template('auth/confirm_email.html', message="Email успешно подтверждён!")
         else:
             return jsonify({
                 'success': True,
@@ -151,7 +151,7 @@ def confirm_email():
     except Exception as e:
         logging.info(f"Неверный или просроченный токен: {email}, Ошибка: {str(e)}")
         if 'text/html' in request.accept_mimetypes:
-            return render_template('confirm_email.html', error="Неверный или просроченный токен.")
+            return render_template('auth/confirm_email.html', error="Неверный или просроченный токен.")
         else:
             return jsonify({
                 'success': False,
@@ -166,7 +166,7 @@ def confirm_email():
 def login():
     # Отображение формы
     if request.method == 'GET':
-        return render_template('login.html')
+        return render_template('auth/login.html')
 
     # Обработка входящих данных
     elif request.method == 'POST':
@@ -253,7 +253,7 @@ def logout():
 @auth_bp.route('/reset-password', methods=['GET', 'POST'])
 def reset_password_():
     if request.method == 'GET':
-        return render_template('reset_password.html', mess='Введите корректный email который вы указывали при регистрации!')
+        return render_template('auth/reset_password.html', mess='Введите корректный email который вы указывали при регистрации!')
 
     elif request.method == 'POST':
         # Получаем email из формы
@@ -264,7 +264,7 @@ def reset_password_():
 
         if not client_ip:
             message = 'Ошибка получения IP-адреса.'
-            return render_template('reset_password.html', err=message)
+            return render_template('auth/reset_password.html', err=message)
 
         # Получаем запись по IP
         user_ip = IPAttemptLog.query.filter_by(ip_address=client_ip).first()
@@ -277,17 +277,17 @@ def reset_password_():
                 db.session.add(new_user_ip)
                 db.session.commit()
                 message = "Введите корректный email. Осталось попыток: 2"
-                return render_template('reset_password.html', err=message)
+                return render_template('auth/reset_password.html', err=message)
 
             elif user_ip.recovery_attempts_count <= 1:
                 message = "Вы исчерпали все попытки восстановления пароля."
-                return render_template('reset_password.html', err=message)
+                return render_template('auth/reset_password.html', err=message)
 
             else:
                 user_ip.recovery_attempts_count -= 1
                 db.session.commit()
                 message = f"Введите корректный email. Осталось попыток: {user_ip.recovery_attempts_count}"
-                return render_template('reset_password.html', err=message)
+                return render_template('auth/reset_password.html', err=message)
 
         # Проверяем, существует ли пользователь с таким email
         user = User.query.filter_by(email=email).first()
@@ -297,22 +297,22 @@ def reset_password_():
                 db.session.add(new_user_ip)
                 db.session.commit()
                 message = "Пользователь с таким email не найден. Осталось попыток: 2"
-                return render_template('reset_password.html', err=message)
+                return render_template('auth/reset_password.html', err=message)
 
             elif user_ip.recovery_attempts_count <= 1:
                 message = "Вы исчерпали все попытки восстановления пароля."
-                return render_template('reset_password.html', err=message)
+                return render_template('auth/reset_password.html', err=message)
 
             else:
                 user_ip.recovery_attempts_count -= 1
                 db.session.commit()
                 message = f"Пользователь с таким email не найден. Осталось попыток: {user_ip.recovery_attempts_count}"
-                return render_template('reset_password.html', err=message)
+                return render_template('auth/reset_password.html', err=message)
 
         # Проверяем, остались ли попытки у пользователя
         if user_ip and user_ip.recovery_attempts_count <= 1:
             message = "Вы исчерпали все попытки восстановления пароля."
-            return render_template('reset_password.html', err=message)
+            return render_template('auth/reset_password.html', err=message)
 
         # Генерируем токен и ссылку
         token = generate_password_reset_token(user.email)
@@ -321,10 +321,10 @@ def reset_password_():
         # Отправляем письмо и проверяем результат
         if send_password_reset_email(user, reset_url):
             message = "Ссылка для восстановления пароля успешно отправлена на email."
-            return render_template('reset_password.html', mess=message)
+            return render_template('auth/reset_password.html', mess=message)
         else:
             message = "Не удалось отправить ссылку для восстановления пароля. Попробуйте позже."
-            return render_template('reset_password.html', err=message)
+            return render_template('auth/reset_password.html', err=message)
 
 
 # Роутер с формой по востановлению пароля.
@@ -335,29 +335,29 @@ def reset_password_with_token():
     token = request.args.get('token')
 
     if not token:
-        return render_template('reset_password.html'), 400
+        return render_template('auth/reset_password.html'), 400
 
     # Расшифровываем токен
     decoded_token = decode_token(token)
 
     if decoded_token.get('type') != 'password_reset':
-        return render_template('reset_password_form.html', err="Недопустимый тип токена.")
+        return render_template('auth/reset_password_form.html', err="Недопустимый тип токена.")
 
     email = decoded_token.get('sub')
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        return render_template('reset_password_form.html', err="Пользователь не найден.")
+        return render_template('auth/reset_password_form.html', err="Пользователь не найден.")
 
     if request.method == 'POST':
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
 
         if not password or not confirm_password:
-            return render_template('reset_password_form.html', token=token, err="Пароль не может быть пустым")
+            return render_template('auth/reset_password_form.html', token=token, err="Пароль не может быть пустым")
 
         if password != confirm_password:
-            return render_template('reset_password_form.html', token=token, err="Пароли не совпадают")
+            return render_template('auth/reset_password_form.html', token=token, err="Пароли не совпадают")
 
         # Обновляем пароль
         user.set_password(password)
@@ -365,4 +365,4 @@ def reset_password_with_token():
 
         return redirect(url_for('session.login'))
 
-    return render_template('reset_password_form.html', token=token)
+    return render_template('auth/reset_password_form.html', token=token)
