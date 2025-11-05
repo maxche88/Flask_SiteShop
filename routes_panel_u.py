@@ -143,7 +143,7 @@ def checkout():
     if errors:
         return jsonify({"error": "Невозможно оформить заказ", "details": errors}), 400
 
-    # 🔹 Всё OK — оформляем заказ
+    # OK — оформляем заказ
     for item in cart_items:
         product = Shop.query.get(item.product_id)
         # Уменьшаем остаток на складе
@@ -158,3 +158,20 @@ def checkout():
 
     db.session.commit()
     return jsonify({"success": True, "message": "Заказ успешно оформлен"})
+
+
+@user_bp.route('/cart/count')
+@jwt_required()
+def cart_count():
+    current_user_id = get_jwt_identity()
+    user = User.query.get(current_user_id)
+    if not user:
+        return jsonify({"count": 0}), 404
+
+    # Суммируем quantity по всем непокупленным товарам текущего пользователя
+    total_quantity = db.session.query(db.func.sum(CartItem.quantity)) \
+        .filter_by(user_id=user.id, is_purchased=False) \
+        .scalar() or 0
+
+    # scalar() может вернуть None, если нет записей → заменяем на 0
+    return jsonify({"count": int(total_quantity)})
