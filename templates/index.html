@@ -25,7 +25,7 @@
     <div class="dropdown-menu" id="account-menu">
         <a href="{{ url_for('panel_a.admin_acaunt') }}">Личный кабинет</a>
         <a href="{{ url_for('panel_a.admin_panel') }}">Admin panel</a>
-        <a href="{{ url_for('panel.suser_panel_edit') }}">Управление товарами</a>
+        <a href="{{ url_for('product_edit.product') }}">Управление товарами</a>
         <a href="{{ url_for('session.logout') }}">Выйти</a>
     </div>
 
@@ -41,8 +41,8 @@
 
     <!-- Выпадающее меню продавца -->
     <div class="dropdown-menu" id="account-menu">
-        <a href="{{ url_for('panel.suser_panel_acaunt') }}">Личный кабинет</a>
-        <a href="{{ url_for('panel.suser_panel_edit') }}">Управление товарами</a>
+        <a href="{{ url_for('panel_s.suser_panel_acaunt') }}">Личный кабинет</a>
+        <a href="{{ url_for('product_edit.product') }}">Управление товарами</a>
         <a href="{{ url_for('session.logout') }}">Выйти</a>
     </div>
 
