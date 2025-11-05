@@ -1,11 +1,41 @@
 // Общий функционал корзины для всех страниц: кнопки, API, управление видимостью
 
-/*
-Добавляет товар в корзину через AJAX
-@param {number} productId — ID товара
-@returns {Promise<Object>} — ответ от сервера
+/**
+ * Запрашивает текущее количество товаров в корзине и обновляет бейдж
  */
+function updateCartBadge() {
+    const badge = document.getElementById('cart-count-badge');
+    if (!badge) return;
 
+    fetch('/user/cart/count', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    })
+    .then(data => {
+        const count = data.count || 0;
+        if (count > 0) {
+            badge.textContent = '+' + count;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.warn('Не удалось обновить счётчик корзины:', error);
+        badge.style.display = 'none';
+    });
+}
+
+/**
+ * Добавляет товар в корзину через AJAX
+ * @param {number} productId — ID товара
+ * @returns {Promise<Object>} — ответ от сервера
+ */
 function addToCart(productId) {
     const formData = new FormData();
     formData.append("product_id", productId);
@@ -26,9 +56,9 @@ function addToCart(productId) {
     });
 }
 
-/*
-Добавляет товар и перенаправляет в корзину
-@param {number} productId
+/**
+ * Добавляет товар и перенаправляет в корзину
+ * @param {number} productId
  */
 function buyNow(productId) {
     if (!productId || productId <= 0 || isNaN(productId)) {
@@ -61,6 +91,8 @@ document.addEventListener('DOMContentLoaded', function () {
         userActions.forEach(el => {
             el.style.display = ''; // сбрасываем скрытие
         });
+        // Обновляем счётчик корзины при загрузке страницы
+        updateCartBadge();
     } else {
         userActions.forEach(el => {
             el.style.display = 'none';
@@ -102,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 addToCart(parseInt(id))
                     .then(data => {
                         if (data.success) {
-                            // ✅ Здесь можно обновить счётчик в шапке (позже)
+                            updateCartBadge(); // ✅ Обновляем счётчик корзины
                             console.log("Товар добавлен в корзину");
                         } else {
                             alert("Не удалось добавить товар");

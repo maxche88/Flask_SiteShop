@@ -66,20 +66,24 @@ html, body {
 /* Стиль значка количества товаров */
 .cart-badge {
   position: absolute;
-  top: 0;
-  left: 40px;
+  top: 25px;
+  right: 75px;
   transform: translateX(-50%);
-  background-color: #f8220a;
-  color: rgb(255, 255, 255);
-  font-size: 10px;
+  color: rgb(0, 0, 0);
+  font-size: 12px;
   font-weight: bold;
-  width: 18px;
-  height: 18px;
   line-height: 18px;
   text-align: center;
-  border-radius: 50%;
-  display: block;
+  background: rgb(251, 255, 0);
+  height: 18px;
+  min-width: 18px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 11px, 100% 100%, 0 100%);
+  display: none;
   pointer-events: none;
+  white-space: nowrap;
+  font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
 }
 
 .head_user_icons {

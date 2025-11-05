@@ -32,6 +32,7 @@ def index():
         user = User.query.get(current_user_id)
         if user:
             context.update({
+                "гuserid": current_user_id,
                 "username": user.username,
                 "role": user.role,
             })
