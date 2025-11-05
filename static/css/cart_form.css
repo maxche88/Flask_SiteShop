@@ -44,3 +44,85 @@ a {
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0,123,255,.25);
 }
+
+/* Стилизация таблицы корзины */
+.styled-table {
+    width: 100%;
+    max-width: 800px;
+    margin: 20px auto;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-size: 15px;
+    color: #333;
+}
+
+.styled-table thead th {
+    background: #2196F3;
+    color: white;
+    font-weight: 600;
+    padding: 14px 16px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.styled-table tbody td {
+    padding: 14px 16px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+/* Убираем нижнюю границу у последней строки */
+.styled-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Эффект при наведении на строку */
+.styled-table tbody tr:hover {
+    background-color: #f9f9f9;
+    transform: scale(1.005);
+    transition: background-color 0.2s, transform 0.15s ease;
+}
+
+/* Стиль кнопки "Удалить" */
+.styled-table .delete-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background-color 0.2s;
+}
+
+.styled-table .delete-btn:hover {
+    background-color: #d32f2f;
+}
+
+/* Кнопка "Оформить заказ" — улучшим внешний вид */
+.btn_order .bt.reg_bt {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.3s, transform 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn_order .bt.reg_bt:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn_order .bt.reg_bt:active {
+    transform: translateY(0);
+}
