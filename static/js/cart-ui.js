@@ -7,9 +7,8 @@ function updateCartBadge() {
     const badge = document.getElementById('cart-count-badge');
     if (!badge) return;
 
-    fetch('/user/cart/count', {
+    fetch('/api/user/cart/count', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
     })
     .then(response => {
@@ -41,16 +40,18 @@ function addToCart(productId) {
     formData.append("product_id", productId);
     formData.append("quantity", 1);
 
-    return fetch("/user/cart", {
+    return fetch("/api/user/cart", {
         method: "POST",
         body: formData,
         credentials: 'include'
     })
     .then(response => {
         if (!response.ok) {
-            return response.text().then(text => {
-                throw new Error(`Ошибка ${response.status}: ${text}`);
-            });
+            return response.json().catch(() => ({})) 
+                .then(json => {
+                    const message = json.error || json.message || 'Неизвестная ошибка';
+                    throw new Error(`Ошибка ${response.status}: ${message}`);
+                });
         }
         return response.json();
     });
@@ -70,7 +71,7 @@ function buyNow(productId) {
     addToCart(productId)
         .then(data => {
             if (data.success) {
-                window.location.href = "/user/cart";
+                window.location.href = "/user/cart"; 
             } else {
                 alert("Ошибка при добавлении товара");
             }
@@ -89,9 +90,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const userActions = document.querySelectorAll('.user-actions');
     if (userRole === 'user') {
         userActions.forEach(el => {
-            el.style.display = ''; // сбрасываем скрытие
+            el.style.display = '';
         });
-        // Обновляем счётчик корзины при загрузке страницы
+
         updateCartBadge();
     } else {
         userActions.forEach(el => {
@@ -110,8 +111,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const id = buyBtn.dataset.productId;
-            if (id && !isNaN(id) && parseInt(id) > 0) {
-                buyNow(parseInt(id));
+            const productId = parseInt(id, 10);
+            if (id && !isNaN(productId) && productId > 0) {
+                buyNow(productId);
             } else {
                 console.error("Некорректный ID товара:", id);
                 alert("Не удалось определить товар для покупки.");
@@ -130,11 +132,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const id = cartIcon.dataset.productId;
-            if (id && !isNaN(id) && parseInt(id) > 0) {
-                addToCart(parseInt(id))
+            const productId = parseInt(id, 10);
+            if (id && !isNaN(productId) && productId > 0) {
+                addToCart(productId)
                     .then(data => {
                         if (data.success) {
-                            updateCartBadge(); // ✅ Обновляем счётчик корзины
+                            updateCartBadge();
                             console.log("Товар добавлен в корзину");
                         } else {
                             alert("Не удалось добавить товар");

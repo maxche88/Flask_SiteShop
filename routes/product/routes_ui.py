@@ -16,7 +16,7 @@ def product():
     user = User.query.get(current_user_id)
     
     if not user:
-        return redirect(url_for('session.login'))  # или 404
+        return redirect(url_for('session.login'))
     
     if user.role not in ('suser', 'admin'):
         return redirect(url_for('session.login'))

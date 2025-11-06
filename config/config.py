@@ -8,6 +8,8 @@ load_dotenv()
 # Определяем корень проекта (на уровень выше папки config/)
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
+INSTANCE_DIR = os.path.join(basedir, 'instance')
+
 class Config:
     # === Основной секретный ключ Flask ===
     SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -27,10 +29,19 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = 3600    # 1 час
 
     # === База данных ===
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{os.path.join(basedir, 'database.db')}"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{os.path.join(INSTANCE_DIR, 'database.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # === Загрузка файлов ===
     UPLOAD_FOLDER = os.path.join(basedir, 'static', 'img', 'products')
     ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
+
+    # === Почта ===
+    MAIL_SERVER = 'smtp.mail.ru'
+    MAIL_PORT = 465
+    MAIL_USE_TLS = False
+    MAIL_USE_SSL = True
+    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
