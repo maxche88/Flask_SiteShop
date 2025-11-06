@@ -94,10 +94,10 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const response = await fetch('/api/products', {
                 method: 'POST',
-                body: formData // автоматически устанавливает правильный Content-Type с boundary
+                body: formData
             });
 
-            const result = await response.json(); // Ожидается, что сервер вернёт JSON
+            const result = await response.json();
 
             if (response.ok) {
                 showSuccess('Товар успешно добавлен!');

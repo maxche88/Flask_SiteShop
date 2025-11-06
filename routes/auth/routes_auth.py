@@ -333,36 +333,53 @@ def reset_password_():
 @auth_bp.route('/reset-password/token', methods=['GET', 'POST'])
 def reset_password_with_token():
     token = request.args.get('token')
-
     if not token:
+        if request.is_json or request.accept_mimetypes.best_match(['application/json', 'text/html']) == 'application/json':
+            return jsonify({"error": "Токен не указан"}), 400
         return render_template('auth/reset_password.html'), 400
 
-    # Расшифровываем токен
     decoded_token = decode_token(token)
-
     if decoded_token.get('type') != 'password_reset':
+        if request.is_json:
+            return jsonify({"error": "Недопустимый тип токена"}), 400
         return render_template('auth/reset_password_form.html', err="Недопустимый тип токена.")
 
     email = decoded_token.get('sub')
     user = User.query.filter_by(email=email).first()
-
     if not user:
+        if request.is_json:
+            return jsonify({"error": "Пользователь не найден"}), 404
         return render_template('auth/reset_password_form.html', err="Пользователь не найден.")
 
     if request.method == 'POST':
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
+        # Определяем, откуда пришёл запрос
+        if request.is_json:
+            data = request.get_json()
+            password = data.get('password')
+            confirm_password = data.get('confirm_password')
+        else:
+            password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
 
         if not password or not confirm_password:
+            if request.is_json:
+                return jsonify({"error": "Пароль не может быть пустым"}), 400
             return render_template('auth/reset_password_form.html', token=token, err="Пароль не может быть пустым")
 
         if password != confirm_password:
+            if request.is_json:
+                return jsonify({"error": "Пароли не совпадают"}), 400
             return render_template('auth/reset_password_form.html', token=token, err="Пароли не совпадают")
 
         # Обновляем пароль
         user.set_password(password)
         db.session.commit()
 
-        return redirect(url_for('session.login'))
+        # Универсальный ответ
+        if request.is_json:
+            return jsonify({"success": True, "message": "Пароль успешно изменён"}), 200
+        else:
+            return redirect(url_for('session.login'))
 
+    # GET-запрос: только рендер HTML (JSON-клиенты не должны делать GET сюда)
     return render_template('auth/reset_password_form.html', token=token)

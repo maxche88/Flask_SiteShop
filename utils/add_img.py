@@ -11,6 +11,7 @@ from werkzeug.utils import secure_filename
 import uuid
 from flask import current_app
 
+
 def save_product_image(image_file):
     """
     Сохраняет изображение товара с учётом настроек из конфигурации:
