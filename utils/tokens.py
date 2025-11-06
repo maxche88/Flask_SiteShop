@@ -1,4 +1,4 @@
-# Генерирует JWT-токены для служебных целей.
+# Генерирует JWT-токены.
 
 from flask_jwt_extended import create_access_token
 from datetime import timedelta

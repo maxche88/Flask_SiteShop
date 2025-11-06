@@ -9,9 +9,9 @@ admin_bp = Blueprint('panel_a', __name__)
 @admin_bp.route('/admin_acaunt')
 @jwt_required()
 def admin_acaunt():
-    return render_template('admin_acaunt.html')
+    return render_template('admin/admin_acaunt.html')
 
 @admin_bp.route('/admin_panel')
 @jwt_required()
 def admin_panel():
-    return render_template('admin_panel.html')
+    return render_template('admin/admin_panel.html')

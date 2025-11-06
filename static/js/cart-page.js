@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             // Отправка запроса на удаление
-            fetch(`/user/cart?item_id=${itemId}`, {
+            fetch(`/api/user/cart?item_id=${itemId}`, {
                 method: "DELETE",
                 credentials: 'include'
             })
@@ -31,15 +31,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (row) {
                         row.remove();
 
-                        // Дополнительно: проверим, не стала ли корзина пустой
+                        // Проверим, не стала ли корзина пустой
                         const tableBody = document.querySelector('#cart-table-body');
                         if (tableBody && tableBody.children.length === 0) {
-                            // Корзина пуста — покажем сообщение без перезагрузки
                             const cartTable = document.getElementById('cart-table');
-                            const emptyMessage = document.createElement('p');
-                            emptyMessage.className = 'cart_empty';
-                            emptyMessage.textContent = 'Корзина пуста';
-                            cartTable.replaceWith(emptyMessage);
+                            if (cartTable) {
+                                const emptyMessage = document.createElement('p');
+                                emptyMessage.className = 'cart_empty';
+                                emptyMessage.textContent = 'Корзина пуста';
+                                cartTable.replaceWith(emptyMessage);
+                            }
 
                             // Скрыть кнопку "Оформить заказ"
                             const checkoutBtn = document.getElementById('checkout-button');
@@ -49,13 +50,14 @@ document.addEventListener("DOMContentLoaded", function () {
                             }
                         }
                     } else {
-                        // Fallback: перезагрузить, если не нашли строку
-                        location.reload();
+                        location.reload(); // fallback
                     }
                 } else {
-                    return response.text().then(text => {
-                        throw new Error(text || "Ошибка удаления");
-                    });
+                    return response.json().catch(() => ({}))
+                        .then(json => {
+                            const message = json.error || 'Неизвестная ошибка';
+                            throw new Error(message);
+                        });
                 }
             })
             .catch(error => {
@@ -65,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // 2. Заглушка для кнопки "Оформить заказ"
+    // 2. Кнопка "Оформить заказ" — пока заглушка
     const checkoutButton = document.getElementById("checkout-button");
     if (checkoutButton) {
         checkoutButton.addEventListener("click", function (e) {

@@ -7,9 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let isMainMenuOpen = false;
 
-    // =============================
     // 1. Логика основного меню (аккаунт)
-    // =============================
     if (accountButton && dropdownMenu) {
         accountButton.addEventListener("click", function (e) {
             e.preventDefault();
@@ -33,9 +31,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // =============================
+
     // 2. Логика иконки корзины
-    // =============================
     if (cartIcon) {
         cartIcon.addEventListener("click", function () {
             window.location.href = "/user/cart";
