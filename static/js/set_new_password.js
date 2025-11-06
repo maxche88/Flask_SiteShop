@@ -5,66 +5,123 @@ function checkPasswordsMatch() {
     const errorServer = document.getElementById("errorMessages");
     const icon = document.getElementById("passwordCheckIcon");
 
-    // Если одно из полей пустое — не показываем ошибку или иконку
+    // Если одно из полей пустое — скрываем ошибку и иконку
     if (!password || !confirmPassword) {
-        errorServer.innerHTML = "";
+        if (errorServer) errorServer.textContent = "";
         if (icon) icon.style.display = "none";
         return;
     }
 
     if (password === confirmPassword) {
         if (icon) icon.style.display = "inline";
-        errorServer.innerHTML = "";
+        if (errorServer) errorServer.textContent = "";
     } else {
         if (icon) icon.style.display = "none";
-        errorServer.innerHTML = "<div>Пароли не совпадают</div>";
+        if (errorServer) errorServer.textContent = "Пароли не совпадают";
     }
 }
 
-// Слушатель на ввод
-document.getElementById("password").addEventListener("input", checkPasswordsMatch);
-document.getElementById("confirm_password").addEventListener("input", checkPasswordsMatch);
+// Добавляем обработчики только если элементы существуют
+const passwordInput = document.getElementById("password");
+const confirmPasswordInput = document.getElementById("confirm_password");
 
-// Слушатель на загрузку страницы
+if (passwordInput) passwordInput.addEventListener("input", checkPasswordsMatch);
+if (confirmPasswordInput) confirmPasswordInput.addEventListener("input", checkPasswordsMatch);
+
 window.addEventListener("load", checkPasswordsMatch);
 
 // Обработка отправки формы
-document.getElementById("setNewPasswordForm").addEventListener("submit", function(e) {
-    e.preventDefault();
+const form = document.getElementById("setNewPasswordForm");
+if (form) {
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
 
-    const token = new URLSearchParams(window.location.search).get("token");
-    const errorServer = document.getElementById("errorMessages");
-    const submitBtn = document.getElementById("submitBtn");
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get("token");
+        const errorServer = document.getElementById("errorMessages");
+        const submitBtn = document.getElementById("submitBtn");
 
-    errorServer.textContent = "";
-    errorServer.style.display = "none";
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Загрузка...";
+        // Сброс ошибок
+        if (errorServer) {
+            errorServer.textContent = "";
+            errorServer.style.display = "none";
+        }
 
-    const password = document.getElementById("password").value;
-    const confirm_password = document.getElementById("confirm_password").value;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Сохранение...";
+        }
 
-    if (password !== confirm_password) {
-        errorServer.textContent = "Пароли не совпадают";
-        errorServer.style.display = "block";
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Сохранить пароль";
-        return;
-    }
+        const password = document.getElementById("password")?.value || '';
+        const confirm_password = document.getElementById("confirm_password")?.value || '';
 
-    fetch(`/reset-password/token?token=${encodeURIComponent(token)}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            password,
-            confirm_password
+        // Клиентская валидация
+        if (!password || !confirm_password) {
+            if (errorServer) {
+                errorServer.textContent = "Пароль не может быть пустым";
+                errorServer.style.display = "block";
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Сохранить пароль";
+            }
+            return;
+        }
+
+        if (password !== confirm_password) {
+            if (errorServer) {
+                errorServer.textContent = "Пароли не совпадают";
+                errorServer.style.display = "block";
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Сохранить пароль";
+            }
+            return;
+        }
+
+        // Отправка JSON-запроса на универсальный роутер
+        fetch(`/reset-password/token?token=${encodeURIComponent(token)}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                password: password,
+                confirm_password: confirm_password
+            })
         })
-    })
-
-    .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Сохранить пароль";
+        .then(response => {
+            const contentType = response.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return response.json().then(data => {
+                    if (response.ok) {
+                        // Успех — редирект или сообщение
+                        window.location.href = "/auth/login?reset_success=1";
+                    } else {
+                        // Ошибка от API
+                        throw new Error(data.error || "Неизвестная ошибка");
+                    }
+                });
+            } else {
+                // Сервер вернул HTML (например, при ошибке валидации без JSON)
+                return response.text().then(html => {
+                    throw new Error("Сервер вернул HTML вместо JSON. Убедитесь, что роут поддерживает JSON.");
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Ошибка при сбросе пароля:", error);
+            if (errorServer) {
+                errorServer.textContent = error.message || "Не удалось подключиться к серверу";
+                errorServer.style.display = "block";
+            }
+        })
+        .finally(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Сохранить пароль";
+            }
+        });
     });
-});
+}

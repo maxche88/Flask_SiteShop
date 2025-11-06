@@ -5,6 +5,7 @@ myenv/
 .venv
 
 # Локальная БД (SQLite)
+/instance/
 database.db
 *.db
 
