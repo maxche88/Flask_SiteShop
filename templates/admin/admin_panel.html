@@ -1,30 +1,56 @@
 <!-- admin panel -->
 {% extends 'base.html' %}
 
-
 {% block link %}
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+<!-- Добавьте свой CSS для таблицы, если нужно -->
+<style>
+    .admin-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    .admin-table th { background-color: #f0f0f0; }
+    .old-unconfirmed { background-color: #fff5f5; }
+    .confirmed { background-color: #f0fff0; }
+    .btn-admin { padding: 6px 12px; margin: 5px 5px 5px 0; cursor: pointer; }
+</style>
 {% endblock %}
 
-{% block title %}
-super panel
-{% endblock %}
+{% block title %}Админ-панель{% endblock %}
 
 {% block header %}
-    <div class="back">
-        <a href="/" title="Вернуться назад">
-            <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
-        </a>
-    </div>
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+    </a>
+</div>
 {% endblock %}
 
 {% block content %}
 <div class="conteiner_forms">
     <div class="info_panel">
-        <h3>Admin panel</h3><br>
-    </div>
+        <h3>Админ-панель: Управление пользователями</h3><br>
 
+        <button class="btn-admin" id="btnDeleteOld">🗑️ Удалить все неподтверждённые (>24 ч)</button>
+        <button class="btn-admin" id="btnDeleteSelected" disabled>🗑️ Удалить выбранные</button>
+
+        <table class="admin-table" id="usersTable">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAll"></th>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Email</th>
+                    <th>Подтверждён</th>
+                    <th>Дата</th>
+                    <th>IP-записи</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Загрузится через JS -->
+            </tbody>
+        </table>
+    </div>
 </div>
 
-
+<!-- Подключаем JS -->
+<script src="{{ url_for('static', filename='js/admin_users.js') }}"></script>
 {% endblock %}
