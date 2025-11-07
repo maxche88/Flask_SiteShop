@@ -1,6 +1,6 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
-from utils.database_utils import current_time
+from utils.time import current_time
 
 
 class User(db.Model):
@@ -16,6 +16,7 @@ class User(db.Model):
     role = db.Column(db.String(5), default="user")  # admin / suser / user
     avatar_url = db.Column(db.String(255), default="/img/avatars/default_user.png")
     confirm_email = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=current_time)
 
     def set_password(self, password):
         """Хэширует пароль и сохраняет его в hash_passwd"""

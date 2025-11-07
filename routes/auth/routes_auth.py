@@ -5,7 +5,8 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from models import db, User,IPAttemptLog
 from utils.tokens import generate_password_reset_token, generate_email_confirmation_token
 from utils.mail import send_password_reset_email, send_confirm_email, normalize_email
-import logging
+from utils.ip_log import ensure_ip_log_entry, reset_recovery_attempts_for_ip
+from utils.responses import render_or_json
 
 
 auth_bp = Blueprint('session', __name__)
@@ -29,7 +30,7 @@ def register():
         if password != confirm_password:
             return jsonify({'success': False, 'errors': ['Пароли не совпадают.']})
 
-        # Нормализация и валидация за один вызов
+
         email = normalize_email(raw_email)
         if email is None:
             return jsonify({
@@ -37,7 +38,7 @@ def register():
                 'errors': ['Указанный email некорректен.']
             }), 400
 
-        # Проверка на существование нормализованного email
+
         existing_user = User.query.filter(
             (User.username.ilike(username)) | (User.email.ilike(email))
         ).first()
@@ -48,7 +49,7 @@ def register():
                 'errors': ['Пользователь с таким именем или электронной почтой уже существует.']
             }), 400
 
-        # Дальнейший email уже нормализованный и валидный
+
         token = generate_email_confirmation_token(email)
         confirm_url = url_for('session.confirm_email', token=token, _external=True)
         is_email_sent = send_confirm_email(email, confirm_url)
@@ -61,14 +62,14 @@ def register():
 
         new_user = User(username=username, email=email)
         new_user.set_password(password)
-
-        ip_address = request.headers.getlist("X-Forwarded-For")[0] if request.headers.getlist("X-Forwarded-For") else request.remote_addr
-        ip_log = IPAttemptLog(ip_address=ip_address, user=new_user, recovery_attempts_count=3)
-
+        
         try:
             db.session.add(new_user)
-            db.session.add(ip_log)
-            db.session.commit()
+            db.session.commit()  # Сохраняем пользователя, чтобы получить ID
+
+            # Создаём или обновляем запись IP-лога с привязкой к пользователю
+            ensure_ip_log_entry(user=new_user)
+
             return jsonify({'success': True, 'message': 'Пользователь успешно зарегистрирован! Для подтверждения учётной записи вам отправлена на эл. почту'}), 200
         except Exception as e:
             db.session.rollback()
@@ -81,70 +82,104 @@ def register():
 @auth_bp.route('/confirm-email', methods=['GET'])
 def confirm_email():
     token = request.args.get('token')
-
+    
     if not token:
-        if 'text/html' in request.accept_mimetypes:
-            return render_template('auth/confirm_email.html', error="Токен не предоставлен.")
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Токен не предоставлен.'
-            }), 400
+        return render_or_json(
+            template_name='auth/confirm_email.html',
+            json_data={'message': 'Токен не предоставлен.'},
+            status_code=400,
+            is_success=False
+        )
 
     try:
         decoded_token = decode_token(token)
 
         if decoded_token.get('type') != 'email_confirmation':
-            if 'text/html' in request.accept_mimetypes:
-                return render_template('auth/confirm_email.html', error="Недопустимый тип токена.")
-            else:
-                return jsonify({
-                    'success': False,
-                    'message': 'Недопустимый тип токена.'
-                }), 400
-
+            raise ValueError("Недопустимый тип токена")
+        
         email = decoded_token.get('sub')
+        if not email:
+            raise ValueError("Email отсутствует в токене")
+        
         user = User.query.filter_by(email=email).first()
-
         if not user:
-            if 'text/html' in request.accept_mimetypes:
-                return render_template('auth/confirm_email.html', error="Пользователь не найден.")
-            else:
-                return jsonify({
-                    'success': False,
-                    'message': 'Пользователь не найден.'
-                }), 404
-
+            raise ValueError("Пользователь не найден")
+        
         if user.confirm_email:
-            if 'text/html' in request.accept_mimetypes:
-                return render_template('auth/confirm_email.html', message="Email уже подтверждён.")
-            else:
-                return jsonify({
-                    'success': True,
-                    'message': 'Email уже подтверждён.'
-                }), 200
-
-        # Подтверждаем email
+            return render_or_json(
+                template_name='auth/confirm_email.html',
+                json_data={'message': 'Email уже подтверждён.'},
+                status_code=200,
+                is_success=True
+            )
+        
         user.confirm_email = True
         db.session.commit()
+        
+        return render_or_json(
+            template_name='auth/confirm_email.html',
+            json_data={'message': 'Email успешно подтверждён!'},
+            status_code=200,
+            is_success=True
+        )
 
-        if 'text/html' in request.accept_mimetypes:
-            return render_template('auth/confirm_email.html', message="Email успешно подтверждён!")
-        else:
-            return jsonify({
-                'success': True,
-                'message': 'Email успешно подтверждён!'
-            }), 200
+    except Exception:
+        # Попробуем извлечь email из токена для возможности повторной отправки
+        email_for_resend = None
+        try:
+            # Повторно декодируем токен без проверки срока (для извлечения email)
+            decoded = decode_token(token, allow_expired=True)
+            if decoded.get('type') == 'email_confirmation':
+                email_for_resend = decoded.get('sub')
+        except:
+            pass
 
-    except Exception as e:
-        logging.info(f"Неверный или просроченный токен: {email}, Ошибка: {str(e)}")
-        if 'text/html' in request.accept_mimetypes:
-            return render_template('auth/confirm_email.html', error="Неверный или просроченный токен.")
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Неверный или просроченный токен.'
-            }), 400
+        # Проверим, существует ли пользователь с таким email и не подтверждён ли он
+        can_resend = False
+        if email_for_resend:
+            user = User.query.filter_by(email=email_for_resend).first()
+            if user and not user.confirm_email:
+                can_resend = True
+
+        return render_template('auth/confirm_email.html', 
+                               error="Неверный или просроченный токен.",
+                               email_for_resend=email_for_resend,
+                               can_resend=can_resend), 400
+
+@auth_bp.route('/resend-confirmation', methods=['POST'])
+def resend_confirmation_email():
+    email = request.form.get('email')
+    if not email:
+        return render_template('auth/confirm_email.html', 
+                               error="Email не указан.", 
+                               can_resend=False), 400
+
+    email = normalize_email(email)
+    if not email:
+        return render_template('auth/confirm_email.html', 
+                               error="Некорректный email.", 
+                               can_resend=False), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return render_template('auth/confirm_email.html', 
+                               error="Пользователь с таким email не найден.", 
+                               can_resend=False), 400
+
+    if user.confirm_email:
+        return render_template('auth/confirm_email.html', 
+                               message="Email уже подтверждён.", 
+                               can_resend=False), 200
+
+    # Генерируем новый токен и отправляем
+    token = generate_email_confirmation_token(user.email)
+    confirm_url = url_for('session.confirm_email', token=token, _external=True)
+    if send_confirm_email(user.email, confirm_url):
+        return render_template('auth/confirm_email.html', 
+                               message="Ссылка для подтверждения отправлена повторно."), 200
+    else:
+        return render_template('auth/confirm_email.html', 
+                               error="Не удалось отправить письмо. Попробуйте позже."), 500
 
 
 # Роутер слушает GET - отображает форму входа
@@ -152,11 +187,11 @@ def confirm_email():
 # с токеном. 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    # Отображение формы
+
     if request.method == 'GET':
         return render_template('auth/login.html')
 
-    # Обработка входящих данных
+
     elif request.method == 'POST':
         data = request.get_json()
 
@@ -183,10 +218,12 @@ def login():
                 'errors': ['Подтвердите email. Письмо отправлено вам на email который вы указали при регистрации.']
             }), 401
 
-        # Генерация токена
+        # Сбрасываем счётчик попыток восстановления для текущего IP и привязываем его к пользователю
+        reset_recovery_attempts_for_ip(user)
+
         access_token = create_access_token(identity=str(user.id))
 
-        # Формирование JSON-ответа с токеном
+
         response_data = {
             'success': True,
             'message': 'Авторизация прошла успешно.',
@@ -236,14 +273,14 @@ def logout():
 # GET: Отображает форму для ввода email, использованного при регистрации.
 # 
 # POST: Принимает email, нормализует и проверяет его валидность.
-#       Если email корректен и принадлежит зарегистрированному пользователю —
+#       Если email корректен, принадлежит **подтверждённому** пользователю —
 #       отправляется письмо со ссылкой для сброса пароля.
 # 
-#       При невалидном email или отсутствии пользователя с таким email:
+#       Если пользователь не подтвердил email → ошибка.
+#       При невалидном email или отсутствии пользователя:
 #       - IP-адрес клиента записывается в таблицу IPAttemptLog,
-#       - уменьшается счётчик оставшихся попыток восстановления (начальное значение: 2,
-#         что даёт пользователю в общей сложности 3 попытки: текущая + 2 дополнительные).
-#       - При исчерпании попыток (счётчик <= 0) дальнейшие запросы блокируются.
+#       - уменьшается счётчик попыток восстановления,
+#       - при исчерпании попыток — блокировка.
 @auth_bp.route('/reset-password', methods=['GET', 'POST'])
 def reset_password_():
     if request.method == 'GET':
@@ -259,35 +296,35 @@ def reset_password_():
         # Получаем или создаём запись об IP
         user_ip = IPAttemptLog.query.filter_by(ip_address=client_ip).first()
         if not user_ip:
-            # Даём 3 попытки всего
+
             user_ip = IPAttemptLog(ip_address=client_ip, recovery_attempts_count=3)
             db.session.add(user_ip)
             db.session.commit()
 
-        # Если попытки уже исчерпаны — блокируем сразу
+        # Если попытки исчерпаны — блокируем
         if user_ip.recovery_attempts_count <= 0:
             return render_template('auth/reset_password.html', err="Вы исчерпали все попытки восстановления пароля.")
 
-        # Валидация и нормализация email
+        # Валидация email
         email = normalize_email(raw_email)
-        
-        # === Обработка ошибок с учётом "последней попытки" ===
+
         if email is None:
-            # Это невалидный email
+            # Невалидный email — уменьшаем счётчик
             if user_ip.recovery_attempts_count <= 1:
-                # Это 3-я (последняя) попытка
+
                 user_ip.recovery_attempts_count = 0
                 db.session.commit()
                 return render_template('auth/reset_password.html', err="Вы исчерпали все попытки восстановления пароля.")
+            
             else:
-                # Уменьшаем счётчик и показываем оставшиеся попытки
+
                 user_ip.recovery_attempts_count -= 1
                 db.session.commit()
                 remaining = user_ip.recovery_attempts_count
                 message = f"Введите корректный email. Осталось попыток: {remaining}"
                 return render_template('auth/reset_password.html', err=message)
 
-        # Проверяем существование пользователя
+        # Проверяем, существует ли пользователь с таким email
         user = User.query.filter_by(email=email).first()
         if not user:
             user_ip.recovery_attempts_count -= 1
@@ -295,6 +332,11 @@ def reset_password_():
             remaining = max(0, user_ip.recovery_attempts_count)
             message = f"Пользователь с таким email не найден. Осталось попыток: {remaining}"
             return render_template('auth/reset_password.html', err=message)
+
+        # пользователь должен быть подтверждён!
+        if not user.confirm_email:
+            # НЕ уменьшаем счётчик попыток! Это не ошибка ввода, а состояние аккаунта.
+            return render_template('auth/reset_password.html', err="Для восстановления пароля необходимо сначала подтвердить ваш email.")
 
         # Отправляем письмо
         token = generate_password_reset_token(user.email)
@@ -333,7 +375,7 @@ def reset_password_with_token():
         return render_template('auth/reset_password_form.html', err="Пользователь не найден.")
 
     if request.method == 'POST':
-        # Определяем, откуда пришёл запрос
+
         if request.is_json:
             data = request.get_json()
             password = data.get('password')
@@ -352,15 +394,17 @@ def reset_password_with_token():
                 return jsonify({"error": "Пароли не совпадают"}), 400
             return render_template('auth/reset_password_form.html', token=token, err="Пароли не совпадают")
 
-        # Обновляем пароль
+
         user.set_password(password)
         db.session.commit()
 
-        # Универсальный ответ
+        # Сбрасываем счётчик и привязываем IP к пользователю после успешного сброса
+        reset_recovery_attempts_for_ip(user)
+
         if request.is_json:
             return jsonify({"success": True, "message": "Пароль успешно изменён"}), 200
         else:
             return redirect(url_for('session.login'))
 
-    # GET-запрос: только рендер HTML (JSON-клиенты не должны делать GET сюда)
+
     return render_template('auth/reset_password_form.html', token=token)

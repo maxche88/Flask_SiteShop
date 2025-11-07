@@ -3,7 +3,7 @@
 
 from models import  CartItem, Shop
 from extensions import db
-from utils.database_utils import current_time
+from utils.time import current_time
 
 def add_to_cart(user_id, product_id, quantity=1):
     """
