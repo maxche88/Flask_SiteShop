@@ -1,17 +1,7 @@
-<!-- admin panel -->
 {% extends 'base.html' %}
 
 {% block link %}
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
-<!-- Добавьте свой CSS для таблицы, если нужно -->
-<style>
-    .admin-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    .admin-table th { background-color: #f0f0f0; }
-    .old-unconfirmed { background-color: #fff5f5; }
-    .confirmed { background-color: #f0fff0; }
-    .btn-admin { padding: 6px 12px; margin: 5px 5px 5px 0; cursor: pointer; }
-</style>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/admin_panel.css') }}">
 {% endblock %}
 
 {% block title %}Админ-панель{% endblock %}
@@ -26,31 +16,73 @@
 
 {% block content %}
 <div class="conteiner_forms">
-    <div class="info_panel">
-        <h3>Админ-панель: Управление пользователями</h3><br>
+    <h3>Админ-панель</h3>
 
-        <button class="btn-admin" id="btnDeleteOld">🗑️ Удалить все неподтверждённые (>24 ч)</button>
-        <button class="btn-admin" id="btnDeleteSelected" disabled>🗑️ Удалить выбранные</button>
+    <!-- Вкладки -->
+    <div class="admin-tabs">
+        <div class="admin-tab active" data-tab="users">Пользователи</div>
+        <div class="admin-tab" data-tab="logs">Посмотреть логи</div>
+    </div>
 
-        <table class="admin-table" id="usersTable">
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="selectAll"></th>
-                    <th>ID</th>
-                    <th>Имя</th>
-                    <th>Email</th>
-                    <th>Подтверждён</th>
-                    <th>Дата</th>
-                    <th>IP-записи</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Загрузится через JS -->
-            </tbody>
-        </table>
+    <!-- Содержимое вкладки: Пользователи -->
+    <div class="admin-tab-content active" id="tab-users">
+        <div class="info_panel">
+            <h4>Управление пользователями</h4>
+
+            <div class="container_control">
+                <div class="search-box">
+                    <input type="text" id="userSearch" placeholder="Поиск по ID, имени или email...">
+                    <button id="btnSearch">Найти</button>
+                </div>
+
+                <button class="btn-admin" id="btnDeleteOld">Удалить все неподтверждённые (>24 ч)</button>
+                <button class="btn-admin" id="btnDeleteSelected" disabled>Удалить выбранные</button>
+                <button class="btn-admin" id="btnEditRoleSelected" disabled>Изменить роль</button>
+            </div>
+            
+            <table class="admin-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>UID</th>
+                        <th>Имя</th>
+                        <th>Email</th>
+                        <th>Verified</th>
+                        <th>Дата</th>
+                        <th>IP</th>
+                        <th>Роль</th>
+                    </tr>
+                </thead>
+                <tbody>
+                   
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Содержимое вкладки: Логи -->
+    <div class="admin-tab-content" id="tab-logs">
+        <div class="info_panel">
+            <h4>Логи попыток авторизации</h4><br>
+            <table class="admin-table" id="logsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>IP-адрес</th>
+                        <th>Попытки</th>
+                        <th>Последняя</th>
+                        <th>Заблокирован</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Загрузится через JS -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+{% endblock %}
 
-<!-- Подключаем JS -->
-<script src="{{ url_for('static', filename='js/admin_users.js') }}"></script>
+{% block js %}
+<script src="{{ url_for('static', filename='js/admin_panel.js') }}"></script>
 {% endblock %}

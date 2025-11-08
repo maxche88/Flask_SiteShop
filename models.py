@@ -13,7 +13,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     hash_passwd = db.Column(db.String(120), nullable=False)
-    role = db.Column(db.String(5), default="user")  # admin / suser / user
+    role = db.Column(db.String(5), default="user")
     avatar_url = db.Column(db.String(255), default="/img/avatars/default_user.png")
     confirm_email = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=current_time)
