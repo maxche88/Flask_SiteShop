@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tableBody.innerHTML = '';
         if (users.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="8">Нет данных</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="9">Нет данных</td></tr>';
             updateButtons();
             return;
         }
@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : '—';
 
             const roleText = user.role || '—';
+            const userAgentText = user.user_agent || '—';
 
             row.innerHTML = `
                 <td>
@@ -175,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${dateText}</td>
                 <td>${user.ip_logs_count || 0}</td>
                 <td>${roleText}</td>
+                <td>${userAgentText}</td>
             `;
             tableBody.appendChild(row);
         });

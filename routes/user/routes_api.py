@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, CartItem, Shop, User, current_time
-from utils.logger import get_user_logger
 
 user_api_bp = Blueprint('user_api', __name__, url_prefix='/api/user')
 

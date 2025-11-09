@@ -2,8 +2,6 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, User, IPAttemptLog
 from utils.cleanup import get_unconfirmed_cutoff
-from utils.time import current_time
-from datetime import timedelta
 
 admin_system_bp = Blueprint('admin_system', __name__, url_prefix='/admin/api')
 
@@ -107,7 +105,7 @@ def _serialize_users(users):
 def get_all_users():
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    if current_user.role not in 'admin':
+    if current_user.role != 'admin':  # исправлено: было `not in 'admin'`
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     users = User.query.all()
@@ -116,12 +114,18 @@ def get_all_users():
     cutoff_naive = get_unconfirmed_cutoff()
 
     for u in users:
-        # Сравниваем только если created_at не None
         is_old_unconfirmed = (
             not u.confirm_email and
             u.created_at is not None and
-            u.created_at < cutoff_naive  # ← просто сравниваем с cutoff
+            u.created_at < cutoff_naive
         )
+
+        # Получаем user_agent из первой (или последней) записи IP-лога
+        user_agent = None
+        if u.ip_logs:
+            # Берём последнюю запись (самую свежую)
+            latest_log = max(u.ip_logs, key=lambda log: log.id)
+            user_agent = latest_log.user_agent
 
         result.append({
             'id': u.id,
@@ -131,8 +135,10 @@ def get_all_users():
             'created_at': u.created_at.isoformat() if u.created_at else None,
             'is_old_unconfirmed': is_old_unconfirmed,
             'ip_logs_count': len(u.ip_logs),
-            'role': u.role
+            'role': u.role,
+            'user_agent': user_agent  # ← новое поле
         })
+        
     return jsonify(result)
 
 # Изменить роль пользователя
