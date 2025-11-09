@@ -134,6 +134,8 @@
 #usersTable td:nth-child(7) { width: 3%; }   /* IP-записи */
 #usersTable th:nth-child(8),
 #usersTable td:nth-child(8) { width: 8%; }   /* Роль */
+#usersTable th:nth-child(9),
+#usersTable td:nth-child(9) { width: 8%; }   /* Роль */
 
 /* === Ячейка email с кнопкой копирования === */
 .email-cell {

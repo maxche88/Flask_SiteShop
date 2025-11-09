@@ -12,6 +12,7 @@ from routes.user.routes_api import user_api_bp
 
 from extensions import mail, jwt, db, migrate
 from config.config import Config, INSTANCE_DIR
+from utils.logger import app_loggers
 
 
 def create_app():
@@ -40,4 +41,5 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
+    app_loggers(app)
     app.run(debug=True)

@@ -11,14 +11,8 @@
     {% endif %}
   </div>
 
-  {% if can_resend and email_for_resend %}
-    <form method="POST" action="{{ url_for('session.resend_confirmation_email') }}" class="resend-form">
-      <input type="hidden" name="email" value="{{ email_for_resend }}">
-      <button type="submit" class="resend-btn">Отправить ссылку повторно</button>
-    </form>
-  {% else %}
-    <button class="action-btn" type="button" onclick="redirectToLogin()">OK</button>
-  {% endif %}
+  <button class="action-btn" type="button" onclick="redirectToLogin()">OK</button>
+
 </div>
 {% endblock %}
 

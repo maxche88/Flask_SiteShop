@@ -39,9 +39,10 @@ class IPAttemptLog(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    ip_address = db.Column(db.String(45), nullable=False)
+    ip_address = db.Column(db.String(45), nullable=False, unique=True)
     recovery_attempts_count = db.Column(db.Integer, nullable=False)
     revoked_jwt_token = db.Column(db.Text, nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
 
     user = db.relationship("User", backref=db.backref("ip_logs", lazy=True))
 

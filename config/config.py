@@ -9,6 +9,7 @@ load_dotenv()
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 INSTANCE_DIR = os.path.join(basedir, 'instance')
+LOG_DIR = os.path.join(INSTANCE_DIR, 'logs')
 
 class Config:
     # === Основной секретный ключ Flask ===
@@ -51,7 +52,7 @@ class Config:
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
 
     # === Логирование ===
-    LOG_DIR = os.environ.get('LOG_DIR') or os.path.join(basedir, 'logs')
-    LOG_MAX_BYTES = int(os.environ.get('LOG_MAX_BYTES', 10 * 1024 * 1024))  # 10 МБ по умолчанию
-    LOG_BACKUP_COUNT = int(os.environ.get('LOG_BACKUP_COUNT', 5))
-    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO').upper()
+    LOG_DIR = LOG_DIR
+    LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+    LOG_BACKUP_COUNT = 5
+    LOG_LEVEL = 'INFO'
