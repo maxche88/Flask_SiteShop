@@ -38,6 +38,8 @@
                 <button class="btn-admin" id="btnDeleteOld">Удалить все неподтверждённые (>24 ч)</button>
                 <button class="btn-admin" id="btnDeleteSelected" disabled>Удалить выбранные</button>
                 <button class="btn-admin" id="btnEditRoleSelected" disabled>Изменить роль</button>
+                <button class="btn-admin" id="btnExitUserProfole" disabled>Отозвать токен</button>
+                <button class="btn-admin" id="btnDeleteToken" disabled>Удалить токены</button>
             </div>
             
             <table class="admin-table" id="usersTable">
@@ -52,6 +54,7 @@
                         <th>IP</th>
                         <th>Роль</th>
                         <th>Устройство</th>
+                        <th>Сессия</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -64,7 +67,7 @@
     <!-- Содержимое вкладки: Логи -->
     <div class="admin-tab-content" id="tab-logs">
         <div class="info_panel">
-            <h4>Логи попыток авторизации</h4><br>
+            <h4>Логи попыток авторизации</h4>
             <table class="admin-table" id="logsTable">
                 <thead>
                     <tr>

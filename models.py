@@ -1,5 +1,6 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+
 from utils.time import current_time
 
 
@@ -41,10 +42,25 @@ class IPAttemptLog(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     ip_address = db.Column(db.String(45), nullable=False, unique=True)
     recovery_attempts_count = db.Column(db.Integer, nullable=False)
-    revoked_jwt_token = db.Column(db.Text, nullable=True)
+
     user_agent = db.Column(db.Text, nullable=True)
 
     user = db.relationship("User", backref=db.backref("ip_logs", lazy=True))
+
+
+class UserToken(db.Model):
+    """
+    Хранит информацию о выданных JWT-токенах: JTI, срок действия,
+    статус отзыва и привязку к пользователю.
+    Используется для точного отзыва сессий и отображения статуса в админке. 
+    """
+    __tablename__ = 'user_tokens'
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(36), nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    issued_at = db.Column(db.DateTime, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    revoked = db.Column(db.Boolean, default=False, nullable=False)
 
 
 class Shop(db.Model):

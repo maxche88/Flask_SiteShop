@@ -31,7 +31,8 @@ class Config:
 
     # === Время жизни токенов подтверждения и восстановления ===
     # Указывается в МИНУТАХ (удобно для теста: 1 минута, продакшен: 1440 = 24 часа)
-    UNCONFIRMED_USER_TTL_MINUTES = int(os.getenv('UNCONFIRMED_USER_TTL_MINUTES', '1440'))
+    UNCONFIRMED_USER_TTL_MINUTES = 1440
+    PASSWORD_RESET_TOKEN_TTL_MINUTES = 30
 
     # === База данных ===
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{os.path.join(INSTANCE_DIR, 'database.db')}"
