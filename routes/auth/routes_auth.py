@@ -1,12 +1,14 @@
 # Регистрация. Аутентификация и управление сессией.
 import logging
 from flask import Blueprint, request, redirect, url_for, render_template, jsonify, make_response
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, decode_token
-from models import db, User
+from flask_jwt_extended import get_jwt_identity, jwt_required, get_jwt_identity, decode_token, verify_jwt_in_request, get_jwt
+from flask import request
+from extensions import db
+from models import User, UserToken
 from utils.tokens import generate_password_reset_token, generate_email_confirmation_token
 from utils.mail import send_password_reset_email, send_confirm_email, normalize_email
 from utils.ip_log import get_client_ip, get_or_create_ip_log, decrement_recovery_attempts, bind_ip_to_user_and_reset_attempts, update_ip_log_with_user_agent
-
+from utils.user_sessions import create_access_token_for_user
 from utils.responses import render_or_json
 
 
@@ -16,6 +18,11 @@ auth_logger = logging.getLogger('app.auth')
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
+    """
+    Обрабатывает регистрацию нового пользователя: валидирует данные, проверяет уникальность,
+    создаёт учётную запись и отправляет письмо для подтверждения email.
+    Поддерживает как HTML-форму, так и JSON-API. 
+    """
     if request.method == 'POST':
         data = request.get_json()
         client_ip = get_client_ip()
@@ -104,9 +111,13 @@ def register():
     return render_template('auth/register.html')
 
 
-# Роутер для подтверждения учётной записи.
+
 @auth_bp.route('/confirm-email', methods=['GET'])
 def confirm_email():
+    """
+    Подтверждает email пользователя по уникальному токену из ссылки.
+    Проверяет валидность токена, тип и наличие пользователя.
+    """
     token = request.args.get('token')
     
     if not token:
@@ -159,12 +170,14 @@ def confirm_email():
 
 
 
-# Роутер слушает GET - отображает форму входа
-# POST запрос - проверяет логин и пароль, далее возвращает ответ клиенту
-# с токеном. 
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-
+    """
+    Аутентифицирует пользователя по логину/email и паролю.
+    При успешном входе создаёт и сохраняет JWT-токен в БД (UserToken) и возвращает его клиенту.
+    Требует подтверждённого email. 
+    """
     if request.method == 'GET':
         return render_template('auth/login.html')
     
@@ -198,27 +211,36 @@ def login():
                 'errors': ['Подтвердите email. Письмо отправлено вам на email который вы указывали при регистрации.']
             }), 401
 
-        # Сбрасываем счётчик попыток восстановления для текущего IP и привязываем его к пользователю
+        # Сбрасываем счётчик попыток и привязываем IP
         bind_ip_to_user_and_reset_attempts(user)
 
-        # Сохраняем User-Agent устройства
+
         update_ip_log_with_user_agent(client_ip)
 
-        access_token = create_access_token(identity=str(user.id))
+
+        access_token = create_access_token_for_user(user.id)
         
+        db.session.commit()
+
         response_data = {
             'success': True,
             'message': 'Авторизация прошла успешно.',
             'access_token': access_token
         }
 
+        auth_logger.info(f"Вход выполнен: email подтверждён, user_id={user.id}, IP: {client_ip}")
         return jsonify(response_data)
 
 
-# Проверка пользователя на аутентификацию
+
 @auth_bp.route('/auth', methods=['GET'])
 @jwt_required()  # Декоратор проверки JWT-токена
 def auth():
+    """
+    API-эндпоинт для проверки текущей сессии.
+    Возвращает данные авторизованного пользователя (id, имя, email, роль) или ошибку 401,
+    если токен недействителен. 
+    """
     try:
         current_user_id = get_jwt_identity()  # Извлекаем идентификатор текущего пользователя
         user = User.query.get(current_user_id)
@@ -239,32 +261,34 @@ def auth():
         return jsonify({"msg": str(e)}), 500
 
 
-# Очищает cookie.
+
 @auth_bp.route('/logout', methods=['GET'])
 def logout():
-    # Перенаправляем обратно на главную страницу
-    response = make_response(redirect(url_for('main.index')))  
-    # Удаляем cookie с токеном
-    response.delete_cookie('access_token')
+    try:
+        verify_jwt_in_request()
+        jti = get_jwt()["jti"]
+        current_user_id = get_jwt_identity()
+        token = UserToken.query.filter_by(jti=jti, user_id=current_user_id).first()
+        if token:
+            token.revoked = True
+            db.session.commit()
+    except Exception:
+        pass
 
+    response = make_response(redirect(url_for('main.index')))
+    response.set_cookie('access_token_cookie', '', expires=0, path='/')
     return response
 
 
-# Восстановление пароля по email.
-# 
-# GET: Отображает форму для ввода email, использованного при регистрации.
-# 
-# POST: Принимает email, нормализует и проверяет его валидность.
-#       Если email корректен, принадлежит **подтверждённому** пользователю —
-#       отправляется письмо со ссылкой для сброса пароля.
-# 
-#       Если пользователь не подтвердил email → ошибка.
-#       При невалидном email или отсутствии пользователя:
-#       - IP-адрес клиента записывается в таблицу IPAttemptLog,
-#       - уменьшается счётчик попыток восстановления,
-#       - при исчерпании попыток — блокировка.
+
 @auth_bp.route('/reset-password', methods=['GET', 'POST'])
 def reset_password_():
+    """
+    Восстановление пароля.
+    Инициирует процесс сброса пароля: проверяет email,
+    учитывает лимиты попыток по IP и отправляет письмо
+    со ссылкой для смены пароля только подтверждённым пользователям. 
+    """
     if request.method == 'GET':
         return render_template('auth/reset_password.html', mess='Введите корректный email, который вы указывали при регистрации!')
 
@@ -324,11 +348,14 @@ def reset_password_():
             return render_template('auth/reset_password.html', err=message)
 
 
-# Роутер с формой по востановлению пароля.
-# Форма рендерится когда пользователь переходит по ссылке
-# которая отправляется на email.
+
 @auth_bp.route('/reset-password/token', methods=['GET', 'POST'])
 def reset_password_with_token():
+    """
+    Восстановление пароля.
+    Обрабатывает запрос на смену пароля по токену из email.
+    Проверяет валидность токена, позволяет задать новый пароль и обновляет хэш в БД. 
+    """
     token = request.args.get('token')
     client_ip = get_client_ip()
     if not token:

@@ -25,8 +25,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDeleteSelected = document.getElementById('btnDeleteSelected');
     const btnDeleteOld = document.getElementById('btnDeleteOld');
     const btnEditRoleSelected = document.getElementById('btnEditRoleSelected');
+    const btnExitUserProfole = document.getElementById('btnExitUserProfole');
+    const btnDeleteToken = document.getElementById('btnDeleteToken');
     const searchInput = document.getElementById('userSearch');
     const btnSearch = document.getElementById('btnSearch');
+
+    // === TOOLTIP'ы для кнопок ===
+    const tooltips = {
+        btnDeleteOld: "Удалить все неподтверждённые аккаунты старше 24 часов",
+        btnDeleteSelected: "Удалить выбранных пользователей и их данные",
+        btnEditRoleSelected: "Изменить роль выбранного пользователя",
+        btnExitUserProfole: "Отозвать токены выбранных пользователей",
+        btnDeleteToken: "Очистить токены: если выбраны пользователи — удалить их просроченные и отозванные токены; если нет — удалить все просроченные и отозванные токены"
+    };
+
+    Object.entries(tooltips).forEach(([id, text]) => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.title = text;
+        }
+    });
 
     // === ВСПЛЫВАЮЩЕЕ МЕНЮ ДЛЯ ВЫБОРА РОЛИ ===
     let roleDropdown = null;
@@ -131,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => {
                 console.error('Ошибка загрузки пользователей:', err);
                 if (tableBody) {
-                    tableBody.innerHTML = '<tr><td colspan="8">Ошибка загрузки</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="10">Ошибка загрузки</td></tr>';
                 }
             });
     }
@@ -142,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tableBody.innerHTML = '';
         if (users.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="9">Нет данных</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="10">Нет данных</td></tr>';
             updateButtons();
             return;
         }
@@ -159,6 +177,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const roleText = user.role || '—';
             const userAgentText = user.user_agent || '—';
+
+            // Отображаем оставшееся время или тире
+            const sessionText = user.session_minutes_left !== null
+                ? `${user.session_minutes_left} мин`
+                : '—';
 
             row.innerHTML = `
                 <td>
@@ -177,6 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${user.ip_logs_count || 0}</td>
                 <td>${roleText}</td>
                 <td>${userAgentText}</td>
+                <td>${sessionText}</td>
             `;
             tableBody.appendChild(row);
         });
@@ -195,6 +219,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnEditRoleSelected) {
             btnEditRoleSelected.disabled = checkedCount !== 1;
         }
+
+        if (btnExitUserProfole) {
+            btnExitUserProfole.disabled = checkedCount === 0;
+        }
+
+        if (btnDeleteToken) {
+            btnDeleteToken.disabled = false;
+        }
     }
 
     // === ПОИСК ===
@@ -212,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => {
                 console.error('Ошибка поиска:', err);
                 if (tableBody) {
-                    tableBody.innerHTML = '<tr><td colspan="8">Ошибка поиска</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="10">Ошибка поиска</td></tr>';
                 }
             });
     }
@@ -228,22 +260,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === КОПИРОВАНИЕ EMAIL ===
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('copy-email-btn')) {
-            const email = e.target.dataset.email;
-            if (!email) return;
+    // === КОПИРОВАНИЕ EMAIL (ДЕЛЕГИРОВАННЫЙ ОБРАБОТЧИК) ===
+    document.addEventListener('click', function(e) {
+        const button = e.target.closest('.copy-email-btn');
+        if (!button) return;
 
-            navigator.clipboard.writeText(email)
-                .then(() => {
-                    const original = e.target.textContent;
-                    e.target.textContent = '✓';
-                    setTimeout(() => e.target.textContent = original, 1000);
-                })
-                .catch(() => alert('Не удалось скопировать email'));
+        const email = button.getAttribute('data-email');
+        if (!email) {
+            console.warn('Кнопка копирования не содержит data-email');
+            return;
         }
-    });
 
+        // Сохраняем оригинальный текст
+        const originalText = button.textContent;
+
+        navigator.clipboard.writeText(email)
+            .then(() => {
+                button.textContent = '✓';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                }, 1000);
+            })
+            .catch(err => {
+                console.error('Ошибка копирования email:', err);
+                alert('Не удалось скопировать email. Возможно, сайт не использует HTTPS или браузер блокирует clipboard.');
+            });
+    });
+    
     // === УПРАВЛЕНИЕ ЧЕКБОКСАМИ ===
     selectAll?.addEventListener('change', () => {
         document.querySelectorAll('.user-checkbox:not(:disabled)').forEach(cb => {
@@ -306,7 +349,89 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // === ЗАВЕРШЕНИЕ СЕССИИ ВЫБРАННЫХ ПОЛЬЗОВАТЕЛЕЙ ===
+    btnExitUserProfole?.addEventListener('click', () => {
+        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+        const user_ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
 
+        if (user_ids.length === 0) {
+            alert('Выберите хотя бы одного пользователя');
+            return;
+        }
+
+        if (!confirm(`Завершить сессии для ${user_ids.length} пользователей? Это отключит их от всех устройств.`)) {
+            return;
+        }
+
+        fetch('/admin/api/users/revoke-sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_ids })
+        })
+        .then(async res => {
+            try {
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`Сессии успешно завершены для ${user_ids.length} пользователей`);
+                    loadUsers();
+                } else {
+                    alert(`Ошибка: ${data.error || 'Не удалось завершить сессии'}`);
+                }
+            } catch (e) {
+                alert('Ошибка: не удалось обработать ответ сервера');
+            }
+        })
+        .catch(err => {
+            console.error('Сетевая ошибка при завершении сессий:', err);
+            alert('Ошибка сети при завершении сессий');
+        });
+    });
+
+    // === УДАЛЕНИЕ ТОКЕНОВ ===
+    btnDeleteToken?.addEventListener('click', () => {
+        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+        const user_ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
+
+        let confirmMsg, fetchUrl, fetchBody;
+
+        if (user_ids.length > 0) {
+            confirmMsg = `Удалить ВСЕ токены для ${user_ids.length} пользователей? Это завершит их сессии.`;
+            fetchUrl = '/admin/api/users/delete-tokens';
+            fetchBody = { user_ids };
+        } else {
+            confirmMsg = 'Удалить все недействительные токены (просроченные или отозванные) из базы?';
+            fetchUrl = '/admin/api/users/delete-tokens';
+            fetchBody = { delete_all_invalid: true };
+        }
+
+        if (!confirm(confirmMsg)) return;
+
+        fetch(fetchUrl, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(fetchBody)
+        })
+        .then(async res => {
+            try {
+                const data = await res.json();
+                if (res.ok) {
+                    const successMsg = user_ids.length > 0
+                        ? `Токены удалены для ${user_ids.length} пользователей`
+                        : `Удалено ${data.deleted_count} недействительных токенов`;
+                    alert(successMsg);
+                    loadUsers();
+                } else {
+                    alert(`Ошибка: ${data.error || 'Не удалось удалить токены'}`);
+                }
+            } catch (e) {
+                alert('Ошибка: не удалось обработать ответ сервера');
+            }
+        })
+        .catch(err => {
+            console.error('Сетевая ошибка при удалении токенов:', err);
+            alert('Ошибка сети при удалении токенов');
+        });
+    });
 
     // === ИНИЦИАЛИЗАЦИЯ ===
     loadUsers();

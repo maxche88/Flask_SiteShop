@@ -121,11 +121,11 @@
 #usersTable th:nth-child(1),
 #usersTable td:nth-child(1) { width: 3%; }   /* Чекбокс */
 #usersTable th:nth-child(2),
-#usersTable td:nth-child(2) { width: 8%; }   /* UID */
+#usersTable td:nth-child(2) { width: 5%; }   /* UID */
 #usersTable th:nth-child(3),
 #usersTable td:nth-child(3) { width: 15%; }  /* Имя */
 #usersTable th:nth-child(4),
-#usersTable td:nth-child(4) { width: 25%; }  /* Email */
+#usersTable td:nth-child(4) { width: 20%; }  /* Email */
 #usersTable th:nth-child(5),
 #usersTable td:nth-child(5) { width: 5%; }   /* Подтверждён */
 #usersTable th:nth-child(6),
@@ -133,9 +133,11 @@
 #usersTable th:nth-child(7),
 #usersTable td:nth-child(7) { width: 3%; }   /* IP-записи */
 #usersTable th:nth-child(8),
-#usersTable td:nth-child(8) { width: 8%; }   /* Роль */
+#usersTable td:nth-child(8) { width: 4%; }   /* Роль */
 #usersTable th:nth-child(9),
-#usersTable td:nth-child(9) { width: 8%; }   /* Роль */
+#usersTable td:nth-child(9) { width: 8%; }   /* Устройство*/
+#usersTable th:nth-child(10),
+#usersTable td:nth-child(10) { width: 5%; }   /* Сессия */
 
 /* === Ячейка email с кнопкой копирования === */
 .email-cell {
