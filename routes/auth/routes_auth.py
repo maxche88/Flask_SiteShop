@@ -4,12 +4,13 @@ from flask import Blueprint, request, redirect, url_for, render_template, jsonif
 from flask_jwt_extended import get_jwt_identity, jwt_required, get_jwt_identity, decode_token, verify_jwt_in_request, get_jwt
 from flask import request
 from extensions import db
-from models import User, UserToken
+from models import User, UserToken, IPAttemptLog
 from utils.tokens import generate_password_reset_token, generate_email_confirmation_token
 from utils.mail import send_password_reset_email, send_confirm_email, normalize_email
 from utils.ip_log import get_client_ip, get_or_create_ip_log, decrement_recovery_attempts, bind_ip_to_user_and_reset_attempts, update_ip_log_with_user_agent
 from utils.user_sessions import create_access_token_for_user
 from utils.responses import render_or_json
+from datetime import datetime, timezone
 
 
 auth_bp = Blueprint('session', __name__)
@@ -80,7 +81,11 @@ def register():
                 'errors': ['Не удалось отправить письмо. Проверьте корректность email.']
             }), 400
 
-        new_user = User(username=username, email=email)
+        new_user = User(username=username,
+                        email=email,
+                        created_at=datetime.now(timezone.utc)
+                        )
+        
         new_user.set_password(password)
         
         try:
@@ -170,13 +175,13 @@ def confirm_email():
 
 
 
-
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     """
     Аутентифицирует пользователя по логину/email и паролю.
     При успешном входе создаёт и сохраняет JWT-токен в БД (UserToken) и возвращает его клиенту.
-    Требует подтверждённого email. 
+    Требует подтверждённого email.
+    Блокирует вход, если IP-адрес заблокирован в IPAttemptLog.
     """
     if request.method == 'GET':
         return render_template('auth/login.html')
@@ -188,6 +193,15 @@ def login():
         if not data:
             auth_logger.warning(f"Вход: неверный формат данных, IP: {client_ip}")
             return jsonify({'success': False, 'errors': ['Неверный формат данных']}), 400
+
+        # === ПРОВЕРКА: ЗАБЛОКИРОВАН ЛИ IP? ===
+        ip_log = IPAttemptLog.query.filter_by(ip_address=client_ip).first()
+        if ip_log and ip_log.is_blocked:
+            auth_logger.warning(f"Вход заблокирован: IP {client_ip} находится в чёрном списке")
+            return jsonify({
+                'success': False,
+                'errors': ['Ваш IP-адрес заблокирован. Обратитесь к администратору.']
+            }), 403  # Forbidden
 
         username_or_email = data.get('username')
         password = data.get('password')
@@ -214,12 +228,10 @@ def login():
         # Сбрасываем счётчик попыток и привязываем IP
         bind_ip_to_user_and_reset_attempts(user)
 
-
         update_ip_log_with_user_agent(client_ip)
 
-
         access_token = create_access_token_for_user(user.id)
-        
+
         db.session.commit()
 
         response_data = {
@@ -229,8 +241,8 @@ def login():
         }
 
         auth_logger.info(f"Вход выполнен: email подтверждён, user_id={user.id}, IP: {client_ip}")
+        
         return jsonify(response_data)
-
 
 
 @auth_bp.route('/auth', methods=['GET'])
@@ -276,7 +288,9 @@ def logout():
         pass
 
     response = make_response(redirect(url_for('main.index')))
-    response.set_cookie('access_token_cookie', '', expires=0, path='/')
+
+    response.set_cookie('access_token', '', expires=0, path='/')
+
     return response
 
 

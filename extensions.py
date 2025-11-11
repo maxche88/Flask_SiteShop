@@ -4,8 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
-from flask import request, jsonify, redirect, make_response
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 db = SQLAlchemy()
@@ -20,4 +19,4 @@ def check_if_token_revoked(_, jwt_payload):
     jti = jwt_payload["jti"]
     from models import UserToken
     token = UserToken.query.filter_by(jti=jti).first()
-    return token is not None and (token.revoked or datetime.utcnow() >= token.expires_at)
+    return token is not None and (token.revoked or datetime.now(timezone.utc) >= token.expires_at)

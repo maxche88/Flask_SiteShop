@@ -205,3 +205,17 @@
 .admin-tab-content.active {
     display: block;
 }
+
+/* Ширина колонок: ip_log */
+#tab-logs th:nth-child(1),
+#tab-logs td:nth-child(1) { width: 3%; }   /* Чекбокс */
+#tab-logs th:nth-child(2),
+#tab-logs td:nth-child(2) { width: 5%; }   /* UID */
+#tab-logs th:nth-child(3),
+#tab-logs td:nth-child(3) { width: 15%; }  /* IP-адрес */
+#tab-logs th:nth-child(4),
+#tab-logs td:nth-child(4) { width: 4%; }  /* Попытки */
+#tab-logs th:nth-child(5),
+#tab-logs td:nth-child(5) { width: 5%; }   /* Последняя */
+#tab-logs th:nth-child(6),
+#tab-logs td:nth-child(6) { width: 12%; }  /* Заблокирован */

@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const articleCell = row.querySelector('.article-cell');
                     if (articleCell) articleCell.textContent = product.article_num || '—';
 
-                    // ID продавца
+                    // ID manager (suser)
                     const sellerIdCell = row.querySelector('.seller-id-cell');
                     if (sellerIdCell) sellerIdCell.textContent = product.user_id || '—';
 

@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, CartItem, Shop, User, current_time
+from models import db, CartItem, Shop, User
+from datetime import datetime, timezone
 
 user_api_bp = Blueprint('user_api', __name__, url_prefix='/api/user')
 
@@ -52,7 +53,7 @@ def add_to_cart():
             product_id=product.id,
             quantity=quantity,
             is_purchased=False,
-            added_at=current_time()
+            added_at=datetime.now(timezone.utc)
         )
         db.session.add(cart_item)
     
@@ -133,7 +134,7 @@ def checkout():
         if product.quantity < 0:
             product.quantity = 0
         item.is_purchased = True
-        item.purchased_at = current_time()
+        item.purchased_at = datetime.now(timezone.utc)
 
     db.session.commit()
     return jsonify({"success": True, "message": "Заказ успешно оформлен"})

@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === ЭЛЕМЕНТЫ УПРАВЛЕНИЯ ===
+    // === ЭЛЕМЕНТЫ УПРАВЛЕНИЯ ДЛЯ ВКЛАДКИ "ПОЛЬЗОВАТЕЛИ" ===
     const tableBody = document.querySelector('#usersTable tbody');
     const selectAll = document.getElementById('selectAll');
     const btnDeleteSelected = document.getElementById('btnDeleteSelected');
@@ -432,6 +432,209 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Ошибка сети при удалении токенов');
         });
     });
+
+    // === ЭЛЕМЕНТЫ ДЛЯ ВКЛАДКИ "ЛОГИ" ===
+    const logsTableBody = document.querySelector('#logsTable tbody');
+    const selectAllLogs = document.getElementById('selectAllLogs');
+    const btnBlockSelected = document.getElementById('btnBlockSelected');
+    const btnUnblockSelected = document.getElementById('btnUnblockSelected');
+    const logSearchInput = document.getElementById('logSearch');
+    const btnSearchLogs = document.getElementById('btnSearchLogs');
+
+    // === ЗАГРУЗКА ЛОГОВ ===
+    function loadLogs() {
+        if (!logsTableBody) return;
+        logsTableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
+
+        fetch('/admin/api/logs')
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
+            .then(logs => {
+                renderLogs(logs);
+            })
+            .catch(err => {
+                console.error('Ошибка загрузки логов:', err);
+                logsTableBody.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>';
+            });
+    }
+
+    // === ОТРИСОВКА ЛОГОВ ===
+    function renderLogs(logs) {
+        if (!logsTableBody) return;
+        logsTableBody.innerHTML = '';
+
+        if (!Array.isArray(logs) || logs.length === 0) {
+            logsTableBody.innerHTML = '<tr><td colspan="5">Нет записей</td></tr>';
+            updateLogButtons();
+            return;
+        }
+
+        logs.forEach(log => {
+            const userIdDisplay = log.user_id !== null ? log.user_id : '—';
+            const blockedText = log.is_blocked ? '✅ Да' : '❌ Нет';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <input type="checkbox" class="log-checkbox" 
+                        data-ip="${log.ip_address}"
+                        data-blocked="${log.is_blocked}">
+                </td>
+                <td>${userIdDisplay}</td>
+                <td>${log.ip_address}</td>
+                <td>${log.recovery_attempts_count}</td>
+                <td>${blockedText}</td>
+            `;
+            logsTableBody.appendChild(row);
+        });
+        updateLogButtons();
+    }
+
+    // === ПОИСК ПО ЛОГАМ ===
+    function searchLogs(query) {
+        if (!query.trim()) {
+            loadLogs();
+            return;
+        }
+
+        // Преобразуем "да"/"нет" в boolean
+        let isBlockedParam = null;
+        const lowerQuery = query.trim().toLowerCase();
+        if (lowerQuery === 'да') {
+            isBlockedParam = true;
+        } else if (lowerQuery === 'нет') {
+            isBlockedParam = false;
+        }
+
+        const url = new URL('/admin/api/logs/search', window.location.origin);
+        url.searchParams.append('q', query);
+        if (isBlockedParam !== null) {
+            url.searchParams.append('is_blocked', isBlockedParam);
+        }
+
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
+            .then(logs => {
+                renderLogs(logs);
+            })
+            .catch(err => {
+                console.error('Ошибка поиска логов:', err);
+                logsTableBody.innerHTML = '<tr><td colspan="5">Ошибка поиска</td></tr>';
+            });
+    }
+
+    // === УПРАВЛЕНИЕ КНОПКАМИ В ЛОГАХ ===
+    function updateLogButtons() {
+        const checked = document.querySelectorAll('.log-checkbox:checked');
+        const hasSelected = checked.length > 0;
+        
+        if (btnBlockSelected) {
+            btnBlockSelected.disabled = !hasSelected;
+        }
+        if (btnUnblockSelected) {
+            btnUnblockSelected.disabled = !hasSelected;
+        }
+    }
+
+    // === УПРАВЛЕНИЕ ЧЕКБОКСАМИ В ЛОГАХ ===
+    if (selectAllLogs) {
+        selectAllLogs.addEventListener('change', () => {
+            document.querySelectorAll('.log-checkbox:not(:disabled)').forEach(cb => {
+                cb.checked = selectAllLogs.checked;
+            });
+            updateLogButtons();
+        });
+    }
+
+    if (logsTableBody) {
+        logsTableBody.addEventListener('change', updateLogButtons);
+    }
+
+    // === ПОИСК (ЛОГИ) ===
+    if (btnSearchLogs) {
+        btnSearchLogs.addEventListener('click', () => {
+            searchLogs(logSearchInput?.value || '');
+        });
+    }
+    if (logSearchInput) {
+        logSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchLogs(logSearchInput.value);
+            }
+        });
+    }
+
+    // === БЛОКИРОВКА ВЫБРАННЫХ ЗАПИСЕЙ ===
+    if (btnBlockSelected) {
+        btnBlockSelected.addEventListener('click', () => {
+            const ips = Array.from(document.querySelectorAll('.log-checkbox:checked'))
+                .map(cb => cb.dataset.ip);
+
+            if (ips.length === 0) {
+                alert('Выберите записи для блокировки');
+                return;
+            }
+
+            // Убираем дубликаты
+            const uniqueIps = [...new Set(ips)];
+
+            if (!confirm(`Заблокировать вход с ${uniqueIps.length} IP-адрес(а/ов)?`)) return;
+
+            fetch('/admin/api/logs/block', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip_addresses: uniqueIps })
+            })
+            .then(async res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+                alert(`Заблокировано: ${data.blocked_count} записей`);
+                loadLogs();
+            })
+            .catch(err => {
+                console.error('Ошибка блокировки:', err);
+                alert('Ошибка сети или сервера при блокировке');
+            });
+        });
+    }
+
+    // === РАЗБЛОКИРОВКА ВЫБРАННЫХ ЗАПИСЕЙ ===
+    if (btnUnblockSelected) {
+        btnUnblockSelected.addEventListener('click', () => {
+            const ips = Array.from(document.querySelectorAll('.log-checkbox:checked'))
+                .map(cb => cb.dataset.ip);
+
+            if (ips.length === 0) {
+                alert('Выберите записи для разблокировки');
+                return;
+            }
+
+            const uniqueIps = [...new Set(ips)];
+
+            if (!confirm(`Разблокировать вход с ${uniqueIps.length} IP-адрес(а/ов)?`)) return;
+
+            fetch('/admin/api/logs/unblock', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ip_addresses: uniqueIps })
+            })
+            .then(async res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+                alert(`Разблокировано: ${data.unblocked_count || uniqueIps.length} IP-адресов`);
+                loadLogs();
+            })
+            .catch(err => {
+                console.error('Ошибка разблокировки:', err);
+                alert('Ошибка сети или сервера при разблокировке');
+            });
+        });
+    }
 
     // === ИНИЦИАЛИЗАЦИЯ ===
     loadUsers();

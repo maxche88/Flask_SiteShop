@@ -1,9 +1,12 @@
-from flask import current_app, request
+import logging
+from flask import current_app
 from flask_jwt_extended import create_access_token, get_jti, verify_jwt_in_request, get_jwt_identity
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from models import UserToken, User
 from extensions import db
 
+
+sys_logger = logging.getLogger('app.system')
 
 def create_access_token_for_user(user_id):
     """
@@ -21,11 +24,12 @@ def create_access_token_for_user(user_id):
 
     # Определение срока действия
     expires_delta = current_app.config.get('JWT_ACCESS_TOKEN_EXPIRES', timedelta(minutes=15))
+    # Если в конфиге время не задано — используется значение по умолчанию: 15 минут
     if isinstance(expires_delta, int):
         expires_delta = timedelta(seconds=expires_delta)
 
-    issued_at = datetime.utcnow()
-    expires_at = issued_at + expires_delta
+    issued_at = datetime.now(timezone.utc)  # Текущее время в формате UTC.
+    expires_at = issued_at + expires_delta  # Время, когда токен перестанет быть валидным.
 
     # Сохранение в БД
     token_record = UserToken(
@@ -35,6 +39,7 @@ def create_access_token_for_user(user_id):
         expires_at=expires_at,
         revoked=False
     )
+
     db.session.add(token_record)
 
     return access_token
@@ -69,9 +74,15 @@ def get_safe_user_id():
     try:
         verify_jwt_in_request(optional=True)
         user_id = get_jwt_identity()
-        if user_id is not None and User.query.get(user_id):
-            return str(user_id)
-    except Exception:
-        pass 
-
+        if user_id is not None:
+            # Проверяем, существует ли пользователь
+            if User.query.get(user_id):
+                return str(user_id)
+            else:
+                sys_logger.warning(f"JWT содержит user_id={user_id}, но пользователь не найден в БД")
+        else:
+            sys_logger.debug("JWT не содержит user_id (identity is None)")
+    except Exception as e:
+        sys_logger.error(f"Ошибка в get_safe_user_id: {e}", exc_info=True)
+    
     return None

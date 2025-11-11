@@ -35,7 +35,7 @@ class Config:
     PASSWORD_RESET_TOKEN_TTL_MINUTES = 30
 
     # === База данных ===
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{os.path.join(INSTANCE_DIR, 'database.db')}"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # === Загрузка файлов ===

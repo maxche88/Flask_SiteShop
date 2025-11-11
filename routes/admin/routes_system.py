@@ -3,15 +3,18 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, User, IPAttemptLog, UserToken
 from utils.cleanup import get_unconfirmed_cutoff
-from datetime import datetime
+from datetime import datetime, timezone
+
 
 admin_system_bp = Blueprint('admin_system', __name__, url_prefix='/admin/api')
-system_logger = logging.getLogger('app.auth')
+sys_logger = logging.getLogger('app.system')
+
+
 
 def _serialize_users(users):
     """
     Преобразует список объектов User в список словарей (JSON),
-    чтобы можно было отправить данные пользователей через API (например, в админку).
+    чтобы можно было отправить данные пользователей через API (в admin_panel).
     """
     cutoff_naive = get_unconfirmed_cutoff()
     result = []
@@ -29,18 +32,22 @@ def _serialize_users(users):
 
         # Проверяем активную сессию и оставшееся время
         session_minutes_left = None
+        now = datetime.now(timezone.utc)
+
         token = UserToken.query.filter(
             UserToken.user_id == u.id,
             UserToken.revoked.is_(False),
-            UserToken.expires_at > datetime.utcnow()
+            UserToken.expires_at > now
         ).order_by(UserToken.expires_at.asc()).first()
 
         if token:
-            delta = token.expires_at - datetime.utcnow()
+            delta = token.expires_at - datetime.now(timezone.utc)
             minutes_left = int(delta.total_seconds() // 60)
             if minutes_left > 0:
                 session_minutes_left = minutes_left
 
+        
+  
         result.append({
             'id': u.id,
             'username': u.username,
@@ -51,8 +58,9 @@ def _serialize_users(users):
             'ip_logs_count': len(u.ip_logs),
             'role': u.role,
             'user_agent': user_agent,
-            'session_minutes_left': session_minutes_left  # None или число
+            'session_minutes_left': session_minutes_left
         })
+
     return result
 
 # === Роуты ===
@@ -66,7 +74,7 @@ def search_users():
     """
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':  # ✅ Исправлено: строгое сравнение
+    if current_user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     query = request.args.get('q', '').strip()
@@ -95,9 +103,8 @@ def search_users():
 
     # Поиск по дате
     date_matches = []
-    try:
 
-        from datetime import datetime
+    try:
         dt_part = query.split(',', 1)[0].strip() if ',' in query else query
         if '.' in dt_part:
 
@@ -128,7 +135,7 @@ def get_all_users():
         return jsonify(_serialize_users(users))
     except Exception as e:
 
-        system_logger.error(f"Ошибка в get_all_users: {e}")
+        sys_logger.error(f"Ошибка в get_all_users: {e}")
         return jsonify({'error': 'Ошибка при загрузке пользователей'}), 500
 
 
@@ -163,12 +170,17 @@ def update_user_role(user_id):
 @jwt_required()
 def delete_selected_users():
     """
-    Удаляет выбранных пользователей и всю связанную с ними информацию.
-    Токены не удаляются, а помечаются как отозванные (revoked=True).
+    Удаляет выбранных пользователей.
+    Связанные данные обрабатываются каскадно на уровне БД:
+      - CartItem → удаляются полностью
+      - IPAttemptLog → удаляются полностью
+      - Shop.user_id → обнуляется (SET NULL), товары остаются
+    Токены отзываются (revoked=True).
     """
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+
+    if not current_user or current_user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     data = request.get_json()
@@ -176,24 +188,30 @@ def delete_selected_users():
     if not user_ids:
         return jsonify({'error': 'Не указаны ID'}), 400
 
-    # Отзываем токены выбранных пользователей
-    from models import UserToken
-    UserToken.query.filter(
-        UserToken.user_id.in_(user_ids)
-    ).update({'revoked': True}, synchronize_session=False)
+    try:
+        user_ids = list(set(int(uid) for uid in user_ids))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Некорректный формат ID'}), 400
 
-    # Удаляем IP-логи
-    IPAttemptLog.query.filter(
-        IPAttemptLog.user_id.in_(user_ids)
-    ).delete(synchronize_session=False)
+    if current_user_id in user_ids:
+        return jsonify({'error': 'Нельзя удалить самого себя'}), 400
 
-    # Удаляем пользователей
-    User.query.filter(
-        User.id.in_(user_ids)
-    ).delete(synchronize_session=False)
+    # Отзываем токены (логическая операция — не удаляем физически)
+    UserToken.query.filter(UserToken.user_id.in_(user_ids)).update(
+        {'revoked': True}, synchronize_session=False
+    )
 
-    db.session.commit()
-    return jsonify({'success': True, 'deleted_count': len(user_ids)})
+    # Удаляем пользователей — КАСКАД СДЕЛАЕТ ОСТАЛЬНОЕ!
+    deleted_count = User.query.filter(User.id.in_(user_ids)).delete(synchronize_session=False)
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        sys_logger.error("Ошибка при удалении пользователей: %s", str(e), exc_info=True)
+        return jsonify({'error': 'Ошибка при удалении'}), 500
+
+    return jsonify({'success': True, 'deleted_count': deleted_count})
 
 
 @admin_system_bp.route('/users/delete-old-unconfirmed', methods=['DELETE'])
@@ -262,7 +280,7 @@ def delete_user_tokens():
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     data = request.get_json()
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     if data.get('user_ids'):
         user_ids = data['user_ids']
@@ -281,3 +299,84 @@ def delete_user_tokens():
 
     db.session.commit()
     return jsonify({'success': True, 'deleted_count': deleted_count})
+
+
+
+# Получить все логи
+@admin_system_bp.route('/logs')
+@admin_system_bp.route('/logs')
+def get_logs():
+    logs = IPAttemptLog.query.order_by(IPAttemptLog.id.desc()).all()
+    return jsonify([{
+        'user_id': log.user_id,  # ← будет null, если нет привязки
+        'ip_address': log.ip_address,
+        'recovery_attempts_count': log.recovery_attempts_count,
+        'is_blocked': log.is_blocked
+    } for log in logs])
+
+
+# Поиск
+@admin_system_bp.route('/logs/search')
+def search_logs():
+    q = request.args.get('q', '').strip()
+    is_blocked = request.args.get('is_blocked')
+
+    query = IPAttemptLog.query
+
+    if is_blocked is not None:
+        blocked_val = is_blocked.lower() == 'true'
+        query = query.filter(IPAttemptLog.is_blocked == blocked_val)
+    elif q:
+        if q.isdigit():
+            query = query.filter(IPAttemptLog.user_id == int(q))
+        else:
+            query = query.filter(IPAttemptLog.ip_address.ilike(f'%{q}%'))
+
+    logs = query.order_by(IPAttemptLog.id.desc()).all()
+    return jsonify([{
+        'user_id': log.user_id,  # ← null, а не '-'
+        'ip_address': log.ip_address,
+        'recovery_attempts_count': log.recovery_attempts_count,
+        'is_blocked': log.is_blocked
+    } for log in logs])
+
+# Блокировка записей
+@admin_system_bp.route('/logs/block', methods=['PATCH'])
+@jwt_required()
+def block_logs():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    data = request.get_json()
+    ip_addresses = data.get('ip_addresses', [])
+
+    if not ip_addresses:
+        return jsonify({'error': 'Не указаны IP-адреса'}), 400
+
+    if not isinstance(ip_addresses, list):
+        return jsonify({'error': 'Некорректный формат IP-адресов'}), 400
+
+    try:
+        # Находим все записи с такими IP и блокируем их
+        updated = IPAttemptLog.query.filter(
+            IPAttemptLog.ip_address.in_(ip_addresses)
+        ).update({'is_blocked': True}, synchronize_session=False)
+
+        db.session.commit()
+        return jsonify({'blocked_count': updated}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        sys_logger.error(f"Ошибка при блокировке IP: {e}", exc_info=True)
+        return jsonify({'error': 'Ошибка при обновлении базы данных'}), 500
+
+
+@admin_system_bp.route('/logs/unblock', methods=['PATCH'])
+def unblock_logs():
+    ip_addresses = request.get_json().get('ip_addresses', [])
+    IPAttemptLog.query.filter(IPAttemptLog.ip_address.in_(ip_addresses)) \
+                      .update({'is_blocked': False})
+    db.session.commit()
+    return jsonify({'success': True})
