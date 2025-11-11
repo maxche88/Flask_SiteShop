@@ -21,7 +21,7 @@
     <!-- Вкладки -->
     <div class="admin-tabs">
         <div class="admin-tab active" data-tab="users">Пользователи</div>
-        <div class="admin-tab" data-tab="logs">Посмотреть логи</div>
+        <div class="admin-tab" data-tab="logs">Блокировка IP</div>
     </div>
 
     <!-- Содержимое вкладки: Пользователи -->
@@ -67,21 +67,30 @@
     <!-- Содержимое вкладки: Логи -->
     <div class="admin-tab-content" id="tab-logs">
         <div class="info_panel">
-            <h4>Логи попыток авторизации</h4>
-            <table class="admin-table" id="logsTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>IP-адрес</th>
-                        <th>Попытки</th>
-                        <th>Последняя</th>
-                        <th>Заблокирован</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Загрузится через JS -->
-                </tbody>
-            </table>
+            <h4>Блокировка IP</h4>
+            <div class="container_control">
+            <div class="search-box">
+                <input type="text" id="logSearch" placeholder="Поиск по ID, IP или 'да'/'нет'">
+                <button id="btnSearchLogs">Найти</button>
+            </div>
+            <button class="btn-admin" id="btnBlockSelected">Блокировать</button>
+            <button class="btn-admin" id="btnUnblockSelected">Разблокировать</button>
+        </div>
+
+        <table class="admin-table" id="logsTable">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAllLogs"></th>
+                    <th>UID</th>
+                    <th>IP-адрес</th>
+                    <th>Попытки</th>
+                    <th>Заблокирован</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Загрузится через JS -->
+            </tbody>
+        </table>
         </div>
     </div>
 </div>

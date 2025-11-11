@@ -1,8 +1,6 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from utils.time import current_time
-
 
 class User(db.Model):
     """
@@ -13,11 +11,11 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    hash_passwd = db.Column(db.String(120), nullable=False)
+    hash_passwd = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(5), default="user")
     avatar_url = db.Column(db.String(255), default="/img/avatars/default_user.png")
     confirm_email = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=current_time)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False)
 
     def set_password(self, password):
         """Хэширует пароль и сохраняет его в hash_passwd"""
@@ -32,20 +30,20 @@ class User(db.Model):
 
 
 class IPAttemptLog(db.Model):
-    """
-    Таблица предназначена для регистрации попыток входа и действий, связанных с восстановлением учётных записей,
-    а также фиксации информации о токенах JWT (JSON Web Token), которые были отозваны системой.
-    """
     __tablename__ = 'ip_attempt_log'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        nullable=True
+    )
     ip_address = db.Column(db.String(45), nullable=False, unique=True)
     recovery_attempts_count = db.Column(db.Integer, nullable=False)
-
     user_agent = db.Column(db.Text, nullable=True)
+    is_blocked = db.Column(db.Boolean, nullable=False, default=False)
 
-    user = db.relationship("User", backref=db.backref("ip_logs", lazy=True))
+    user = db.relationship("User", backref=db.backref("ip_logs", lazy=True, passive_deletes=True))
 
 
 class UserToken(db.Model):
@@ -57,54 +55,54 @@ class UserToken(db.Model):
     __tablename__ = 'user_tokens'
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(36), nullable=False, unique=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    issued_at = db.Column(db.DateTime, nullable=False)
-    expires_at = db.Column(db.DateTime, nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
+    issued_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
     revoked = db.Column(db.Boolean, default=False, nullable=False)
 
 
 class Shop(db.Model):
-    """
-    Таблица предназначена для хранения информации о товарах, продаваемых в интернет-магазине.
-    """
     __tablename__ = 'shop'
 
     id = db.Column(db.Integer, primary_key=True)
     article_num = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(
+        db.Integer, 
+        db.ForeignKey('users.id', ondelete='SET NULL'),
+        nullable=True
+    )
     title = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(120), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     link_img = db.Column(db.String(80), nullable=False)
-    created_at = db.Column(db.DateTime, default=current_time)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False)
     category = db.Column(db.String(80))
     sale = db.Column(db.Boolean, default=False)
 
-    # Связь с моделью User
-    user = db.relationship('User', backref=db.backref('products', lazy=True))
+    user = db.relationship('User', backref=db.backref('products', lazy=True, passive_deletes=True))
 
     def __repr__(self):
         return f"<Product {self.title}>"
 
 
 class CartItem(db.Model):
-    """
-    Таблица служит для хранения информации о товарах, добавленных пользователями в корзину покупок.
-    """
     __tablename__ = 'cart_items'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(
+        db.Integer, 
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        nullable=False
+    )
     product_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
 
-    is_purchased = db.Column(db.Boolean, default=False)  # Флаг покупки
-    added_at = db.Column(db.DateTime, default=current_time)  # Дата добавления
-    purchased_at = db.Column(db.DateTime, nullable=True)  # Дата покупки
+    is_purchased = db.Column(db.Boolean, default=False)
+    added_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    purchased_at = db.Column(db.DateTime, nullable=True)
 
-    # Связи
-    user = db.relationship('User', backref=db.backref('cart_items', lazy=True))
+    user = db.relationship('User', backref=db.backref('cart_items', lazy=True, passive_deletes=True))
     product = db.relationship('Shop', backref=db.backref('cart_items', lazy=True))
 
     def __repr__(self):

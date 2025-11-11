@@ -1,6 +1,5 @@
-from datetime import timedelta
+from datetime import datetime, timezone, timedelta
 from flask import current_app
-from utils.time import current_time
 from models import db, User, IPAttemptLog
 
 
@@ -10,8 +9,7 @@ def get_unconfirmed_cutoff():
     Используется для сравнения с User.created_at (который naive).
     """
     ttl_minutes = current_app.config['UNCONFIRMED_USER_TTL_MINUTES']
-    aware_cutoff = current_time() - timedelta(minutes=ttl_minutes)
-    return aware_cutoff.replace(tzinfo=None)
+    return datetime.now(timezone.utc) - timedelta(minutes=ttl_minutes)
 
 
 def get_unconfirmed_users_older_than_ttl():

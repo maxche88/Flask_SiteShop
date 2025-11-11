@@ -22,6 +22,7 @@ def index():
         "username": user.username if user else "Гость",
         "role": user.role if user else None
     }
+
     return render_template('index.html', **context)
 
 
