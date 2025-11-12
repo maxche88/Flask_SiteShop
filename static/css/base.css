@@ -9,6 +9,53 @@ html, body {
     background-color: #5f5f5f;
 }
 
+.back {
+  padding-right: 10px;
+}
+
+.back:hover .account {
+    content: url('/static/img/other/back_g.png'); /* заменяем картинку при наведении */
+}
+
+/* Фиксируем всю шапку (логотип + иконка пользователя) */
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 58px;
+    background-color: #333;
+    color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+/* Фиксация блока поиска сразу под шапкой */
+.sticky-search-container {
+    position: sticky;
+    top: 58px;
+    z-index: 999;
+    /* Убираем background и padding отсюда */
+}
+
+.sticky-search-content {
+    background-color: #fff;
+    padding: 12px 24px; /* отступы внутри */
+    margin: 0 auto; /* центрируем */
+    max-width: 1300px; /* или 1200px — как у вашего .center */
+    border-radius: 0 0 12px 12px; /* скругляем ТОЛЬКО нижние углы */
+    box-shadow:
+        0 -1px 2px rgba(0, 0, 0, 0.05), /* тонкая тень сверху (опционально) */
+        0 4px 12px rgba(0, 0, 0, 0.1),
+        -2px 0 6px rgba(0, 0, 0, 0.05),
+        2px 0 6px rgba(0, 0, 0, 0.05);
+}
+
 .center {
     padding-left: calc(50% - 650px);
     padding-right: calc(50% - 650px);
@@ -20,30 +67,10 @@ html, body {
     min-height: 100vh;
 }
 
-.header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    height: 58px;
-    background-color: #333;
-    color: white;
-}
-
-.logo {
-    margin-left: 16px;
-}
-
-.head_user_icons {
-    display: flex;
-    gap: 10px;
-}
-
 
 .content-container {
     flex: 1;
-    padding: 0.5rem;
+    padding: 0 0.5rem 0.5rem; /* top = 0, left/right = 0.5rem, bottom = 0.5rem */
     background-color: #f9f9f9;
 }
 
@@ -118,18 +145,18 @@ html, body {
   color: #4CAF50; /* зелёный */
 }
 
-/* Заголовок приветствия пользователя*/
+/* Заголовок приветствия пользователя */
 .user_greeting {
     display: flex;
-    flex-direction: row-reverse;
-    padding-right: 15px;
+    width: 100%;
+    padding: 8px 0;
+    box-sizing: border-box;
 }
 
-/* Меню пользователя*/
+/* Меню пользователя */
 .menu {
     position: relative;
     display: inline-block;
-    padding-right: 16px;
 }
 
 /* Базовое меню и подменю */
@@ -157,53 +184,80 @@ html, body {
     background-color: #f1f1f1;
 }
 
-
-/*Поле поиска*/
+/* Поле поиска */
 .container_info_search {
-    padding: 10px;
-    border-bottom: 1px solid #ccc;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .search_top {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
     flex-wrap: wrap;
-    position: relative;
 }
 
 .search_input_group {
     display: flex;
-    gap: 8px;
     flex: 1;
     min-width: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.3s ease;
 }
 
-/*Кнопка выбора категории*/
-.category_menu {
-    position: absolute;
-    top: 100%; /* Ниже кнопки */
-    left: 0;
-    z-index: 1000;
-    padding: 10px 0;
-    min-width: 200px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    display: none;
+.search_input_group:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
+/* === Поле ввода === */
 #search-input {
     flex: 1;
-    padding: 8px;
-    font-size: 14px;
-    min-width: 150px;
+    padding: 12px 16px;
+    font-size: 15px;
+    border: none;
+    outline: none;
+    background-color: #fff;
+    color: #333;
+    min-width: 0;
+    transition: background-color 0.2s;
 }
 
-.search_btn {
-    white-space: nowrap; /* чтобы текст "Поиск" не переносился */
-    padding: 8px 16px;
+#search-input::placeholder {
+    color: #999;
 }
+
+#search-input:focus {
+    background-color: #fafafa;
+}
+
+/* === Кнопка "Поиск" === */
+.search_btn {
+    padding: 12px 20px;
+    background-color: #e9ecef;
+    color: rgb(48, 48, 48);
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 
+        background-color 0.25s ease,
+        transform 0.15s ease;
+    white-space: nowrap;
+    font-size: 15px;
+}
+
+.search_btn:hover {
+    background-color: #007bff;
+    color: #000;
+}
+
+.search_btn:active {
+    transform: translateY(0);
+}
+
 
 /*Меню фильтра*/
 .conteiner_category {
@@ -222,69 +276,201 @@ html, body {
     cursor: pointer;
 }
 
+.filter_toggle {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 
+        background-color 0.2s,
+        border-color 0.2s,
+        transform 0.15s;
+}
+
+.filter_toggle:hover {
+    background-color: #e9ecef;
+    border-color: #bbb;
+    transform: translateY(-1px);
+}
+
+.filter_toggle:active {
+    transform: translateY(0);
+}
+
+/* Иконка фильтра */
+.btn-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.filter_toggle:hover .btn-icon {
+    opacity: 1;
+}
+
 .clear_filters {
     height: 50px;
 }
 
-.filter_toggle {
-    width: auto;
-    height: auto;
-    padding: 6px;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    overflow: hidden;
-}
 
-.btn-icon {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    display: block; 
-}
-
+/* === Всплывающий блок фильтров === */
 .advanced_filters {
     display: none;
-    padding: 10px;
-    background-color: #f9f9f9;
-    border-top: 1px solid #ddd;
+    padding: 16px;
+    background-color: #fafafa;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-top: 12px;
 }
 
 .advanced_filters--visible {
     display: flex !important;
     flex-wrap: wrap;
-    gap: 30px;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+/* === Группы фильтров (категории, цена и т.д.) === */
+.conteiner_category,
+.conteiner_price,
+.filter_group.check_box_sale {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 200px;
 }
 
 .filter_group {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
-.active_filters {
-    margin-bottom: 10px;
+.conteiner_category > p,
+.conteiner_price > p {
+    margin: 0;
     font-size: 14px;
-    color: #333;
+    font-weight: 600;
+    color: #444;
 }
 
-.block_info_price {
+/* === Стилизованные чекбоксы === */
+.filter_group label {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
 }
 
+.filter_group label:hover {
+    background-color: #f0f0f0;
+}
+
+/* Скрываем нативный чекбокс */
+.filter_group input[type="checkbox"] {
+    opacity: 0;
+    position: absolute;
+    width: 0;
+    height: 0;
+}
+
+/* Создаём кастомный индикатор */
+.filter_group input[type="checkbox"] + span {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.filter_group input[type="checkbox"]:checked + span {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.filter_group input[type="checkbox"]:checked + span::after {
+    content: "✓";
+    position: absolute;
+    top: -1px;
+    left: 3px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Оборачиваем текст чекбокса */
+.filter_group label span.text {
+    color: #333;
+    font-size: 14px;
+}
+
+/* === Поля цены === */
+.block_info_price,
 .block_field_price {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    gap: 8px;
+}
+
+.block_info_price p,
+.block_field_price input[type="number"] {
+    margin: 0;
+    font-size: 14px;
 }
 
 .block_field_price input[type="number"] {
-    width: 120px;
+    width: 100px;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
+
+.block_field_price input[type="number"]:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+}
+
+/* === Кнопка "Сбросить фильтры" === */
+.clear_filters {
+    padding: 10px 20px;
+    background-color: #0056b3;
+    color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: auto; /* отменяем фиксированную высоту */
+    align-self: flex-end; /* прижимаем вправо/вниз */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.clear_filters:hover {
+    background-color: #007bff;
+    border-color: #b6b6b6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.clear_filters:active {
+    transform: translateY(0);
+}
+
 
 
 /*Сетка карточек товаров*/
