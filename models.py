@@ -1,5 +1,6 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import func
 
 
 class User(db.Model):
@@ -65,18 +66,18 @@ class Shop(db.Model):
     __tablename__ = 'shop'
 
     id = db.Column(db.Integer, primary_key=True)
-    article_num = db.Column(db.Integer, nullable=False)
+    article_num = db.Column(db.String, nullable=False)
     user_id = db.Column(
         db.Integer, 
         db.ForeignKey('users.id', ondelete='SET NULL'),
         nullable=True
     )
     title = db.Column(db.String(80), nullable=False)
-    description = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Integer, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     link_img = db.Column(db.String(80), nullable=False)
-    created_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=func.now())
     category = db.Column(db.String(80))
     sale = db.Column(db.Boolean, default=False)
 

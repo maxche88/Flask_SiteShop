@@ -1,15 +1,7 @@
 /* Основной контейнер */
 
-.back {
-  padding-right: 10px;
-}
-
 .account {
     transition: opacity 0.3s ease-in-out; /* плавная смена */
-}
-
-.back:hover .account {
-    content: url('/static/img/other/back_g.png'); /* заменяем картинку при наведении */
 }
 
 .conteiner_forms {

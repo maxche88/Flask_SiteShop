@@ -7,7 +7,6 @@ load_dotenv()
 
 # Определяем корень проекта (на уровень выше папки config/)
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-
 INSTANCE_DIR = os.path.join(basedir, 'instance')
 LOG_DIR = os.path.join(INSTANCE_DIR, 'logs')
 

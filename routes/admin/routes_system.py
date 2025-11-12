@@ -1,5 +1,7 @@
 import logging
-from flask import Blueprint, jsonify, request
+import os
+from flask import Blueprint, jsonify, request, current_app, abort
+from werkzeug.exceptions import NotFound
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, User, IPAttemptLog, UserToken
 from utils.cleanup import get_unconfirmed_cutoff
@@ -380,3 +382,98 @@ def unblock_logs():
                       .update({'is_blocked': False})
     db.session.commit()
     return jsonify({'success': True})
+
+
+# ФАЙЛОВЫЕ ЛОГИ
+
+@admin_system_bp.route('/logs/files')
+@jwt_required()
+def list_log_files():
+    """Возвращает список .log файлов из папки LOG_DIR"""
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    log_dir = current_app.config.get('LOG_DIR')
+    if not log_dir or not os.path.isdir(log_dir):
+        return jsonify([])
+
+    try:
+        files = [f for f in os.listdir(log_dir) if f.endswith('.log') and os.path.isfile(os.path.join(log_dir, f))]
+        return jsonify(sorted(files))
+    except Exception as e:
+        sys_logger.error("Ошибка при чтении списка лог-файлов: %s", e)
+        return jsonify([]), 500
+
+
+@admin_system_bp.route('/logs/files/<filename>')
+@jwt_required()
+def get_log_file_content(filename):
+    """Возвращает содержимое указанного .log файла как plain text"""
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    # Защита от path traversal
+    if not filename.endswith('.log') or '..' in filename or filename.startswith('/'):
+        abort(400)
+
+    # Дополнительная защита: оставляем только basename
+    safe_filename = os.path.basename(filename)
+    if safe_filename != filename:
+        abort(400)
+
+    log_dir = current_app.config.get('LOG_DIR')
+    if not log_dir:
+        abort(500)
+
+    filepath = os.path.join(log_dir, safe_filename)
+
+    if not os.path.isfile(filepath):
+        raise NotFound("Файл лога не найден")
+
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        # Возвращаем как plain text, НЕ как JSON!
+        return content, 200, {'Content-Type': 'text/plain; charset=utf-8'}
+    except UnicodeDecodeError:
+        sys_logger.warning("Файл %s не в кодировке UTF-8", safe_filename)
+        abort(400, description="Файл не является текстовым (ожидается UTF-8)")
+    except Exception as e:
+        sys_logger.error("Ошибка чтения лог-файла %s: %s", safe_filename, e)
+        abort(500)
+
+@admin_system_bp.route('/logs/files/<filename>/clear', methods=['POST'])
+@jwt_required()
+def clear_log_file(filename):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if current_user.role != 'admin':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    # Защита от path traversal
+    if not filename.endswith('.log') or '..' in filename or filename.startswith('/'):
+        abort(400)
+
+    safe_filename = os.path.basename(filename)
+    if safe_filename != filename:
+        abort(400)
+
+    log_dir = current_app.config.get('LOG_DIR')
+    if not log_dir:
+        abort(500)
+
+    filepath = os.path.join(log_dir, safe_filename)
+    if not os.path.isfile(filepath):
+        abort(404)
+
+    try:
+        # Очищаем файл (делаем пустым)
+        open(filepath, 'w').close()
+        return jsonify({'success': True, 'message': f'Файл {filename} очищен'})
+    except Exception as e:
+        sys_logger.error("Ошибка очистки лог-файла %s: %s", safe_filename, e)
+        abort(500)
