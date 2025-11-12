@@ -7,8 +7,8 @@ load_dotenv()
 
 # Определяем корень проекта (на уровень выше папки config/)
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-
 INSTANCE_DIR = os.path.join(basedir, 'instance')
+LOG_DIR = os.path.join(INSTANCE_DIR, 'logs')
 
 class Config:
     # === Основной секретный ключ Flask ===
@@ -28,8 +28,13 @@ class Config:
     JWT_REFRESH_COOKIE_PATH = '/token/refresh'
     JWT_ACCESS_TOKEN_EXPIRES = 3600    # 1 час
 
+    # === Время жизни токенов подтверждения и восстановления ===
+    # Указывается в МИНУТАХ (удобно для теста: 1 минута, продакшен: 1440 = 24 часа)
+    UNCONFIRMED_USER_TTL_MINUTES = 1440
+    PASSWORD_RESET_TOKEN_TTL_MINUTES = 30
+
     # === База данных ===
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{os.path.join(INSTANCE_DIR, 'database.db')}"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # === Загрузка файлов ===
@@ -45,3 +50,9 @@ class Config:
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
+
+    # === Логирование ===
+    LOG_DIR = LOG_DIR
+    LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+    LOG_BACKUP_COUNT = 5
+    LOG_LEVEL = 'INFO'

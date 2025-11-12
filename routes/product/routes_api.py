@@ -1,14 +1,15 @@
-from flask import Blueprint, request, jsonify
+import logging
+import os
+from flask import Blueprint, request, jsonify, current_app
 from models import User, Shop, db
 from utils.add_img import save_product_image
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
-import logging
-from flask import current_app
-import os
 from pathlib import Path
 
+
 api_bp = Blueprint('api', __name__, url_prefix='/api')
+
 
 
 @api_bp.route('/products/<int:id>', methods=['GET'])
@@ -504,3 +505,4 @@ def delete_product(id):
         db.session.rollback()
         logging.exception("Ошибка при удалении товара")
         return jsonify({"error": "Ошибка при удалении товара"}), 500
+    
