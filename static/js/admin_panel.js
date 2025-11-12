@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {    
     // === ВКЛАДКИ ===
     const tabs = document.querySelectorAll('.admin-tab');
     const tabContents = document.querySelectorAll('.admin-tab-content');
@@ -19,6 +19,226 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // === ЭЛЕМЕНТЫ ДЛЯ ВКЛАДКИ "ФАЙЛЫ ЛОГОВ" ===
+    const dropdownContainer = document.querySelector('.log-files-dropdown');
+    const btnToggleLogFiles = document.getElementById('toggleLogFiles');
+    const logFilesList = document.getElementById('logFilesList');
+    const logsDisplayArea = document.getElementById('logsDisplayArea');
+    const btnClearOpenedLogs = document.getElementById('btnClearOpenedLogs');
+    const fileLogSearchInput = document.getElementById('fileLogSearch');
+    const btnSearchFileLogs = document.getElementById('btnSearchFileLogs');
+
+    let currentLogFile = null;
+    let fileLogsLoaded = false;
+
+    function loadLogFileList() {
+        if (!logFilesList) return;
+
+        fetch('/admin/api/logs/files')
+            .then(res => {
+                if (!res.ok) throw new Error('Не удалось загрузить список файлов');
+                return res.json();
+            })
+            .then(files => {
+                logFilesList.innerHTML = '';
+                files.forEach(file => {
+                    const div = document.createElement('div');
+                    div.className = 'log-file-item';
+                    div.textContent = file;
+                    div.title = file;
+                    div.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openLogFile(file);
+                        logFilesList.classList.remove('show');
+                    });
+                    logFilesList.appendChild(div);
+                });
+            })
+            .catch(err => {
+                console.error('Ошибка загрузки списка логов:', err);
+                logFilesList.innerHTML = '<div style="color:red; padding:8px;">Ошибка загрузки файлов</div>';
+            });
+    }
+
+    function openLogFile(filename) {
+        fetch(`/admin/api/logs/files/${encodeURIComponent(filename)}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`Файл не найден: ${filename}`);
+                return res.text();
+            })
+            .then(content => {
+                currentLogFile = { filename, content };
+                renderOpenedLogs();
+                btnClearOpenedLogs.disabled = false;
+            })
+            .catch(err => {
+                console.error(`Ошибка загрузки лога ${filename}:`, err);
+                alert(`Не удалось загрузить файл: ${filename}`);
+            });
+    }
+
+    function renderOpenedLogs() {
+        if (!logsDisplayArea) return;
+
+        if (!currentLogFile) {
+            logsDisplayArea.innerHTML = '<em>Нет открытых логов</em>';
+            btnClearOpenedLogs.disabled = true;
+            return;
+        }
+
+        const { filename, content } = currentLogFile;
+        const lines = content.split('\n').filter(line => line.trim() !== '');
+        let html = `<div class="log-file-section"><h5>📁 ${filename}</h5>`;
+
+        lines.forEach(line => {
+            let className = 'log-entry';
+            const lowerLine = line.toLowerCase();
+            if (lowerLine.includes('error')) {
+                className += ' error';
+            } else if (lowerLine.includes('warning') || lowerLine.includes('warn')) {
+                className += ' warning';
+            }
+            html += `<div class="${className}">${escapeHtml(line)}</div>`;
+        });
+
+        html += '</div>';
+        logsDisplayArea.innerHTML = html;
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '<')
+            .replace(/>/g, '>')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function searchInOpenedLogs(query) {
+        if (!currentLogFile) {
+            logsDisplayArea.innerHTML = '<em>Нет открытого файла для поиска</em>';
+            return;
+        }
+
+        if (!query.trim()) {
+            renderOpenedLogs(); // сброс → полный файл
+            return;
+        }
+
+        const { filename, content } = currentLogFile;
+        const term = query.trim();
+        const lines = content.split('\n').filter(line => line.trim() !== '');
+        const matchedLines = lines.filter(line => line.toLowerCase().includes(term.toLowerCase()));
+
+        let html = `<div class="log-file-section"><h5>📁 ${filename} (${matchedLines.length} совпадений)</h5>`;
+
+        if (matchedLines.length === 0) {
+            html += '<div class="log-entry"><em>Ничего не найдено</em></div>';
+        } else {
+            matchedLines.forEach(line => {
+                let className = 'log-entry';
+                const lowerLine = line.toLowerCase();
+                if (lowerLine.includes('error')) {
+                    className += ' error';
+                } else if (lowerLine.includes('warning') || lowerLine.includes('warn')) {
+                    className += ' warning';
+                }
+                const highlighted = line.replace(
+                    new RegExp(`(${escapeRegex(term)})`, 'gi'),
+                    '<mark style="background:#ffeb3b;color:#000;">$1</mark>'
+                );
+                html += `<div class="${className}">${escapeHtmlForInner(highlighted)}</div>`;
+            });
+        }
+
+        html += '</div>';
+        logsDisplayArea.innerHTML = html;
+    }
+
+    function escapeHtmlForInner(str) {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '<')
+            .replace(/>/g, '>')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Обработчик кнопки dropdown
+    if (btnToggleLogFiles) {
+        btnToggleLogFiles.addEventListener('click', (e) => {
+            e.stopPropagation();
+            logFilesList.classList.toggle('show');
+            if (logFilesList.classList.contains('show') && !fileLogsLoaded) {
+                loadLogFileList();
+                fileLogsLoaded = true;
+            }
+        });
+    }
+
+    // Закрытие dropdown по клику вне
+    document.addEventListener('click', (e) => {
+        if (dropdownContainer && !dropdownContainer.contains(e.target)) {
+            logFilesList.classList.remove('show');
+        }
+    });
+
+    // Поиск по логам
+    if (btnSearchFileLogs) {
+        btnSearchFileLogs.addEventListener('click', () => {
+            searchInOpenedLogs(fileLogSearchInput?.value || '');
+        });
+    }
+
+    if (fileLogSearchInput) {
+        fileLogSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchInOpenedLogs(fileLogSearchInput.value);
+            }
+        });
+    }
+
+    // Очистка логов в файле
+    if (btnClearOpenedLogs) {
+        btnClearOpenedLogs.addEventListener('click', () => {
+            if (!currentLogFile) {
+                alert('Нет открытого файла для очистки');
+                return;
+            }
+
+            const filename = currentLogFile.filename;
+            if (!confirm(`Очистить содержимое файла "${filename}" на сервере? Это действие нельзя отменить.`)) {
+                return;
+            }
+
+            fetch(`/admin/api/logs/files/${encodeURIComponent(filename)}/clear`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (res.ok) {
+                    alert(`Файл "${filename}" успешно очищен`);
+                    // Обновляем отображение: делаем файл пустым
+                    currentLogFile.content = '';
+                    renderOpenedLogs();
+                } else {
+                    alert(`Ошибка: ${data.error || 'Не удалось очистить файл'}`);
+                }
+            })
+            .catch(err => {
+                console.error('Ошибка при очистке лога:', err);
+                alert('Сетевая ошибка при очистке файла');
+            });
+        });
+    }
+
     // === ЭЛЕМЕНТЫ УПРАВЛЕНИЯ ДЛЯ ВКЛАДКИ "ПОЛЬЗОВАТЕЛИ" ===
     const tableBody = document.querySelector('#usersTable tbody');
     const selectAll = document.getElementById('selectAll');
@@ -30,7 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('userSearch');
     const btnSearch = document.getElementById('btnSearch');
 
-    // === TOOLTIP'ы для кнопок ===
     const tooltips = {
         btnDeleteOld: "Удалить все неподтверждённые аккаунты старше 24 часов",
         btnDeleteSelected: "Удалить выбранных пользователей и их данные",
@@ -46,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === ВСПЛЫВАЮЩЕЕ МЕНЮ ДЛЯ ВЫБОРА РОЛИ ===
     let roleDropdown = null;
 
     function createRoleDropdown() {
@@ -125,7 +343,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Обработчики кнопки "Изменить роль"
     btnEditRoleSelected?.addEventListener('click', (e) => {
         e.stopPropagation();
         showRoleDropdown();
@@ -139,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === ФУНКЦИЯ: ЗАГРУЗКА ВСЕХ ПОЛЬЗОВАТЕЛЕЙ ===
     function loadUsers() {
         fetch('/admin/api/users')
             .then(res => res.json())
@@ -154,7 +370,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // === ФУНКЦИЯ: ОТРИСОВКА СПИСКА ПОЛЬЗОВАТЕЛЕЙ ===
     function renderUsers(users) {
         if (!tableBody) return;
 
@@ -167,8 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         users.forEach(user => {
             const row = document.createElement('tr');
-            row.className = user.confirm_email ? 'confirmed' :
-                (user.is_old_unconfirmed ? 'old-unconfirmed' : '');
+            row.className = user.confirm_email ? 'confirmed' : 'not-confirmed';
 
             const confirmedText = user.confirm_email ? '✅ Да' : '❌ Нет';
             const dateText = user.created_at
@@ -178,7 +392,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const roleText = user.role || '—';
             const userAgentText = user.user_agent || '—';
 
-            // Отображаем оставшееся время или тире
             const sessionText = user.session_minutes_left !== null
                 ? `${user.session_minutes_left} мин`
                 : '—';
@@ -207,7 +420,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateButtons();
     }
 
-    // === ОБНОВЛЕНИЕ СОСТОЯНИЯ КНОПОК ===
     function updateButtons() {
         const checked = document.querySelectorAll('.user-checkbox:checked');
         const checkedCount = checked.length;
@@ -229,7 +441,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // === ПОИСК ===
     function searchUsers(query) {
         if (!query.trim()) {
             loadUsers();
@@ -249,7 +460,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // === ОБРАБОТЧИКИ ПОИСКА ===
     btnSearch?.addEventListener('click', () => {
         searchUsers(searchInput?.value || '');
     });
@@ -260,7 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === КОПИРОВАНИЕ EMAIL (ДЕЛЕГИРОВАННЫЙ ОБРАБОТЧИК) ===
     document.addEventListener('click', function(e) {
         const button = e.target.closest('.copy-email-btn');
         if (!button) return;
@@ -271,7 +480,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Сохраняем оригинальный текст
         const originalText = button.textContent;
 
         navigator.clipboard.writeText(email)
@@ -287,7 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     });
     
-    // === УПРАВЛЕНИЕ ЧЕКБОКСАМИ ===
     selectAll?.addEventListener('change', () => {
         document.querySelectorAll('.user-checkbox:not(:disabled)').forEach(cb => {
             cb.checked = selectAll.checked;
@@ -299,7 +506,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tableBody.addEventListener('change', updateButtons);
     }
 
-    // === УДАЛЕНИЕ ===
     btnDeleteSelected?.addEventListener('click', () => {
         const ids = Array.from(document.querySelectorAll('.user-checkbox:checked'))
             .map(cb => cb.dataset.id);
@@ -327,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === УДАЛЕНИЕ СТАРЫХ НЕПОДТВЕРЖДЁННЫХ ===
     btnDeleteOld?.addEventListener('click', () => {
         if (!confirm('Удалить ВСЕ неподтверждённые аккаунты старше 24 часов?')) return;
 
@@ -349,7 +554,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === ЗАВЕРШЕНИЕ СЕССИИ ВЫБРАННЫХ ПОЛЬЗОВАТЕЛЕЙ ===
     btnExitUserProfole?.addEventListener('click', () => {
         const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
         const user_ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
@@ -387,7 +591,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === УДАЛЕНИЕ ТОКЕНОВ ===
     btnDeleteToken?.addEventListener('click', () => {
         const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
         const user_ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
@@ -441,7 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const logSearchInput = document.getElementById('logSearch');
     const btnSearchLogs = document.getElementById('btnSearchLogs');
 
-    // === ЗАГРУЗКА ЛОГОВ ===
     function loadLogs() {
         if (!logsTableBody) return;
         logsTableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
@@ -460,7 +662,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // === ОТРИСОВКА ЛОГОВ ===
     function renderLogs(logs) {
         if (!logsTableBody) return;
         logsTableBody.innerHTML = '';
@@ -476,6 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const blockedText = log.is_blocked ? '✅ Да' : '❌ Нет';
 
             const row = document.createElement('tr');
+            row.className = log.is_blocked ? 'ip-blocked' : 'ip-not-blocked';
             row.innerHTML = `
                 <td>
                     <input type="checkbox" class="log-checkbox" 
@@ -492,14 +694,12 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLogButtons();
     }
 
-    // === ПОИСК ПО ЛОГАМ ===
     function searchLogs(query) {
         if (!query.trim()) {
             loadLogs();
             return;
         }
 
-        // Преобразуем "да"/"нет" в boolean
         let isBlockedParam = null;
         const lowerQuery = query.trim().toLowerCase();
         if (lowerQuery === 'да') {
@@ -528,7 +728,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // === УПРАВЛЕНИЕ КНОПКАМИ В ЛОГАХ ===
     function updateLogButtons() {
         const checked = document.querySelectorAll('.log-checkbox:checked');
         const hasSelected = checked.length > 0;
@@ -541,7 +740,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // === УПРАВЛЕНИЕ ЧЕКБОКСАМИ В ЛОГАХ ===
     if (selectAllLogs) {
         selectAllLogs.addEventListener('change', () => {
             document.querySelectorAll('.log-checkbox:not(:disabled)').forEach(cb => {
@@ -555,7 +753,6 @@ document.addEventListener('DOMContentLoaded', () => {
         logsTableBody.addEventListener('change', updateLogButtons);
     }
 
-    // === ПОИСК (ЛОГИ) ===
     if (btnSearchLogs) {
         btnSearchLogs.addEventListener('click', () => {
             searchLogs(logSearchInput?.value || '');
@@ -569,7 +766,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === БЛОКИРОВКА ВЫБРАННЫХ ЗАПИСЕЙ ===
     if (btnBlockSelected) {
         btnBlockSelected.addEventListener('click', () => {
             const ips = Array.from(document.querySelectorAll('.log-checkbox:checked'))
@@ -580,7 +776,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Убираем дубликаты
             const uniqueIps = [...new Set(ips)];
 
             if (!confirm(`Заблокировать вход с ${uniqueIps.length} IP-адрес(а/ов)?`)) return;
@@ -603,7 +798,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === РАЗБЛОКИРОВКА ВЫБРАННЫХ ЗАПИСЕЙ ===
     if (btnUnblockSelected) {
         btnUnblockSelected.addEventListener('click', () => {
             const ips = Array.from(document.querySelectorAll('.log-checkbox:checked'))
@@ -636,6 +830,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // === ИНИЦИАЛИЗАЦИЯ ===
     loadUsers();
 });

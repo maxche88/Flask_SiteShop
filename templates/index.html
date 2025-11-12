@@ -95,57 +95,88 @@
 {% endblock %}
 
 {% block content %}
-<div class="user_greeting">
-    <h4>Добро пожаловать, {{ username }}!</h4>
-</div>
-
-<!-- Основной блок поиска -->
-<div class="container_info_search">
-    <div class="search_top">
-        <div class="search_input_group">
-            <input type="text" id="search-input" placeholder="Что ищете?" />
-            <button class="search_btn" id="search-btn">Поиск</button>
+<div class="sticky-search-container">
+    <div class="sticky-search-content">
+        <div class="user_greeting">
+            <h4>Добро пожаловать, {{ username }}!</h4>
         </div>
-        <button class="filter_toggle" id="toggle-filters">
-            <img src="{{ url_for('static', filename='img/other/filter.png') }}" alt="filter" class="btn-icon">
-        </button>
-    </div>
 
-    <!-- Отображение активных фильтров -->
-    <div class="active_filters" id="active-filters"></div>
+        <!-- Основной блок поиска -->
+        <div class="container_info_search">
+            <div class="search_top">
+                <div class="search_input_group">
+                    <input type="text" id="search-input" placeholder="Что ищете?" />
+                    <button class="search_btn" id="search-btn">Поиск</button>
+                </div>
+                <button class="filter_toggle" id="toggle-filters">
+                    <img src="{{ url_for('static', filename='img/other/filter.png') }}" alt="filter" class="btn-icon">
+                </button>
+            </div>
 
-    <!-- Форма расширенных фильтров -->
-    <div class="advanced_filters" id="advanced-filters">
+            <!-- Отображение активных фильтров -->
+            <div class="active_filters" id="active-filters"></div>
 
-        <div class="conteiner_category">
-            <p><strong>Категории</strong></p>
-            <div class="filter_group">
-                <label><input type="checkbox" name="category" value="Мотоциклы"> Мотоциклы</label>
-                <label><input type="checkbox" name="category" value="Квадроциклы"> Квадроциклы</label>
-                <label><input type="checkbox" name="category" value="Снегоходы"> Снегоходы</label>
-                <label><input type="checkbox" name="category" value="Мотоблоки"> Мотоблоки</label>
-                <label><input type="checkbox" name="category" value="Бензо-инструмент"> Бензо-инструмент</label>
-                <label><input type="checkbox" name="category" value="Запчасти"> Запчасти</label>
+            <!-- Форма расширенных фильтров -->
+            <div class="advanced_filters" id="advanced-filters">
+                <div class="filter-column">
+                    <div class="conteiner_category">
+                        <p><strong>Категории</strong></p>
+                        <div class="filter_group">
+                            <label>
+                                <input type="checkbox" name="category" value="Мотоциклы">
+                                <span></span>
+                                <span class="text">Мотоциклы</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="category" value="Квадроциклы">
+                                <span></span>
+                                <span class="text">Квадроциклы</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="category" value="Снегоходы">
+                                <span></span>
+                                <span class="text">Снегоходы</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="category" value="Мотоблоки">
+                                <span></span>
+                                <span class="text">Мотоблоки</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="category" value="Бензо-инструмент">
+                                <span></span>
+                                <span class="text">Бензо-инструмент</span>
+                            </label>
+                            <label>
+                                <input type="checkbox" name="category" value="Запчасти">
+                                <span></span>
+                                <span class="text">Запчасти</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-column">
+                    <div class="conteiner_price">
+                        <p><strong>Цена</strong></p>
+                        <div class="block_field_price">
+                            <input type="number" id="price_min" placeholder="от, Руб." />
+                            <input type="number" id="price_max" placeholder="до, Руб." />
+                        </div>
+                    </div>
+
+                    <div class="filter_group check_box_sale">
+                        <label>
+                            <input type="checkbox" id="sale_checkbox">
+                            <span></span>
+                            <span class="text">Только акции</span>
+                        </label>
+                    </div>
+
+                    <button class="clear_filters clear_btn" id="clear-filters">Сбросить фильтры</button>
+                </div>
             </div>
         </div>
-        
-        <div class="conteiner_price">
-            <p><strong>Цена</strong></p>
-            <div class="block_info_price">
-                <p>от:</p>
-                <p>до:</p>
-            </div>
-            <div class="block_field_price">
-                <input type="number" id="price_min" placeholder="Руб." />
-                <input type="number" id="price_max" placeholder="Руб." />
-            </div>
-        </div>
-        
-
-        <div class="filter_group check_box_sale">
-            <label><input type="checkbox" id="sale_checkbox"> Только акции</label>
-        </div>
-        <button class="clear_filters clear_btn" id="clear-filters">Сбросить фильтры</button>
     </div>
 </div>
 

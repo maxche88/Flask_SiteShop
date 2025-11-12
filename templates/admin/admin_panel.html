@@ -22,13 +22,12 @@
     <div class="admin-tabs">
         <div class="admin-tab active" data-tab="users">Пользователи</div>
         <div class="admin-tab" data-tab="logs">Блокировка IP</div>
+        <div class="admin-tab" data-tab="file-logs">Логи</div>
     </div>
 
     <!-- Содержимое вкладки: Пользователи -->
     <div class="admin-tab-content active" id="tab-users">
         <div class="info_panel">
-            <h4>Управление пользователями</h4>
-
             <div class="container_control">
                 <div class="search-box">
                     <input type="text" id="userSearch" placeholder="Поиск по ID, имени или email...">
@@ -41,56 +40,88 @@
                 <button class="btn-admin" id="btnExitUserProfole" disabled>Отозвать токен</button>
                 <button class="btn-admin" id="btnDeleteToken" disabled>Удалить токены</button>
             </div>
-            
-            <table class="admin-table" id="usersTable">
-                <thead>
-                    <tr>
-                        <th><input type="checkbox" id="selectAll"></th>
-                        <th>UID</th>
-                        <th>Имя</th>
-                        <th>Email</th>
-                        <th>Verified</th>
-                        <th>Дата</th>
-                        <th>IP</th>
-                        <th>Роль</th>
-                        <th>Устройство</th>
-                        <th>Сессия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                   
-                </tbody>
-            </table>
+
+            <div class="scrollable-content">
+                <table class="admin-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAll"></th>
+                            <th>UID</th>
+                            <th>Имя</th>
+                            <th>Email</th>
+                            <th>Verified</th>
+                            <th>Дата</th>
+                            <th>IP</th>
+                            <th>Роль</th>
+                            <th>Устройство</th>
+                            <th>Сессия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Загрузится через JS -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Содержимое вкладки: Логи -->
+    <!-- Блокировка IP -->
     <div class="admin-tab-content" id="tab-logs">
         <div class="info_panel">
-            <h4>Блокировка IP</h4>
             <div class="container_control">
-            <div class="search-box">
-                <input type="text" id="logSearch" placeholder="Поиск по ID, IP или 'да'/'нет'">
-                <button id="btnSearchLogs">Найти</button>
+                <div class="search-box">
+                    <input type="text" id="logSearch" placeholder="Поиск по ID, IP или 'да'/'нет'">
+                    <button id="btnSearchLogs">Найти</button>
+                </div>
+                <button class="btn-admin" id="btnBlockSelected">Блокировать</button>
+                <button class="btn-admin" id="btnUnblockSelected">Разблокировать</button>
             </div>
-            <button class="btn-admin" id="btnBlockSelected">Блокировать</button>
-            <button class="btn-admin" id="btnUnblockSelected">Разблокировать</button>
-        </div>
 
-        <table class="admin-table" id="logsTable">
-            <thead>
-                <tr>
-                    <th><input type="checkbox" id="selectAllLogs"></th>
-                    <th>UID</th>
-                    <th>IP-адрес</th>
-                    <th>Попытки</th>
-                    <th>Заблокирован</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Загрузится через JS -->
-            </tbody>
-        </table>
+            <div class="scrollable-content">
+                <table class="admin-table" id="logsTable">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllLogs"></th>
+                            <th>UID</th>
+                            <th>IP-адрес</th>
+                            <th>Попытки</th>
+                            <th>Заблокирован</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Загрузится через JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Содержимое вкладки: Файлы логов -->
+    <div class="admin-tab-content" id="tab-file-logs">
+        <div class="info_panel">
+            <div class="container_control">
+                <div class="search-box">
+                    <input type="text" id="fileLogSearch" placeholder="Поиск по содержимому лога...">
+                    <button id="btnSearchFileLogs">Найти</button>
+                </div>
+
+                <!-- Dropdown с файлами -->
+                <div class="log-files-dropdown">
+                    <button class="btn-admin" id="toggleLogFiles">Список логов</button>
+                    <div class="log-files-menu" id="logFilesList">
+                        <!-- файлы сюда -->
+                    </div>
+                </div>
+
+                <!-- Кнопка очистки открытых логов -->
+                <button class="btn-admin" id="btnClearOpenedLogs" disabled>Очистить логи</button>
+            </div>
+
+            <div class="scrollable-content">
+                <div class="logs-display-area" id="logsDisplayArea">
+                    <!-- Сюда будут подгружаться логи по клику на файл -->
+                </div>
+            </div>
         </div>
     </div>
 </div>
