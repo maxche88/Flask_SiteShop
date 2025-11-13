@@ -1,6 +1,7 @@
 import logging
 from flask import current_app
 from flask_jwt_extended import create_access_token, get_jti, verify_jwt_in_request, get_jwt_identity
+from flask_jwt_extended.exceptions import RevokedTokenError
 from datetime import datetime, timezone, timedelta
 from models import UserToken, User
 from extensions import db
@@ -67,22 +68,20 @@ def create_access_token_for_user(user_id):
 
 
 def get_safe_user_id():
-    """
-    Возвращает user_id (str), если токен валиден.
-    Возвращает None во всех остальных случаях (просрочен, отозван, отсутствует).
-    """
     try:
         verify_jwt_in_request(optional=True)
         user_id = get_jwt_identity()
         if user_id is not None:
-            # Проверяем, существует ли пользователь
             if User.query.get(user_id):
                 return str(user_id)
             else:
                 sys_logger.warning(f"JWT содержит user_id={user_id}, но пользователь не найден в БД")
         else:
             sys_logger.debug("JWT не содержит user_id (identity is None)")
+    except RevokedTokenError:
+        sys_logger.debug("Получен отозванный JWT — трактуем как отсутствие аутентификации")
+        return None
     except Exception as e:
-        sys_logger.error(f"Ошибка в get_safe_user_id: {e}", exc_info=True)
-    
+        sys_logger.error(f"Неожиданная ошибка в get_safe_user_id: {e}", exc_info=True)
+        return None
     return None

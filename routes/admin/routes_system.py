@@ -281,23 +281,25 @@ def delete_user_tokens():
     if current_user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
-    data = request.get_json()
     now = datetime.now(timezone.utc)
+    data = request.get_json() or {}
 
     if data.get('user_ids'):
         user_ids = data['user_ids']
         if not isinstance(user_ids, list) or not user_ids:
             return jsonify({'error': 'Некорректный список user_ids'}), 400
 
+        # Удаляем ТОЛЬКО просроченные токены (даже если не отозваны)
         deleted_count = UserToken.query.filter(
             UserToken.user_id.in_(user_ids),
-            (UserToken.revoked == True) | (UserToken.expires_at < now)
-        ).delete()
+            UserToken.expires_at < now
+        ).delete(synchronize_session=False)
 
     else:
+        # Удаляем ВСЕ просроченные токены (игнорируем revoked!)
         deleted_count = UserToken.query.filter(
-            (UserToken.revoked == True) | (UserToken.expires_at < now)
-        ).delete()
+            UserToken.expires_at < now
+        ).delete(synchronize_session=False)
 
     db.session.commit()
     return jsonify({'success': True, 'deleted_count': deleted_count})
@@ -305,7 +307,6 @@ def delete_user_tokens():
 
 
 # Получить все логи
-@admin_system_bp.route('/logs')
 @admin_system_bp.route('/logs')
 def get_logs():
     logs = IPAttemptLog.query.order_by(IPAttemptLog.id.desc()).all()
