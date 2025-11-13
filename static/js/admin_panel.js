@@ -251,11 +251,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSearch = document.getElementById('btnSearch');
 
     const tooltips = {
-        btnDeleteOld: "Удалить все неподтверждённые аккаунты старше 24 часов",
-        btnDeleteSelected: "Удалить выбранных пользователей и их данные",
+        btnDeleteOld: "Удалить все НЕПОДТВЕРЖДЁННЫЕ (по отправленной ссылке на email) аккаунты старше 24 часов",
+        btnDeleteSelected: "Удалить пользователей и всю их персональную информацию. Их созданные товары в магазине сохранятся, но станут анонимными. Токены отзываются (не удаляются!)",
         btnEditRoleSelected: "Изменить роль выбранного пользователя",
-        btnExitUserProfole: "Отозвать токены выбранных пользователей",
-        btnDeleteToken: "Очистить токены: если выбраны пользователи — удалить их просроченные и отозванные токены; если нет — удалить все просроченные и отозванные токены"
+        btnExitUserProfole: "Отозвать токены выбранных пользователей (завершить сессии)",
+        btnDeleteToken: "Очистить из базы только ПРОСРОЧЕННЫЕ токены. Активные и отозванные токены сохраняются для безопасности."
     };
 
     Object.entries(tooltips).forEach(([id, text]) => {
@@ -595,21 +595,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
         const user_ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
 
-        let confirmMsg, fetchUrl, fetchBody;
+        let confirmMsg, fetchBody;
 
         if (user_ids.length > 0) {
-            confirmMsg = `Удалить ВСЕ токены для ${user_ids.length} пользователей? Это завершит их сессии.`;
-            fetchUrl = '/admin/api/users/delete-tokens';
+            confirmMsg = `Удалить только ПРОСРОЧЕННЫЕ токены для ${user_ids.length} пользователей? Активные и отозванные токены сохранятся.`;
             fetchBody = { user_ids };
         } else {
-            confirmMsg = 'Удалить все недействительные токены (просроченные или отозванные) из базы?';
-            fetchUrl = '/admin/api/users/delete-tokens';
-            fetchBody = { delete_all_invalid: true };
+            confirmMsg = 'Удалить ВСЕ ПРОСРОЧЕННЫЕ токены из базы? Это безопасно: активные сессии не затронуты, отозванные токены останутся для защиты.';
         }
 
         if (!confirm(confirmMsg)) return;
 
-        fetch(fetchUrl, {
+        fetch('/admin/api/users/delete-tokens', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(fetchBody)
@@ -619,20 +616,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 if (res.ok) {
                     const successMsg = user_ids.length > 0
-                        ? `Токены удалены для ${user_ids.length} пользователей`
-                        : `Удалено ${data.deleted_count} недействительных токенов`;
+                        ? `Удалено просроченных токенов для ${user_ids.length} пользователей`
+                        : `Удалено ${data.deleted_count} просроченных токенов`;
                     alert(successMsg);
-                    loadUsers();
+                    // loadUsers(); — не обязателен, т.к. сессии не меняются
                 } else {
-                    alert(`Ошибка: ${data.error || 'Не удалось удалить токены'}`);
+                    alert(`Ошибка: ${data.error || 'Не удалось очистить токены'}`);
                 }
             } catch (e) {
                 alert('Ошибка: не удалось обработать ответ сервера');
             }
         })
         .catch(err => {
-            console.error('Сетевая ошибка при удалении токенов:', err);
-            alert('Ошибка сети при удалении токенов');
+            console.error('Сетевая ошибка при очистке токенов:', err);
+            alert('Ошибка сети при очистке токенов');
         });
     });
 
