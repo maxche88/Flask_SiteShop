@@ -2,8 +2,9 @@
 {% extends 'base.html' %}
 
 {% block link %}
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/edit_product.css') }}">
+  {{ super() }}  <!-- Подключает base.css из родителя -->
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/edit_product.css') }}">
 {% endblock %}
 
 {% block title %}Панель управления товарами{% endblock %}
@@ -18,67 +19,116 @@
 
 {% block content %}
 <div class="container-panel">
-    <div class="info-suser">
-        <div class="info-panel">
-            <h2>Меню управления товарами</h2>
-        </div>
+    <!-- Панель расширенных фильтров -->
+    <div class="sticky-search-container">
+        <div class="sticky-search-content">
+            <div class="info-suser">
+                <div class="info-panel">
+                    <h2>Меню управления товарами</h2>
+                </div>
 
-        <div class="user_info">
-            <p>user_id: {{ user_id }}</p>
-            <p>role: {{ role }}</p>
-        </div>
-    </div>
-
-    <!-- Фильтры и сортировка -->
-    <div class="filters-section">
-        <form id="filter-form" class="filters-form">
-            <!-- Сортировка -->
-            <label>
-                Сортировка:
-                <select name="sort" id="sort-select">
-                    <option value="">-- Выберите поле --</option>
-                    <option value="title_asc">Название (А→Я)</option>
-                    <option value="title_desc">Название (Я→А)</option>
-                    <option value="article_num_asc">Артикул (↑)</option>
-                    <option value="article_num_desc">Артикул (↓)</option>
-                    <option value="price_asc">Цена (↑)</option>
-                    <option value="price_desc">Цена (↓)</option>
-                    <option value="quantity_asc">Количество на скл. (↑)</option>
-                    <option value="quantity_desc">Количество на скл. (↓)</option>
-                    <option value="created_at_asc">Дата (сначала старые)</option>
-                    <option value="created_at_desc">Дата (сначала новые)</option>
-                </select>
-            </label>
-
-            <!-- Выбор категории -->
-            <label>
-                Категория:
-                <select name="category" id="category-select">
-                    <option value="">Все категории</option>
-                    <option value="Мотоциклы">Мотоциклы</option>
-                    <option value="Квадроциклы">Квадроциклы</option>
-                    <option value="Снегоходы">Снегоходы</option>
-                    <option value="Мотоблоки">Мотоблоки</option>
-                    <option value="Бензо-инструмент">Бензо-инструмент</option>
-                    <option value="Запчасти">Запчасти</option>
-                </select>
-            </label>
-
-            <!-- Поиск -->
-            <label>
-                Поиск:
-                <input type="text" name="search" id="search-input" class="search-input" placeholder="Поиск по названию...">
-            </label>
-
-            <!-- Чекбокс: только распродажа -->
-            <div class="checkbox_container">
-                <label class="checkbox-label">
-                    <input type="checkbox" name="sale_only" id="sale-only-checkbox">Только товары со скидкой
-                </label>
+                <div class="user_info">
+                    <p>user_id: {{ user_id }}</p>
+                    <p>role: {{ role }}</p>
+                </div>
             </div>
+            <div class="container_info_search">
+                <div class="search_top">
+                    <div class="search_input_group">
+                        <input type="text" id="search-input" placeholder="Поиск по названию..." />
+                        <button class="search_btn" id="search-btn">Поиск</button>
+                    </div>
+                    <div class="filters-wrapper">
+                        <button class="filter_toggle" id="toggle-filters">
+                            <img src="{{ url_for('static', filename='img/other/filter.png') }}" alt="filter" class="btn-icon">
+                        </button>
+                        <div class="advanced_filters" id="advanced-filters">
+                            <div class="filters-inner">
+                                <!-- Сортировка -->
+                                <div class="filter-sort">
+                                    <label>
+                                        Сортировка:
+                                        <select name="sort" id="sort-select">
+                                            <option value="">-- Выберите поле --</option>
+                                            <option value="title_asc">Название (А→Я)</option>
+                                            <option value="title_desc">Название (Я→А)</option>
+                                            <option value="article_num_asc">Артикул (↑)</option>
+                                            <option value="article_num_desc">Артикул (↓)</option>
+                                            <option value="price_asc">Цена (↑)</option>
+                                            <option value="price_desc">Цена (↓)</option>
+                                            <option value="quantity_asc">Кол-во (↑)</option>
+                                            <option value="quantity_desc">Кол-во (↓)</option>
+                                            <option value="created_at_asc">Дата (старые)</option>
+                                            <option value="created_at_desc">Дата (новые)</option>
+                                        </select>
+                                    </label>
+                                </div>
 
-            <button type="submit">Применить</button>
-        </form>
+                                <!-- Категории -->
+                                <div class="filter-column">
+                                    <div class="conteiner_category">
+                                        <p><strong>Категории</strong></p>
+                                        <div class="filter_group">
+                                            <label>
+                                                <input type="checkbox" name="category" value="Мотоциклы">
+                                                <span></span>
+                                                <span class="text">Мотоциклы</span>
+                                            </label>
+                                            <label>
+                                                <input type="checkbox" name="category" value="Квадроциклы">
+                                                <span></span>
+                                                <span class="text">Квадроциклы</span>
+                                            </label>
+                                            <label>
+                                                <input type="checkbox" name="category" value="Снегоходы">
+                                                <span></span>
+                                                <span class="text">Снегоходы</span>
+                                            </label>
+                                            <label>
+                                                <input type="checkbox" name="category" value="Мотоблоки">
+                                                <span></span>
+                                                <span class="text">Мотоблоки</span>
+                                            </label>
+                                            <label>
+                                                <input type="checkbox" name="category" value="Бензо-инструмент">
+                                                <span></span>
+                                                <span class="text">Бензо-инструмент</span>
+                                            </label>
+                                            <label>
+                                                <input type="checkbox" name="category" value="Запчасти">
+                                                <span></span>
+                                                <span class="text">Запчасти</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Цена и акции -->
+                                <div class="filter-column">
+                                    <div class="conteiner_price">
+                                        <p><strong>Цена</strong></p>
+                                        <div class="block_field_price">
+                                            <input type="number" id="price_min" placeholder="от, Руб." />
+                                            <input type="number" id="price_max" placeholder="до, Руб." />
+                                        </div>
+                                    </div>
+
+                                    <div class="filter_group check_box_sale">
+                                        <label>
+                                            <input type="checkbox" id="sale-checkbox">
+                                            <span></span>
+                                            <span class="text">Только акции</span>
+                                        </label>
+                                    </div>
+
+                                    <button class="clear_filters clear_btn" id="clear-filters">Сбросить фильтры</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Информационная панель: сообщения и счётчик -->
