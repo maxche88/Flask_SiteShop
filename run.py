@@ -1,5 +1,5 @@
-from flask import Flask, jsonify, request
 import os
+from flask import Flask, jsonify, request
 from routes.product.routes_api import api_bp
 from routes.auth.routes_auth import auth_bp
 from routes.main.routes_index import main_bp
@@ -16,6 +16,12 @@ from models import IPAttemptLog
 
 
 def create_app():
+    """
+    Создаёт и настраивает экземпляр Flask-приложения.
+
+    Инициализирует расширения (БД, миграции, почта, JWT),
+    регистрирует blueprint'ы и устанавливает глобальные хуки.
+    """
     app = Flask(__name__)
     app.config.from_object(Config)
     os.makedirs(INSTANCE_DIR, exist_ok=True)
@@ -37,9 +43,32 @@ def create_app():
     app.register_blueprint(user_ui_bp) 
     app.register_blueprint(user_api_bp)
 
-    # ГЛОБАЛЬНАЯ БЛОКИРОВКА ЗАБЛОКИРОВАННЫХ IP
+ 
     @app.before_request
     def block_blocked_ips():
+        """
+        Проверяет, заблокирован ли IP-адрес клиента на уровне приложения.
+
+        Перед каждым входящим запросом функция извлекает IP-адрес клиента
+        через `request.remote_addr`, ищет соответствующую запись в таблице
+        `IPAttemptLog` и, если запись существует и флаг `is_blocked` установлен
+        в `True`, немедленно прерывает обработку запроса с HTTP-статусом 403.
+
+        Примечание:
+            - Функция предназначена исключительно для демонстрации логики
+              блокировки IP-адресов на уровне приложения. В реальной
+              эксплуатации эта блокировка будет реализовываться
+              на уровне reverse proxy (например, nginx), что обеспечит
+              более высокую производительность и защиту на более раннем
+              этапе обработки запроса. В будущем проверка может быть
+              полностью перенесена в конфигурацию reverse proxy, а данный
+              код — удалён.
+
+        Возвращает:
+            Response: JSON-ответ с сообщением об ошибке и статусом 403,
+                    если IP заблокирован. В противном случае — ничего
+                    (запрос продолжает обработку).
+        """
         client_ip = request.remote_addr
         if client_ip:
             ip_log = IPAttemptLog.query.filter_by(ip_address=client_ip).first()
