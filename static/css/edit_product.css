@@ -1,15 +1,17 @@
 /* Основной контейнер панели */
 .container-panel {
     max-width: 1400px;
-    margin: 20px auto;
-    padding: 0 15px;
+    margin: auto;
 }
+
+
 
 /*Контейнер с информацией о пользователе и заголовок*/
 .info-suser {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    padding-bottom: 15px;
 }
 
 /* Заголовок панели */
@@ -20,9 +22,9 @@
     font-size: 14px;
 }
 
+/* Заголовок статуса пользователя */
 .user_info {
-    background-color: #4CAF50;
-    padding: 3px;
+    padding-right: 20px;
 }
 
 /* Фильтры */
@@ -326,13 +328,13 @@
     font-size: 28px;
     font-weight: bold;
     color: #fff;
-    background-color: #464545;
+    background-color: #0056b3;
     text-decoration: none;
     border-radius: 10px;
     transition: background-color 0.2s;
 }
 
 .add-btn:hover {
-    background-color: #4CAF50;
+    background-color: #007bff;
     color: #fff;
 }
