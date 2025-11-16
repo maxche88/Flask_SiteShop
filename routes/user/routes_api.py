@@ -1,11 +1,15 @@
+import logging
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, CartItem, Shop, User
+from models import db, CartItem, Shop, User, OrderItem, Order
 from datetime import datetime, timezone
 
+
 user_api_bp = Blueprint('user_api', __name__, url_prefix='/api/user')
+order_logger = logging.getLogger('app.orders')
 
 
+# === ДОБАВЛЕНИЕ В КОРЗИНУ ===
 @user_api_bp.route('/cart', methods=['POST'])
 @jwt_required()
 def add_to_cart():
@@ -36,8 +40,7 @@ def add_to_cart():
 
     cart_item = CartItem.query.filter_by(
         user_id=user.id,
-        product_id=product.id,
-        is_purchased=False
+        product_id=product.id
     ).first()
 
     if cart_item:
@@ -52,18 +55,17 @@ def add_to_cart():
             user_id=user.id,
             product_id=product.id,
             quantity=quantity,
-            is_purchased=False,
             added_at=datetime.now(timezone.utc)
         )
         db.session.add(cart_item)
     
     db.session.commit()
-
     return jsonify({"success": True})
 
 
+# === УДАЛЕНИЕ ИЗ КОРЗИНЫ ===
 @user_api_bp.route('/cart', methods=['DELETE'])
-@jwt_required()
+@jwt_required()  # ← ОБЯЗАТЕЛЬНО!
 def remove_from_cart():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
@@ -74,7 +76,7 @@ def remove_from_cart():
     clear_all = request.args.get('clear') == 'all'
 
     if clear_all:
-        CartItem.query.filter_by(user_id=user.id, is_purchased=False).delete()
+        CartItem.query.filter_by(user_id=user.id).delete()
         db.session.commit()
         return jsonify({"success": True})
 
@@ -86,8 +88,7 @@ def remove_from_cart():
 
         cart_item = CartItem.query.filter_by(
             id=item_id,
-            user_id=user.id,
-            is_purchased=False
+            user_id=user.id
         ).first()
         if cart_item:
             db.session.delete(cart_item)
@@ -99,45 +100,90 @@ def remove_from_cart():
         return jsonify({"error": "Не указан ID элемента или флаг очистки"}), 400
 
 
+# === ОФОРМЛЕНИЕ ЗАКАЗА ===
 @user_api_bp.route('/checkout', methods=['POST'])
 @jwt_required()
 def checkout():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     if not user:
+        order_logger.warning(f"Попытка оформить заказ несуществующим пользователем: user_id={current_user_id}")
         return jsonify({"error": "Пользователь не найден"}), 404
 
-    cart_items = CartItem.query.filter_by(user_id=user.id, is_purchased=False).all()
-    if not cart_items:
-        return jsonify({"error": "Корзина пуста"}), 400
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Некорректное тело запроса"}), 400
+
+    item_ids = data.get('item_ids')
+    card_number = data.get('card_number')
+    cardholder_name = data.get('cardholder_name')
+    expiry = data.get('expiry')
+
+    if not item_ids or not isinstance(item_ids, list) or len(item_ids) == 0:
+        return jsonify({"error": "Не выбрано ни одного товара"}), 400
+
+    if not card_number or not cardholder_name or not expiry:
+        return jsonify({"error": "Заполните все данные карты"}), 400
+
+    cart_items = CartItem.query.filter(
+        CartItem.id.in_(item_ids),
+        CartItem.user_id == user.id
+    ).all()
+
+    if len(cart_items) != len(item_ids):
+        order_logger.warning(f"Попытка оформить заказ с чужими/несуществующими товарами: user_id={user.id}, item_ids={item_ids}")
+        return jsonify({"error": "Некоторые товары не найдены в корзине"}), 400
 
     errors = []
+    total_amount = 0
     for item in cart_items:
-        product = Shop.query.get(item.product_id)
+        product = item.product
         if not product:
-            errors.append(f"Товар с ID {item.product_id} удалён из каталога.")
+            errors.append(f"Товар с ID {item.product_id} удалён.")
             continue
-        if item.quantity < 1:
-            errors.append(f"Некорректное количество для товара «{product.title}».")
-        elif item.quantity > product.quantity:
-            errors.append(
-                f"Товара «{product.title}» осталось только {product.quantity} шт., "
-                f"а у вас в корзине {item.quantity}."
-            )
+        if item.quantity > product.quantity:
+            errors.append(f"Товара «{product.title}» осталось только {product.quantity} шт.")
+        total_amount += product.price * item.quantity
 
     if errors:
         return jsonify({"error": "Невозможно оформить заказ", "details": errors}), 400
 
-    for item in cart_items:
-        product = Shop.query.get(item.product_id)
-        product.quantity -= item.quantity
-        if product.quantity < 0:
-            product.quantity = 0
-        item.is_purchased = True
-        item.purchased_at = datetime.now(timezone.utc)
+    try:
+        order = Order(
+            user_id=user.id,
+            total_amount=total_amount,
+            card_number=card_number[-4:],
+            cardholder_name=cardholder_name,
+            expiry=expiry
+        )
+        db.session.add(order)
+        db.session.flush()
 
-    db.session.commit()
-    return jsonify({"success": True, "message": "Заказ успешно оформлен"})
+        for item in cart_items:
+            product = item.product
+            product.quantity -= item.quantity
+            if product.quantity < 0:
+                product.quantity = 0
+
+            order_item = OrderItem(
+                order_id=order.id,
+                product_id=item.product_id,
+                quantity=item.quantity,
+                price_at_purchase=product.price
+            )
+            db.session.add(order_item)
+            db.session.delete(item)
+
+        db.session.commit()
+
+        order_logger.info(f"Заказ успешно оформлен: order_id={order.id}, user_id={user.id}, сумма={total_amount}, карта=••••{card_number[-4:]}")
+
+        return jsonify({"success": True, "message": "Заказ успешно оформлен", "order_id": order.id})
+
+    except Exception as e:
+        db.session.rollback()
+        order_logger.exception(f"Критическая ошибка при оформлении заказа: user_id={user.id}, item_ids={item_ids}")
+        return jsonify({"error": "Ошибка при создании заказа"}), 500
 
 
 @user_api_bp.route('/cart/count')
@@ -149,7 +195,7 @@ def cart_count():
         return jsonify({"count": 0}), 404
 
     total_quantity = db.session.query(db.func.sum(CartItem.quantity)) \
-        .filter_by(user_id=user.id, is_purchased=False) \
+        .filter_by(user_id=user.id) \
         .scalar() or 0
 
     return jsonify({"count": int(total_quantity)})

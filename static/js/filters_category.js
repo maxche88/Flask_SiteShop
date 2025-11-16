@@ -29,17 +29,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Очистка всех фильтров ---
     clearFiltersBtn?.addEventListener('click', () => {
-        // Сброс полей ввода
         if (searchInput) searchInput.value = '';
         if (priceMinInput) priceMinInput.value = '';
         if (priceMaxInput) priceMaxInput.value = '';
         if (saleCheckbox) saleCheckbox.checked = false;
         if (sortSelect) sortSelect.value = '';
 
-        // Сброс чекбоксов категорий
         categoryCheckboxes.forEach(cb => cb.checked = false);
 
-        // Очистка состояния и обновление UI
         appliedFilters = {};
         activeFilters.textContent = '';
         loadProducts(1);
@@ -78,21 +75,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // --- Обновление активных фильтров (обновляет appliedFilters и отображает метки) ---
+    // --- Обновление активных фильтров ---
     function updateActiveFilters() {
-        // Собираем выбранные категории
         const selectedCategories = Array.from(categoryCheckboxes)
             .filter(cb => cb.checked)
             .map(cb => cb.value);
 
-        // Получаем значения полей
         const title = searchInput?.value.trim() || '';
         const price_min = parseInputNumber('price_min');
         const price_max = parseInputNumber('price_max');
         const sale = saleCheckbox?.checked || false;
         const sort = sortSelect?.value || '';
 
-        // Сохраняем в глобальное состояние
         appliedFilters = {
             categories: selectedCategories.length ? selectedCategories : null,
             title: title,
@@ -102,9 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
             sort: sort
         };
 
-        // Формируем метки для отображения
         const labels = [];
-
         if (appliedFilters.categories) {
             labels.push(`Категории: ${appliedFilters.categories.join(', ')}`);
         }
@@ -128,15 +120,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 'created_at_asc': 'Сортировка: Сначала старые'
             };
             const label = sortLabels[appliedFilters.sort];
-            if (label) {
-                labels.push(label);
-            }
+            if (label) labels.push(label);
         }
 
         activeFilters.textContent = labels.join(', ');
     }
 
-    // --- Вспомогательная функция: парсинг чисел из input ---
+    // --- Парсинг чисел из input ---
     function parseInputNumber(id) {
         const el = document.getElementById(id);
         if (!el) return undefined;
@@ -158,23 +148,16 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadProducts(page = 1) {
         try {
             const params = new URLSearchParams();
-
-            // Фильтр по категориям (множественный)
             if (appliedFilters.categories) {
-                appliedFilters.categories.forEach(cat => {
-                    params.append('category', cat);
-                });
+                appliedFilters.categories.forEach(cat => params.append('category', cat));
             }
-
-            // Остальные фильтры
             if (appliedFilters.title) params.append('title', appliedFilters.title);
             if (appliedFilters.price_min !== undefined) params.append('price_min', appliedFilters.price_min);
             if (appliedFilters.price_max !== undefined) params.append('price_max', appliedFilters.price_max);
             if (appliedFilters.sale) params.append('sale', appliedFilters.sale);
-            if (appliedFilters.sort) params.append('sort', appliedFilters.sort); // ← КЛЮЧЕВАЯ СТРОКА
-
+            if (appliedFilters.sort) params.append('sort', appliedFilters.sort);
             params.append('page', page);
-            params.append('per_page', 100); // Загружаем все на одной странице
+            params.append('per_page', 100);
 
             const response = await fetch(`/api/products?${params}`);
             const data = await response.json();
@@ -205,30 +188,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 description.textContent = truncateText(product.description, 100);
                 badge.style.display = product.sale ? 'flex' : 'none';
 
-                // === Кнопки корзины (только для авторизованных покупателей) ===
+                // === Обработка кнопок в зависимости от наличия ===
                 const blockBuy = clone.querySelector('.block_buy');
                 if (blockBuy) {
                     const userActions = document.createElement('div');
                     userActions.className = 'user-actions';
 
-                    const buyBtn = document.createElement('div');
-                    buyBtn.className = 'btn_buy';
-                    buyBtn.dataset.productId = product.id;
-                    buyBtn.innerHTML = '<div class="btn_text"></div>Купить';
+                    if (product.quantity <= 0) {
+                        // Нет в наличии — показываем текст
+                        const outOfStock = document.createElement('div');
+                        outOfStock.className = 'out-of-stock';
+                        outOfStock.textContent = 'Нет в наличии';
+                        userActions.appendChild(outOfStock);
+                        userActions.style.display = 'block'; // всегда виден
+                    } else {
+                        // Есть в наличии — кнопки для авторизованных
+                        const buyBtn = document.createElement('div');
+                        buyBtn.className = 'btn_buy';
+                        buyBtn.dataset.productId = product.id;
+                        buyBtn.innerHTML = '<div class="btn_text">Купить</div>';
 
-                    const cartLink = document.createElement('a');
-                    cartLink.href = '#';
-                    cartLink.className = 'cart-icon';
-                    cartLink.title = 'Добавить в корзину';
-                    cartLink.dataset.productId = product.id;
-                    cartLink.innerHTML = `<img class="img_c" src="/static/img/other/cart-add-mini.svg" alt="В корзину" width="25" height="25">`;
+                        const cartLink = document.createElement('a');
+                        cartLink.href = '#';
+                        cartLink.className = 'cart-icon';
+                        cartLink.title = 'Добавить в корзину';
+                        cartLink.dataset.productId = product.id;
+                        cartLink.innerHTML = `<img class="img_c" src="/static/img/other/cart-add-mini.svg" alt="В корзину" width="25" height="25">`;
 
-                    userActions.appendChild(buyBtn);
-                    userActions.appendChild(cartLink);
+                        userActions.appendChild(buyBtn);
+                        userActions.appendChild(cartLink);
+                        userActions.style.display = (window.userRole === 'user') ? '' : 'none';
+                    }
+
                     blockBuy.appendChild(userActions);
-
-                    // Показываем только для обычных покупателей (user)
-                    userActions.style.display = (window.userRole === 'user') ? '' : 'none';
                 }
 
                 productContainer.appendChild(clone);
