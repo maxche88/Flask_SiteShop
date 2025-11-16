@@ -17,7 +17,6 @@
 {% block content %}
 <div class="conteiner_forms">
     <h3>Админ-панель</h3>
-
     <!-- Вкладки -->
     <div class="admin-tabs">
         <div class="admin-tab active" data-tab="users">Пользователи</div>
@@ -109,13 +108,13 @@
                 <!-- Dropdown с файлами -->
                 <div class="log-files-dropdown">
                     <button class="btn-admin" id="toggleLogFiles">Список логов</button>
-                    <div class="log-files-menu" id="logFilesList">
-                        <!-- файлы сюда -->
-                    </div>
+                    <div class="log-files-menu" id="logFilesList"></div>            
                 </div>
 
                 <!-- Кнопка очистки открытых логов -->
                 <button class="btn-admin" id="btnClearOpenedLogs" disabled>Очистить логи</button>
+                <!-- Кнопка обновлении окна с логами -->
+                <button class="btn-admin" id="btnUpdateLogs" disabled>Обновить</button>
             </div>
 
             <div class="scrollable-content">

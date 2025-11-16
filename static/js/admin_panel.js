@@ -25,9 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const logFilesList = document.getElementById('logFilesList');
     const logsDisplayArea = document.getElementById('logsDisplayArea');
     const btnClearOpenedLogs = document.getElementById('btnClearOpenedLogs');
+    const btnUpdateLogs = document.getElementById('btnUpdateLogs');
     const fileLogSearchInput = document.getElementById('fileLogSearch');
     const btnSearchFileLogs = document.getElementById('btnSearchFileLogs');
-
+    
     let currentLogFile = null;
     let fileLogsLoaded = false;
 
@@ -69,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(content => {
                 currentLogFile = { filename, content };
                 renderOpenedLogs();
-                btnClearOpenedLogs.disabled = false;
             })
             .catch(err => {
                 console.error(`Ошибка загрузки лога ${filename}:`, err);
@@ -82,7 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!currentLogFile) {
             logsDisplayArea.innerHTML = '<em>Нет открытых логов</em>';
-            btnClearOpenedLogs.disabled = true;
+            if (btnClearOpenedLogs) btnClearOpenedLogs.disabled = true;
+            if (btnUpdateLogs) btnUpdateLogs.disabled = true;
             return;
         }
 
@@ -103,8 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         html += '</div>';
         logsDisplayArea.innerHTML = html;
-    }
 
+        // Активируем обе кнопки, если файл открыт
+        if (btnClearOpenedLogs) btnClearOpenedLogs.disabled = false;
+        if (btnUpdateLogs) btnUpdateLogs.disabled = false;
+    }
     function escapeHtml(text) {
         return text
             .replace(/&/g, '&amp;')
@@ -238,6 +242,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    // Обновление текущего лог-файла без подтверждений и уведомлений
+    if (btnUpdateLogs) {
+        btnUpdateLogs.addEventListener('click', () => {
+            if (currentLogFile?.filename) {
+                openLogFile(currentLogFile.filename);
+            }
+        });
+    
+    
+    }
+
+    
 
     // === ЭЛЕМЕНТЫ УПРАВЛЕНИЯ ДЛЯ ВКЛАДКИ "ПОЛЬЗОВАТЕЛИ" ===
     const tableBody = document.querySelector('#usersTable tbody');

@@ -97,6 +97,13 @@
     background-color: #e9ecef;
 }
 
+/* Состояние при нажатии (активное) */
+.btn-admin:active,
+.search-box button:active {
+    background-color: #d0d4d8;
+    transform: translateY(1px);
+}
+
 /* === Блок поиска === */
 .search-box {
     display: flex;
