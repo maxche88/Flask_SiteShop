@@ -1,0 +1,64 @@
+<!-- Мои заказы user -->
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/user_orders.css') }}">
+{% endblock %}
+
+{% block title %}
+Мои заказы
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="conteiner_forms">
+    {% if order_items %}
+    <div class="table-responsive">
+        <table class="styled-orders-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all-orders"></th>
+                    <th>ID заказа</th>
+                    <th>Товар</th>
+                    <th>Кол-во</th>
+                    <th>Цена</th>
+                    <th>Дата заказа</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order_items %}
+                <tr>
+                    <td><input type="checkbox" class="order-item-checkbox" value="{{ item.id }}"></td>
+                    <td>{{ item.order.id }}</td>
+                    <td>{{ item.product.title if item.product else 'Товар удалён' }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.price_at_purchase }} ₽</td>
+                    <td>{{ item.order.created_at.strftime('%d.%m.%Y') }}</td>
+                    <td class="actions-cell">
+                        <!-- Иконка подтверждения (чек) -->
+                        <span class="icon-check">✓</span>
+                        <!-- Кнопка отказа (пока без функционала) -->
+                        <button class="btn-cancel-order" disabled>Отказаться</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="no-orders">У вас пока нет оформленных заказов.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/user_orders.js') }}"></script>
+{% endblock %}
