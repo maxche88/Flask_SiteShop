@@ -5,7 +5,8 @@ from sqlalchemy import func
 
 class User(db.Model):
     """
-    Таблица предназначена для хранения информации о зарегистрированных пользователях веб-приложения.
+    Хранит учётные данные зарегистрированных пользователей.
+    Поддерживает роли: user, suser, admin.
     """
     __tablename__ = 'users'
 
@@ -31,6 +32,11 @@ class User(db.Model):
 
 
 class IPAttemptLog(db.Model):
+    """
+    Фиксирует попытки входа/восстановления пароля с IP-адреса.
+    Используется для ограничения количества попыток и блокировки злонамеренных адресов.
+    При удалении пользователя связанные записи удаляются (CASCADE).
+    """
     __tablename__ = 'ip_attempt_log'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -63,6 +69,11 @@ class UserToken(db.Model):
 
 
 class Shop(db.Model):
+    """
+    Каталог товаров магазина.
+    Поле 'quantity' отражает текущий остаток на складе.
+    При покупке остаток уменьшается.
+    """
     __tablename__ = 'shop'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -88,6 +99,11 @@ class Shop(db.Model):
 
 
 class CartItem(db.Model):
+    """
+    Текущие товары в корзине пользователя.
+    Существует только до оформления покупки.
+    После покупки элементы удаляются и переносятся в OrderItem.
+    """
     __tablename__ = 'cart_items'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -98,13 +114,60 @@ class CartItem(db.Model):
     )
     product_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
-
-    is_purchased = db.Column(db.Boolean, default=False)
     added_at = db.Column(db.DateTime(timezone=True), nullable=False)
-    purchased_at = db.Column(db.DateTime, nullable=True)
-
     user = db.relationship('User', backref=db.backref('cart_items', lazy=True, passive_deletes=True))
     product = db.relationship('Shop', backref=db.backref('cart_items', lazy=True))
 
     def __repr__(self):
         return f"<CartItem user_id={self.user_id}, product_id={self.product_id}, quantity={self.quantity}>"
+
+
+class Order(db.Model):
+    """
+    Представляет завершённый заказ пользователя.
+    Содержит общую информацию: сумму, статус, данные оплаты.
+    Для каждой корзины создаётся ровно один Order.
+    """
+    __tablename__ = 'orders'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=func.now())
+    status = db.Column(db.String(20), default='paid')  # для демо сразу "оплачено"
+    total_amount = db.Column(db.Integer, nullable=False)  # сумма в той же единице, что и Shop.price
+
+    # Демонстрационные данные карты — НЕ для продакшена!
+    card_number = db.Column(db.String(20))
+    cardholder_name = db.Column(db.String(100))
+    expiry = db.Column(db.String(7))  # "MM/YYYY"
+
+    user = db.relationship('User', backref=db.backref('orders', lazy=True, passive_deletes=True))
+
+
+class OrderItem(db.Model):
+    """
+    Детализация заказа: какие товары, в каком количестве и по какой цене были куплены.
+    Цена сохраняется на момент покупки, даже если в будущем изменится в Shop.
+    """
+    __tablename__ = 'order_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(
+        db.Integer,
+        db.ForeignKey('orders.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    product_id = db.Column(
+        db.Integer,
+        db.ForeignKey('shop.id', ondelete='SET NULL'),
+        nullable=False
+    )
+    quantity = db.Column(db.Integer, nullable=False)
+    price_at_purchase = db.Column(db.Integer, nullable=False)  # цена на момент покупки
+
+    order = db.relationship('Order', backref=db.backref('items', lazy=True, passive_deletes=True))
+    product = db.relationship('Shop', backref=db.backref('order_items', lazy=True))

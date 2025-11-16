@@ -9,7 +9,6 @@ from pathlib import Path
 
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
-
 product_logger = logging.getLogger('app.product')
 
 
