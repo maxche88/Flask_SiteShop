@@ -1,18 +1,25 @@
-// Фильтрация товаров
+// Фильтрация товаров на публичной странице каталога
 
 document.addEventListener('DOMContentLoaded', function () {
     const productContainer = document.getElementById('product-container');
     if (!productContainer) return;
 
+    // DOM-элементы
     const searchBtn = document.getElementById('search-btn');
     const filtersToggle = document.getElementById('toggle-filters');
     const advancedFilters = document.getElementById('advanced-filters');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const activeFilters = document.getElementById('active-filters');
+    const sortSelect = document.getElementById('sort-select');
+    const searchInput = document.getElementById('search-input');
+    const priceMinInput = document.getElementById('price_min');
+    const priceMaxInput = document.getElementById('price_max');
+    const saleCheckbox = document.getElementById('sale_checkbox');
 
     // Получаем все чекбоксы категорий
     const categoryCheckboxes = document.querySelectorAll('input[name="category"]');
 
+    // Глобальное хранилище применённых фильтров
     let appliedFilters = {};
 
     // --- Переключение видимости расширенных фильтров ---
@@ -22,15 +29,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Очистка всех фильтров ---
     clearFiltersBtn?.addEventListener('click', () => {
-        // Сбрасываем поля
-        document.getElementById('search-input').value = '';
-        document.getElementById('price_min').value = '';
-        document.getElementById('price_max').value = '';
-        document.getElementById('sale_checkbox').checked = false;
+        // Сброс полей ввода
+        if (searchInput) searchInput.value = '';
+        if (priceMinInput) priceMinInput.value = '';
+        if (priceMaxInput) priceMaxInput.value = '';
+        if (saleCheckbox) saleCheckbox.checked = false;
+        if (sortSelect) sortSelect.value = '';
 
-        // Сбрасываем чекбоксы категорий
+        // Сброс чекбоксов категорий
         categoryCheckboxes.forEach(cb => cb.checked = false);
 
+        // Очистка состояния и обновление UI
         appliedFilters = {};
         activeFilters.textContent = '';
         loadProducts(1);
@@ -38,11 +47,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Обработчики чекбоксов категорий ---
     categoryCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateActiveFilters);
+        checkbox.addEventListener('change', () => {
+            updateActiveFilters();
+            loadProducts(1);
+        });
     });
 
     // --- Обработчик чекбокса "Только акции" ---
-    document.getElementById('sale_checkbox')?.addEventListener('change', updateActiveFilters);
+    saleCheckbox?.addEventListener('change', () => {
+        updateActiveFilters();
+        loadProducts(1);
+    });
+
+    // --- Обработчик сортировки ---
+    sortSelect?.addEventListener('change', () => {
+        updateActiveFilters();
+        loadProducts(1);
+    });
 
     // --- Поиск по кнопке и Enter ---
     searchBtn?.addEventListener('click', () => {
@@ -50,30 +71,40 @@ document.addEventListener('DOMContentLoaded', function () {
         loadProducts(1);
     });
 
-    document.getElementById('search-input')?.addEventListener('keypress', e => {
+    searchInput?.addEventListener('keypress', e => {
         if (e.key === 'Enter') {
             updateActiveFilters();
             loadProducts(1);
         }
     });
 
-    // --- Обновление активных фильтров ---
+    // --- Обновление активных фильтров (обновляет appliedFilters и отображает метки) ---
     function updateActiveFilters() {
         // Собираем выбранные категории
         const selectedCategories = Array.from(categoryCheckboxes)
             .filter(cb => cb.checked)
             .map(cb => cb.value);
 
+        // Получаем значения полей
+        const title = searchInput?.value.trim() || '';
+        const price_min = parseInputNumber('price_min');
+        const price_max = parseInputNumber('price_max');
+        const sale = saleCheckbox?.checked || false;
+        const sort = sortSelect?.value || '';
+
+        // Сохраняем в глобальное состояние
         appliedFilters = {
             categories: selectedCategories.length ? selectedCategories : null,
-            title: document.getElementById('search-input')?.value.trim(),
-            price_min: parseInputNumber('price_min'),
-            price_max: parseInputNumber('price_max'),
-            sale: document.getElementById('sale_checkbox')?.checked
+            title: title,
+            price_min: price_min,
+            price_max: price_max,
+            sale: sale,
+            sort: sort
         };
 
         // Формируем метки для отображения
         const labels = [];
+
         if (appliedFilters.categories) {
             labels.push(`Категории: ${appliedFilters.categories.join(', ')}`);
         }
@@ -89,11 +120,23 @@ document.addEventListener('DOMContentLoaded', function () {
         if (appliedFilters.sale) {
             labels.push('Только акции');
         }
+        if (appliedFilters.sort) {
+            const sortLabels = {
+                'price_asc': 'Сортировка: Цена ↑',
+                'price_desc': 'Сортировка: Цена ↓',
+                'created_at_desc': 'Сортировка: Сначала новые',
+                'created_at_asc': 'Сортировка: Сначала старые'
+            };
+            const label = sortLabels[appliedFilters.sort];
+            if (label) {
+                labels.push(label);
+            }
+        }
 
         activeFilters.textContent = labels.join(', ');
     }
 
-    // --- Вспомогательная функция: парсинг чисел ---
+    // --- Вспомогательная функция: парсинг чисел из input ---
     function parseInputNumber(id) {
         const el = document.getElementById(id);
         if (!el) return undefined;
@@ -101,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return isNaN(value) ? undefined : value;
     }
 
-    // --- Обрезка текста ---
+    // --- Обрезка текста описания ---
     function truncateText(text, maxChars = 100) {
         if (!text) return '';
         if (text.length <= maxChars) return text;
@@ -116,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const params = new URLSearchParams();
 
-            // Передаём каждую выбранную категорию отдельно
+            // Фильтр по категориям (множественный)
             if (appliedFilters.categories) {
                 appliedFilters.categories.forEach(cat => {
                     params.append('category', cat);
@@ -128,9 +171,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (appliedFilters.price_min !== undefined) params.append('price_min', appliedFilters.price_min);
             if (appliedFilters.price_max !== undefined) params.append('price_max', appliedFilters.price_max);
             if (appliedFilters.sale) params.append('sale', appliedFilters.sale);
+            if (appliedFilters.sort) params.append('sort', appliedFilters.sort); // ← КЛЮЧЕВАЯ СТРОКА
 
             params.append('page', page);
-            params.append('per_page', 100);
+            params.append('per_page', 100); // Загружаем все на одной странице
 
             const response = await fetch(`/api/products?${params}`);
             const data = await response.json();
@@ -159,10 +203,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 titleLink.href = `/product/${product.id}`;
                 price.textContent = `${product.price} ₽`;
                 description.textContent = truncateText(product.description, 100);
-
                 badge.style.display = product.sale ? 'flex' : 'none';
 
-                // === Кнопки корзины ===
+                // === Кнопки корзины (только для авторизованных покупателей) ===
                 const blockBuy = clone.querySelector('.block_buy');
                 if (blockBuy) {
                     const userActions = document.createElement('div');
@@ -184,6 +227,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     userActions.appendChild(cartLink);
                     blockBuy.appendChild(userActions);
 
+                    // Показываем только для обычных покупателей (user)
                     userActions.style.display = (window.userRole === 'user') ? '' : 'none';
                 }
 

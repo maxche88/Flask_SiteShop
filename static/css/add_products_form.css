@@ -42,7 +42,7 @@
     display: inline-block;
     width: 50px;
     height: 26px;
-    background-color: #ccc;
+    background-color: #0056b3;
     border-radius: 26px;
     transition: 0.3s;
 }
@@ -61,7 +61,7 @@
 
 /* Включённое состояние */
 .toggle-switch input:checked + .slider {
-    background-color: #4CAF50;
+    background-color: #007bff;
 }
 
 .toggle-switch input:checked + .slider::before {

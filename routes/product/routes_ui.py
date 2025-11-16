@@ -1,5 +1,4 @@
-# Маршруты для пользователя с ролью super user.
-
+# Маршруты для пользователя с ролью suser.
 from flask import Blueprint, render_template, redirect, url_for
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import User, Shop
@@ -46,7 +45,7 @@ def edit_product(product_id):
         return render_template('404.html'), 404
 
     # Проверка прав доступа
-    # Админ может редактировать всё. Staff — только свои товары.
+    # Админ может редактировать и видеть все товары. suser — только свои товары.
     if user.role != 'admin' and int(product.user_id) != int(current_user_id):
         return render_template(
             'error.html',
