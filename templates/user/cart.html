@@ -11,7 +11,8 @@
 {% block header %}
 <div class="back">
     <a href="/" title="Вернуться назад">
-        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px"
+            height="35px">
     </a>
 </div>
 {% endblock %}
@@ -20,44 +21,100 @@
 <div class="conteiner_forms">
     <div class="content_order">
         <h2 class="title_order">Ваша корзина</h2>
-
         {% if cart_items %}
         <table class="styled-table" id="cart-table">
             <thead>
                 <tr>
+                    <th>
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="select-all">
+                            <span class="checkmark"></span>
+                        </label>
+                    </th>
                     <th>Товар</th>
                     <th>Цена</th>
                     <th>Кол-во</th>
-                    <th>Действие</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="cart-table-body">
                 {% for item in cart_items %}
                 <tr data-item-id="{{ item.id }}">
+                    <td>
+                        <label class="checkbox-container">
+                            <input type="checkbox" class="item-checkbox" value="{{ item.id }}">
+                            <span class="checkmark"></span>
+                        </label>
+                    </td>
                     <td>{{ item.product.title }}</td>
                     <td>{{ item.product.price }} ₽</td>
                     <td>
                         <div class="quantity-control">
                             <input type="number" class="qty-input" value="{{ item.quantity }}" min="1"
-                                    data-item-id="{{ item.id }}" data-product-id="{{ item.product_id }}">
+                                data-item-id="{{ item.id }}" data-product-id="{{ item.product_id }}">
                         </div>
                     </td>
                     <td>
-                        <button class="delete-btn bt reg_bt" data-id="{{ item.id }}">Удалить</button>
+                        <button class="cart-delete-icon" data-id="{{ item.id }}" aria-label="Удалить товар">
+                            <img src="{{ url_for('static', filename='img/other/delete_product.png') }}" alt="Удалить" width="25" height="25">
+                        </button>
+                        <button class="cart-delete-icon" data-id="#" aria-label="Отправить сообщение">
+                            <img src="{{ url_for('static', filename='img/other/send-mess.png') }}" alt="Отправить сообщение продавцу" width="25" height="25">
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-
+        <!-- Итоговая строка -->
+        <div id="cart-summary" class="cart-summary">
+            Всего товаров: <span id="total-items">0</span> |
+            К оплате: <span id="total-price">0</span> ₽
+        </div>
         <!-- Кнопка оформления заказа -->
         <div class="btn_order">
             <a href="#" class="bt reg_bt" id="checkout-button">Оформить заказ</a>
         </div>
-
         {% else %}
-            <p class="cart_empty">Корзина пуста</p>
+        <p class="cart_empty">Корзина пуста</p>
         {% endif %}
+
+        <!-- Модальное окно оплаты -->
+        <div id="payment-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+
+                <!-- Итоговая сумма -->
+                <div class="payment-summary">
+                    <h3 class="summary-title">К оплате</h3>
+                    <p class="summary-amount" id="modal-total-price">0 ₽</p>
+                    <p class="summary-hint">С учётом всех товаров</p>
+                </div>
+
+                <!-- Форма карты -->
+                <form id="payment-form">
+                    <div class="form-group">
+                        <label for="card-number">Номер карты</label>
+                        <input type="text" id="card-number" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456">
+                    </div>
+                    <div class="form-group">
+                        <label for="cardholder-name">Имя и фамилия</label>
+                        <input type="text" id="cardholder-name" autocomplete="cc-name" placeholder="IVAN IVANOV">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="expiry">Срок действия</label>
+                            <input type="text" id="expiry" inputmode="numeric" autocomplete="cc-exp" placeholder="ММ/ГГ">
+                        </div>
+                        <!-- CVV пока не нужен для демо -->
+                    </div>
+
+                    <button type="submit" class="payment-btn" id="submit-payment-btn">
+                        Оплатить <span id="btn-amount">0 ₽</span>
+                    </button>
+                </form>
+            </div>
+        </div>
 
     </div>
 </div>

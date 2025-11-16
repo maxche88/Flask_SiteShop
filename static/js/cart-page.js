@@ -1,78 +1,219 @@
-// Логика страницы корзины
-
 document.addEventListener("DOMContentLoaded", function () {
-    // 1. Удаление товаров из корзины
-    document.querySelectorAll(".delete-btn").forEach((btn) => {
+    // === 1. Функция пересчёта итогов ===
+    function updateCartSummary() {
+        let totalItems = 0;
+        let totalPrice = 0;
+
+        document.querySelectorAll('#cart-table-body tr').forEach(row => {
+            const checkbox = row.querySelector('.item-checkbox');
+            if (checkbox && checkbox.checked) {
+                const quantityInput = row.querySelector('.qty-input');
+                const priceCell = row.querySelector('td:nth-child(3)'); // Цена
+
+                const quantity = parseInt(quantityInput.value) || 0;
+                const priceText = priceCell.textContent.trim();
+                const price = parseInt(priceText.replace(/[^0-9]/g, '')) || 0;
+
+                totalItems += quantity;
+                totalPrice += price * quantity;
+            }
+        });
+
+        document.getElementById('total-items').textContent = totalItems;
+        document.getElementById('total-price').textContent = totalPrice;
+    }
+
+    // === 2. Вспомогательные функции для оплаты ===
+    function formatCardNumber(value) {
+        const digits = value.replace(/\D/g, '');
+        const formatted = digits.match(/.{1,4}/g)?.join(' ') || '';
+        return formatted;
+    }
+
+    function validateExpiry(expiry) {
+        const match = expiry.match(/^(\d{2})\/(\d{2})$/);
+        if (!match) return false;
+
+        const month = parseInt(match[1], 10);
+        const year = parseInt(match[2], 10);
+        if (month < 1 || month > 12) return false;
+
+        const now = new Date();
+        const currentYear = now.getFullYear() % 100;
+        const currentMonth = now.getMonth() + 1;
+
+        if (year < currentYear) return false;
+        if (year === currentYear && month < currentMonth) return false;
+
+        return true;
+    }
+
+    // === 3. Инициализация чекбоксов ===
+    document.querySelectorAll('.item-checkbox').forEach(cb => {
+        cb.checked = true;
+    });
+
+    const selectAllCheckbox = document.getElementById('select-all');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.addEventListener('change', function () {
+            const isChecked = this.checked;
+            document.querySelectorAll('.item-checkbox').forEach(cb => cb.checked = isChecked);
+            updateCartSummary();
+        });
+    }
+
+    document.querySelectorAll('.item-checkbox').forEach(cb => {
+        cb.addEventListener('change', function () {
+            if (selectAllCheckbox) {
+                const allChecked = Array.from(document.querySelectorAll('.item-checkbox')).every(cb => cb.checked);
+                selectAllCheckbox.checked = allChecked;
+            }
+            updateCartSummary();
+        });
+    });
+
+    // === 4. Изменение количества ===
+    document.querySelectorAll('.qty-input').forEach(input => {
+        input.addEventListener('input', updateCartSummary);
+        input.addEventListener('change', updateCartSummary);
+    });
+
+    // === 5. Удаление товаров ===
+    document.querySelectorAll(".cart-delete-icon").forEach((btn) => {
         btn.addEventListener("click", function (e) {
             e.preventDefault();
-
             const itemId = this.getAttribute("data-id");
-
-            // Проверка ID
-            if (!itemId || isNaN(itemId)) {
-                alert("Неверный ID товара для удаления");
+            if (!itemId || itemId === '#') {
+                if (itemId !== '#') alert("Неверный ID товара");
                 return;
             }
 
-            // Подтверждение удаления
-            if (!confirm("Вы уверены, что хотите удалить этот товар?")) {
-                return;
-            }
+            if (!confirm("Вы уверены, что хотите удалить этот товар?")) return;
 
-            // Отправка запроса на удаление
             fetch(`/api/user/cart?item_id=${itemId}`, {
                 method: "DELETE",
                 credentials: 'include'
             })
             .then(response => {
                 if (response.ok) {
-                    // Удаляем строку <tr> из таблицы
                     const row = this.closest('tr');
-                    if (row) {
-                        row.remove();
+                    if (row) row.remove();
 
-                        // Проверим, не стала ли корзина пустой
-                        const tableBody = document.querySelector('#cart-table-body');
-                        if (tableBody && tableBody.children.length === 0) {
-                            const cartTable = document.getElementById('cart-table');
-                            if (cartTable) {
-                                const emptyMessage = document.createElement('p');
-                                emptyMessage.className = 'cart_empty';
-                                emptyMessage.textContent = 'Корзина пуста';
-                                cartTable.replaceWith(emptyMessage);
-                            }
-
-                            // Скрыть кнопку "Оформить заказ"
-                            const checkoutBtn = document.getElementById('checkout-button');
-                            if (checkoutBtn) {
-                                const btnOrder = checkoutBtn.closest('.btn_order');
-                                if (btnOrder) btnOrder.remove();
-                            }
+                    if (document.querySelectorAll('#cart-table-body tr').length === 0) {
+                        const table = document.getElementById('cart-table');
+                        if (table) {
+                            const msg = document.createElement('p');
+                            msg.className = 'cart_empty';
+                            msg.textContent = 'Корзина пуста';
+                            table.replaceWith(msg);
                         }
-                    } else {
-                        location.reload(); // fallback
+                        document.querySelector('.btn_order')?.remove();
+                        document.getElementById('cart-summary')?.remove();
                     }
+                    updateCartSummary();
                 } else {
-                    return response.json().catch(() => ({}))
-                        .then(json => {
-                            const message = json.error || 'Неизвестная ошибка';
-                            throw new Error(message);
-                        });
+                    return response.json().then(json => {
+                        throw new Error(json.error || 'Ошибка сервера');
+                    });
                 }
             })
             .catch(error => {
                 console.error("Ошибка при удалении:", error);
-                alert("Не удалось удалить товар: " + error.message);
+                alert("Не удалось удалить: " + error.message);
             });
         });
     });
 
-    // 2. Кнопка "Оформить заказ" — пока заглушка
+    // === 6. Модальное окно оплаты ===
     const checkoutButton = document.getElementById("checkout-button");
+    const modal = document.getElementById("payment-modal");
+    const closeModal = document.querySelector(".close");
+    const paymentForm = document.getElementById("payment-form");
+
     if (checkoutButton) {
         checkoutButton.addEventListener("click", function (e) {
             e.preventDefault();
-            alert("Данная функция находится в разработке!");
+            const totalPrice = parseInt(document.getElementById('total-price').textContent);
+            if (totalPrice <= 0) {
+                alert("Выберите хотя бы один товар.");
+                return;
+            }
+            document.getElementById('modal-total-price').textContent = totalPrice + ' ₽';
+            document.getElementById('btn-amount').textContent = totalPrice + ' ₽';
+            modal.style.display = "block";
         });
     }
+
+    if (closeModal) {
+        closeModal.addEventListener("click", () => modal.style.display = "none");
+    }
+    window.addEventListener("click", (e) => {
+        if (e.target === modal) modal.style.display = "none";
+    });
+
+    // === 7. Отправка формы оплаты ===
+    if (paymentForm) {
+        const cardNumberInput = document.getElementById("card-number");
+        cardNumberInput.addEventListener("input", function (e) {
+            e.target.value = formatCardNumber(e.target.value);
+        });
+
+        paymentForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const cardNumber = document.getElementById("card-number").value.replace(/\s/g, '');
+            const cardholderName = document.getElementById("cardholder-name").value.trim();
+            const expiry = document.getElementById("expiry").value.trim();
+            const selectedIds = Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.value);
+
+            // Валидация
+            if (cardNumber.length !== 16 || !/^\d{16}$/.test(cardNumber)) {
+                alert("Номер карты должен содержать 16 цифр");
+                return;
+            }
+            if (!cardholderName) {
+                alert("Введите имя владельца");
+                return;
+            }
+            if (!validateExpiry(expiry)) {
+                alert("Укажите корректный срок действия (ММ/ГГ)");
+                return;
+            }
+            if (selectedIds.length === 0) {
+                alert("Нет выбранных товаров");
+                return;
+            }
+
+            // Отправка
+            fetch("/api/user/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    item_ids: selectedIds,
+                    card_number: cardNumber,
+                    cardholder_name: cardholderName,
+                    expiry: expiry
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("✅ Заказ успешно оформлен!");
+                    modal.style.display = "none";
+                    window.location.reload();
+                } else {
+                    alert("❌ Ошибка: " + (data.error || "Неизвестная ошибка"));
+                }
+            })
+            .catch(err => {
+                console.error("Ошибка сети:", err);
+                alert("❌ Не удалось отправить заказ.");
+            });
+        });
+    }
+
+    // === Инициализация ===
+    updateCartSummary();
 });
