@@ -22,9 +22,24 @@ document.addEventListener('DOMContentLoaded', function () {
     // Глобальное хранилище применённых фильтров
     let appliedFilters = {};
 
-    // --- Переключение видимости расширенных фильтров ---
-    filtersToggle?.addEventListener('click', () => {
+    // --- Переключение видимости расширенных фильтров с закрытием гостевого окна ---
+    filtersToggle?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Закрыть гостевое окно, если открыто
+        const guestWrapper = document.getElementById('guest-contact-wrapper');
+        if (guestWrapper && guestWrapper.classList.contains('expanded')) {
+            guestWrapper.classList.remove('expanded');
+        }
         advancedFilters.classList.toggle('advanced_filters--visible');
+    });
+
+    // --- Закрытие фильтров по клику вне ---
+    document.addEventListener('click', function (e) {
+        if (advancedFilters.classList.contains('advanced_filters--visible') &&
+            e.target !== filtersToggle &&
+            !advancedFilters.contains(e.target)) {
+            advancedFilters.classList.remove('advanced_filters--visible');
+        }
     });
 
     // --- Очистка всех фильтров ---

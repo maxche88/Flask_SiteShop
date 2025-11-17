@@ -1,4 +1,3 @@
-# config/config.py
 import os
 from dotenv import load_dotenv
 
@@ -6,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Определяем корень проекта (на уровень выше папки config/)
-basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-INSTANCE_DIR = os.path.join(basedir, 'instance')
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+INSTANCE_DIR = os.path.join(BASE_DIR, 'instance')
 LOG_DIR = os.path.join(INSTANCE_DIR, 'logs')
 
 class Config:
@@ -26,7 +25,7 @@ class Config:
     JWT_COOKIE_CSRF_PROTECT = False
     JWT_ACCESS_COOKIE_PATH = '/'
     JWT_REFRESH_COOKIE_PATH = '/token/refresh'
-    JWT_ACCESS_TOKEN_EXPIRES = 3600    # 1 час
+    JWT_ACCESS_TOKEN_EXPIRES = 3600    # жизнь токена 1 час
 
     # === Время жизни токенов подтверждения и восстановления ===
     # Указывается в МИНУТАХ (удобно для теста: 1 минута, продакшен: 1440 = 24 часа)
@@ -38,7 +37,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # === Загрузка файлов ===
-    UPLOAD_FOLDER = os.path.join(basedir, 'static', 'img', 'products')
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'img', 'products')
     ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
 
@@ -56,3 +55,22 @@ class Config:
     LOG_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
     LOG_BACKUP_COUNT = 5
     LOG_LEVEL = 'INFO'
+
+    # === Вложения в чате ===
+    CHAT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads', 'chat')
+    CHAT_ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'GIF'}
+    CHAT_MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+"""
+.env
+
+SECRET_KEY=''
+JWT_SECRET_KEY=''
+
+MAIL_USERNAME = ''
+MAIL_PASSWORD = ''
+MAIL_DEFAULT_SENDER = ''
+
+DATABASE_URL = postgresql://myappuser:pass@localhost/myappdb
+"""

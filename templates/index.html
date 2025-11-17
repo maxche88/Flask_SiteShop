@@ -77,6 +77,7 @@
     </div>
 
     {% else %}
+
     <!-- Контейнер иконки гостя -->
     <div id="account-icon-container" class="head_user_icons role-guest">
         <svg class="account" id="account-button" width="40" height="40" viewBox="0 0 4000 4000" aria-haspopup="true"
@@ -91,7 +92,9 @@
         <a href="{{ url_for('session.login') }}">Войти</a>
         <a href="{{ url_for('session.register') }}">Регистрация</a>
     </div>
+
     {% endif %}
+
 </div>
 {% endblock %}
 
@@ -203,6 +206,45 @@
     <div id="loading" style="display: none; text-align: center;">Загрузка...</div>
 </div>
 
+<!-- === Модальное окно для гостей === -->
+{% if not role %}
+<div id="guest-contact-wrapper" class="guest-contact-wrapper">
+    <!-- Вкладка — всегда видна -->
+    <div class="guest-contact-tab">
+        ✉️ Написать нам
+    </div>
+    <!-- Содержимое — скрыто до раскрытия -->
+    <div class="guest-contact-content">
+        <div class="modal-content">
+            <form id="guest-contact-form" class="contact-form">
+                <div class="form-group">
+                    <label for="guest-name" class="visually-hidden">Имя</label>
+                    <input type="text" id="guest-name" name="name" placeholder="Имя" required>
+                </div>
+                <div class="form-group">
+                    <label for="guest-email" class="visually-hidden">Email</label>
+                    <input type="email" id="guest-email" name="email" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <label for="guest-category">Категория обращения</label>
+                    <select id="guest-category" name="category" required>
+                        <option value=""></option>
+                    </select>
+                </div>
+
+                <!-- Поле сообщения — будет растягиваться -->
+                <div class="form-group form-group--message">
+                    <label for="guest-message" class="visually-hidden">Сообщение</label>
+                    <textarea id="guest-message" name="message" placeholder="Сообщение" required></textarea>
+                </div>
+
+                <!-- Кнопка всегда внизу -->
+                <button type="submit" class="btn-submit">Отправить</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Шаблон карточек товаров -->
 <template id="product-card-template">
@@ -259,4 +301,7 @@
 <script src="{{ url_for('static', filename='js/cart-ui.js') }}"></script>
 <script src="{{ url_for('static', filename='js/filters_category.js') }}"></script>
 <script src="{{ url_for('static', filename='js/menu_category.js') }}"></script>
+{% if not role %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endif %}
 {% endblock %}

@@ -54,28 +54,6 @@ def create_access_token_for_user(user_id):
 
     return access_token
 
-
-# def revoke_all_user_tokens(user_id):
-#     """
-#     Отзывает все токены пользователя (устанавливает revoked=True).
-#     """
-#     UserToken.query.filter_by(user_id=user_id).update({'revoked': True})
-
-
-# def has_active_token(user_id):
-#     """
-#     Проверяет, существует ли у пользователя хотя бы один активный (не отозванный и не истёкший) токен.
-    
-#     :return: bool
-#     """
-#     now = datetime.utcnow()
-#     return db.session.query(UserToken.id).filter(
-#         UserToken.user_id == user_id,
-#         UserToken.revoked.is_(False),
-#         UserToken.expires_at > now
-#     ).first() is not None
-
-
 def get_safe_user_id():
     try:
         verify_jwt_in_request(optional=True)

@@ -427,3 +427,4 @@ def reset_password_with_token():
             return redirect(url_for('session.login'))
         
     return render_template('auth/reset_password_form.html', token=token)
+

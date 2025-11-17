@@ -3,7 +3,8 @@
 
 from models import  CartItem, Shop
 from extensions import db
-from utils.time import current_time
+from datetime import datetime, timezone
+
 
 def add_to_cart(user_id, product_id, quantity=1):
     """
@@ -50,7 +51,7 @@ def purchase_cart_items(user_id):
 
         # Помечаем как купленное
         item.is_purchased = True
-        item.purchased_at = current_time()
+        item.purchased_at = datetime.now(timezone.utc)
 
     db.session.commit()
 
