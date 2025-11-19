@@ -26,6 +26,7 @@
         <a href="{{ url_for('panel_a.admin_acaunt') }}">Личный кабинет</a>
         <a href="{{ url_for('panel_a.admin_panel') }}">Admin panel</a>
         <a href="{{ url_for('product_edit.product') }}">Управление товарами</a>
+        <a href="{{ url_for('chat_ui.messages_panel') }}">Cообщения</a>
         <a href="{{ url_for('session.logout') }}">Выйти</a>
     </div>
 
@@ -43,6 +44,7 @@
     <div class="dropdown-menu" id="account-menu">
         <a href="{{ url_for('panel_s.suser_panel_acaunt') }}">Личный кабинет</a>
         <a href="{{ url_for('product_edit.product') }}">Управление товарами</a>
+        <a href="{{ url_for('chat_ui.messages_panel') }}">Cообщения</a>
         <a href="{{ url_for('session.logout') }}">Выйти</a>
     </div>
 
@@ -73,6 +75,7 @@
     <div class="dropdown-menu" id="account-menu">
         <a href="{{ url_for('user_ui.user_accaunt') }}">Личный кабинет</a>
         <a href="{{ url_for('user_ui.user_order') }}">Мои заказы</a>
+        <a href="{{ url_for('chat_ui.my_messages') }}">Cообщения</a>
         <a href="{{ url_for('session.logout') }}">Выйти</a>
     </div>
 
@@ -232,7 +235,7 @@
                     </select>
                 </div>
 
-                <!-- Поле сообщения — будет растягиваться -->
+                <!-- Поле сообщения -->
                 <div class="form-group form-group--message">
                     <label for="guest-message" class="visually-hidden">Сообщение</label>
                     <textarea id="guest-message" name="message" placeholder="Сообщение" required></textarea>
@@ -302,6 +305,6 @@
 <script src="{{ url_for('static', filename='js/filters_category.js') }}"></script>
 <script src="{{ url_for('static', filename='js/menu_category.js') }}"></script>
 {% if not role %}
-<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chat_guest.js') }}"></script>
 {% endif %}
 {% endblock %}

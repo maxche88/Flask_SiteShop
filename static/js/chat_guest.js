@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // === Отправка формы ===
+    // Отправка формы
     if (form) {
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
             };
 
             try {
-                const response = await fetch('/api/chat/guest-dialogs', {
+                const response = await fetch('/api/chat/dialogs', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)

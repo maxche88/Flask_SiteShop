@@ -10,6 +10,7 @@ from routes.product.routes_ui import product_bp
 from routes.user.routes_ui import user_ui_bp
 from routes.user.routes_api import user_api_bp
 from routes.chat.routes_api import chat_bp
+from routes.chat.routes_ui import chat_ui_bp
 from extensions import mail, jwt, db, migrate
 from config.config import Config, INSTANCE_DIR
 from utils.logger import app_loggers
@@ -44,6 +45,7 @@ def create_app():
     app.register_blueprint(user_ui_bp) 
     app.register_blueprint(user_api_bp)
     app.register_blueprint(chat_bp)
+    app.register_blueprint(chat_ui_bp)
 
  
     @app.before_request

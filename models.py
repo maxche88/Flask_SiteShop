@@ -211,8 +211,8 @@ class Dialog(db.Model):
 
     # Инициатор: либо авторизованный пользователь, либо гость
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    guest_name = db.Column(db.String(100), nullable=True)
-    guest_email = db.Column(db.String(120), nullable=True)
+    name = db.Column(db.String(100), nullable=True)
+    email = db.Column(db.String(120), nullable=True)
 
     # Метаданные
     status = db.Column(db.String(20), default='open')  # open | closed | archived
