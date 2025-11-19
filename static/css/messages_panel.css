@@ -1,0 +1,325 @@
+/* Общий контейнер страницы */
+.messages-page {
+    max-width: 100%;
+    padding: 0 16px;
+    margin: 0 auto;
+}
+
+/* Информационная панель */
+.messages-info {
+    margin-bottom: 16px;
+    padding: 10px 15px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.messages-info.info {
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+.messages-info.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.messages-info.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.messages-info.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.messages-info.hidden {
+    display: none !important;
+}
+
+/* Информация о пользователе */
+.messages-user-info {
+    margin-bottom: 20px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #495057;
+}
+
+/* Контейнер списка диалогов */
+.dialogs-list-container {
+    width: 100%;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* Заголовок таблицы */
+.dialogs-header {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    background-color: #f1f3f5;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+}
+
+/* Тело таблицы */
+.dialogs-body {
+    display: flex;
+    flex-direction: column;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+/* Общая колонка */
+.dialogs-col {
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+/* Сетка: гибкие столбцы */
+.dialogs-header,
+.dialog-item {
+    grid-template-columns:
+        minmax(50px, 0.6fr)   /* ID */
+        minmax(120px, 1.2fr)  /* Тема */
+        minmax(150px, 1.8fr)  /* Клиент */
+        minmax(120px, 1.5fr)  /* Контекст */
+        minmax(80px, 0.8fr)   /* Статус */
+        minmax(130px, 1.3fr)  /* Обновлено */
+        minmax(60px, 0.6fr)   /* Сообщений */
+        minmax(100px, 1fr);   /* Последнее */
+    display: grid;
+    width: 100%;
+    min-width: 0;
+}
+
+/* Строка диалога */
+.dialog-item {
+    cursor: pointer;
+    transition: background-color 0.15s;
+    border-bottom: 1px solid #eee;
+}
+
+.dialog-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Статус */
+.status-col.open {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.status-col.closed {
+    color: #6c757d;
+}
+
+/* Адаптивность на мобильных */
+@media (max-width: 768px) {
+    .dialogs-col {
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+    }
+
+    .dialogs-header,
+    .dialog-item {
+        grid-template-columns:
+            minmax(40px, 0.5fr)
+            minmax(100px, 1fr)
+            minmax(120px, 1.5fr)
+            minmax(100px, 1.2fr)
+            minmax(60px, 0.6fr)
+            minmax(100px, 1fr)
+            minmax(50px, 0.5fr)
+            minmax(80px, 0.9fr);
+    }
+
+    .messages-user-info,
+    .dialogs-list-container {
+        padding: 0;
+        margin: 0 -8px;
+        border-radius: 0;
+    }
+}
+
+/* === Модальное окно чата === */
+
+.chat-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+}
+
+.chat-modal.hidden {
+    display: none;
+}
+
+.chat-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.chat-modal-content {
+    position: relative;
+    max-width: 800px;
+    max-height: 90vh;
+    margin: 24px auto;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.chat-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: #f5f7fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.chat-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #2d3748;
+}
+
+.chat-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #777;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.chat-modal-close:hover {
+    background: #e0e0e0;
+    color: #000;
+}
+
+.chat-messages-container {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    background-color: #f9fafb;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.message-entry {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    border-left: 4px solid #ccc;
+}
+
+.message-entry.admin { border-left-color: #e53935; }
+.message-entry.suser { border-left-color: #1e88e5; }
+.message-entry.user { border-left-color: #43a047; }
+.message-entry.guest { border-left-color: #757575; }
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #555;
+}
+
+.message-sender {
+    font-weight: bold;
+}
+
+.message-timestamp {
+    color: #888;
+}
+
+.message-text {
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.chat-input-area {
+    display: flex;
+    gap: 10px;
+    padding: 16px;
+    background: white;
+    border-top: 1px solid #e0e0e0;
+}
+
+#chat-message-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    resize: none;
+    min-height: 60px;
+}
+
+.btn-send {
+    padding: 0 20px;
+    background-color: #1e88e5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-send:hover {
+    background-color: #1976d2;
+}
+
+/* Мелкие экраны */
+@media (max-width: 600px) {
+    .chat-modal-content {
+        margin: 10px;
+        max-height: 95vh;
+    }
+
+    .chat-input-area {
+        flex-direction: column;
+    }
+
+    .btn-send {
+        padding: 12px;
+    }
+}

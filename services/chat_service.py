@@ -32,8 +32,11 @@ def create_user_dialog(user_id, topic_id, text, product_id=None, order_id=None):
     _validate_product_or_order(product_id, order_id)
     _validate_message_text(text)
 
+    user = _validate_user(user_id)
+
     dialog = Dialog(
         user_id=user_id,
+        name=user.username,
         topic_id=topic_id,
         product_id=product_id,
         order_id=order_id,
@@ -82,8 +85,9 @@ def create_guest_dialog(guest_name, guest_email, topic_id, text, product_id=None
     _validate_message_text(text)
 
     dialog = Dialog(
-        guest_name=guest_name.strip(),
-        guest_email=guest_email.strip(),
+        user_id=None,
+        name=guest_name.strip(),
+        email=guest_email.strip(),
         topic_id=topic_id,
         product_id=product_id,
         order_id=order_id,
