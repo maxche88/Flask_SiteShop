@@ -1,30 +1,99 @@
-<!-- Мои сообщения user -->
 {% extends 'base.html' %}
 
-
 {% block link %}
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/messages_user.css') }}">
 {% endblock %}
 
-{% block title %}
-Мои сообщения
-{% endblock %}
+{% block title %}Мои сообщения{% endblock %}
 
 {% block header %}
-    <div class="back">
-        <a href="/" title="Вернуться назад">
-            <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
-        </a>
-    </div>
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+    </a>
+</div>
 {% endblock %}
 
 {% block content %}
-<div class="conteiner_forms">
-    <div class="info_panel">
-        <h3>Мои сообщения</h3><br>
+<div class="messages-page">
+
+    <!-- Информационная панель (опционально) -->
+    <div id="messages-info-panel" class="messages-info hidden"></div>
+
+    <!-- Информация о пользователе (для отладки, можно убрать) -->
+    <div class="messages-user-info" style="display:none;">
+        <p>user_id: {{ user_id }}</p>
+        <p>role: {{ role }}</p>
+    </div>
+
+    <!-- Кнопка создания диалога -->
+    <div class="btn-create-dialog-container">
+        <button id="open-create-dialog-modal" class="btn-create-dialog">Написать сообщение</button>
+    </div>
+
+    <!-- Список диалогов -->
+    <div class="dialogs-list-container">
+        <table class="styled-table" id="dialogs-table">
+            <thead>
+                <tr>
+                    <th>Диалог</th>
+                    <th>Собеседник</th>
+                    <th>Последнее сообщение</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody id="dialogs-list">
+                <!-- Будет заполнено через JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Модальное окно создания диалога -->
+    <div id="create-dialog-modal" class="dialog-modal-overlay hidden">
+        <div class="dialog-modal-box">
+            <div class="dialog-modal-header">
+                <h3>Новое сообщение в поддержку</h3>
+                <button id="close-create-dialog-modal" class="dialog-modal-close">&times;</button>
+            </div>
+            <form id="create-dialog-form">
+                <div class="form-group">
+                    <label for="dialog-topic">Категория вопроса</label>
+                    <select name="topic_id" id="dialog-topic" required>
+                        <option value="">— Выберите категорию —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dialog-message">Ваше сообщение</label>
+                    <textarea name="text" id="dialog-message" placeholder="Опишите ваш вопрос..." required></textarea>
+                </div>
+                <button type="submit" class="btn-submit">Отправить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно чата -->
+    <div id="chat-modal" class="chat-modal hidden">
+        <div class="chat-modal-overlay"></div>
+        <div class="chat-modal-content">
+            <div class="chat-modal-header">
+                <h3>Диалог #<span id="modal-dialog-id"></span></h3>
+                <button id="close-chat-modal" class="chat-modal-close">&times;</button>
+            </div>
+            <div class="chat-messages-container" id="chat-messages-container"></div>
+            <div class="chat-input-area">
+                <textarea id="chat-message-input" placeholder="Введите сообщение..."></textarea>
+                <button id="send-chat-message" class="btn-send">Отправить</button>
+            </div>
+        </div>
     </div>
 
 </div>
+{% endblock %}
 
-
+{% block js %}
+<script>
+    window.CURRENT_USER_ID = "{{ user_id }}";
+    window.CURRENT_USER_ROLE = "{{ role }}";
+</script>
+<script src="{{ url_for('static', filename='js/messages_user.js') }}"></script>
 {% endblock %}

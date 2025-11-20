@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template
 from utils.user_sessions import get_safe_user_id
-from models import User, MessageTopic
+from models import User, Dialog
 
 chat_ui_bp = Blueprint('chat_ui', __name__, url_prefix='/chat')
 
 
-@chat_ui_bp.route('/messages_panel')  # send_mess_s
+@chat_ui_bp.route('/messages_panel')
 def messages_panel():
     """Страница сообщений для менеджеров (suser/admin)."""
     user_id = get_safe_user_id()
@@ -26,9 +26,6 @@ def messages_panel():
 def my_messages():
     """
     Страница личных сообщений для авторизованного пользователя (роль 'user').
-    
-    Отображает список диалогов текущего пользователя и форму для написания.
-    Доступ запрещён для гостей, менеджеров и администраторов.
     """
     user_id = get_safe_user_id()
     if not user_id:

@@ -27,16 +27,18 @@ def create_user_dialog(user_id, topic_id, text, product_id=None, order_id=None):
         ValueError: при недопустимых данных
         IntegrityError: при нарушении целостности БД
     """
-    _validate_user(user_id)
+    user = User.query.get(user_id)
+    if not user:
+        raise ValueError("Пользователь не найден")
+
     _validate_topic(topic_id)
     _validate_product_or_order(product_id, order_id)
     _validate_message_text(text)
 
-    user = _validate_user(user_id)
-
     dialog = Dialog(
         user_id=user_id,
         name=user.username,
+        email=user.email,
         topic_id=topic_id,
         product_id=product_id,
         order_id=order_id,
