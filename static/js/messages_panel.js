@@ -147,20 +147,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         messages.forEach(msg => {
-            const roleClass = getRoleClass(msg.sender_role);
+            const isSent = msg.sender_role === window.CURRENT_USER_ROLE; // админ/менеджер
+            const senderLabel = getRoleLabel(msg.sender_role);
+
             const messageEl = document.createElement('div');
-            messageEl.className = `message-entry ${roleClass}`;
+            messageEl.className = `chat-message ${isSent ? 'sent' : 'received'}`;
             messageEl.innerHTML = `
-                <div class="message-header">
-                    <span class="message-sender">${getRoleLabel(msg.sender_role)}</span>
-                    <span class="message-timestamp">${formatDate(msg.created_at)}</span>
-                </div>
-                <div class="message-text">${escapeHtml(msg.text)}</div>
+                <div class="author">${escapeHtml(senderLabel)}</div>
+                <div class="text">${escapeHtml(msg.text)}</div>
+                <div class="timestamp">${formatDate(msg.created_at)}</div>
             `;
             chatMessagesContainer.appendChild(messageEl);
         });
 
-        // Прокрутка вниз
         chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
     }
 

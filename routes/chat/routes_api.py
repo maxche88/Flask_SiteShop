@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from extensions import db
 from models import Dialog, Message, User, MessageTopic
-from services.chat_service import create_guest_dialog, create_user_dialog
+from services.chat_service import create_guest_dialog, create_user_dialog, send_message_in_dialog
 from utils.mail import send_guest_dialog_reply
 from utils.user_sessions import get_safe_user_id
 import logging
@@ -149,7 +149,131 @@ def create_dialog_api():
         chat_logger.exception("Неожиданная ошибка при создании диалога")
         return jsonify({'success': False, 'errors': ['Внутренняя ошибка сервера.']}), 500
 
+# USER
+@chat_bp.route('/user-dialogs', methods=['GET'])
+def get_user_dialogs():
+    """
+    Возвращает список диалогов ТЕКУЩЕГО авторизованного пользователя (роль 'user').
+    """
+    current_user_id = get_safe_user_id()
+    if not current_user_id:
+        return jsonify({'error': 'Требуется авторизация'}), 401
 
+    try:
+        user_id = int(current_user_id)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Некорректный идентификатор пользователя'}), 400
+
+    user = User.query.get(user_id)
+    if not user or user.role != 'user':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    try:
+        dialogs = Dialog.query.filter_by(user_id=user_id).order_by(Dialog.updated_at.desc()).all()
+        result = []
+        for dialog in dialogs:
+            last_message = Message.query.filter_by(dialog_id=dialog.id).order_by(Message.created_at.desc()).first()
+            result.append({
+                'id': dialog.id,
+                'topic_name': dialog.topic.name if dialog.topic else 'Без темы',
+                'last_sender_role': last_message.sender_role if last_message else 'support',
+                'last_message_preview': last_message.text if last_message else '',
+                'updated_at': dialog.updated_at.isoformat() if dialog.updated_at else None
+            })
+        return jsonify(result), 200
+
+    except Exception as e:
+        chat_logger.exception("Ошибка загрузки диалогов пользователя")
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+
+
+@chat_bp.route('/user-dialogs/<int:dialog_id>/messages', methods=['GET'])
+def get_user_dialog_messages(dialog_id):
+    """
+    Возвращает сообщения диалога ТОЛЬКО если он принадлежит текущему пользователю.
+    """
+    current_user_id = get_safe_user_id()
+    if not current_user_id:
+        return jsonify({'error': 'Требуется авторизация'}), 401
+
+    try:
+        user_id = int(current_user_id)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Некорректный ID'}), 400
+
+    user = User.query.get(user_id)
+    if not user or user.role != 'user':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    dialog = Dialog.query.filter_by(id=dialog_id, user_id=user_id).first()
+    if not dialog:
+        return jsonify({'error': 'Диалог не найден или недоступен'}), 404
+
+    try:
+        messages = Message.query.filter_by(dialog_id=dialog_id).order_by(Message.created_at.asc()).all()
+        return jsonify([{
+            'id': msg.id,
+            'sender_role': msg.sender_role,
+            'text': msg.text,
+            'created_at': msg.created_at.isoformat()
+        } for msg in messages]), 200
+
+    except Exception as e:
+        chat_logger.exception(f"Ошибка загрузки сообщений диалога {dialog_id}")
+        return jsonify({'error': 'Ошибка сервера'}), 500
+
+
+@chat_bp.route('/user-dialogs/<int:dialog_id>/reply', methods=['POST'])
+def send_user_reply(dialog_id):
+    """Отправка сообщения от пользователя в свой диалог."""
+    current_user_id = get_safe_user_id()
+    if not current_user_id:
+        return jsonify({'error': 'Требуется авторизация'}), 401
+
+    try:
+        user_id = int(current_user_id)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Некорректный ID'}), 400
+
+    user = User.query.get(user_id)
+    if not user or user.role != 'user':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    dialog = Dialog.query.filter_by(id=dialog_id, user_id=user_id).first()
+    if not dialog:
+        return jsonify({'error': 'Диалог не найден'}), 404
+
+    if dialog.status != 'open':
+        return jsonify({'error': 'Нельзя отвечать в закрытый диалог'}), 400
+
+    data = request.get_json()
+    text = data.get('text', '').strip() if data else ''
+    if not text:
+        return jsonify({'error': 'Сообщение не может быть пустым'}), 400
+
+    try:
+        message = send_message_in_dialog(
+            dialog_id=dialog_id,
+            sender_user_id=user_id,
+            sender_role='user',
+            text=text
+        )
+        return jsonify({
+            'success': True,
+            'message_id': message.id,
+            'sent_at': message.created_at.isoformat()
+        }), 201
+
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        chat_logger.exception("Ошибка при отправке сообщения пользователем")
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+
+
+# SUSER/ADMIN
 @chat_bp.route('/dialogs', methods=['GET'])
 def get_all_dialogs():
     """
