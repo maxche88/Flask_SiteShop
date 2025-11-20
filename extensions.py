@@ -17,6 +17,12 @@ sys_logger = logging.getLogger('app.system')
 # Декоратор из flask-jwt-extended, который регистрирует функцию, вызываемую каждый раз, когда поступает запрос с JWT-токеном.
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(_, jwt_payload):
+    """
+    Проверяет, был ли JWT-токен отозван вручную.
+    
+    Вызывается flask-jwt-extended автоматически для всех запросов
+    с @jwt_required(), но только если токен ещё не просрочен.
+    """    
     jti = jwt_payload.get("jti")
     user_id = jwt_payload.get("sub", "unknown")
 
