@@ -216,11 +216,13 @@ html, body {
 
 /* === Кнопка "Назад" === */
 .back {
-    padding-right: 10px;
+  color: red;
+  transition: color 0.2s ease;
 }
 
-.back:hover .account {
-    content: url('/static/img/other/back_g.png');
+/* Зелёный при наведении */
+.back:hover {
+  color: #4CAF50;
 }
 
 /* === Иконки пользователей и корзины === */

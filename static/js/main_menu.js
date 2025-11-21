@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // === Элементы основного меню ===
     const accountButton = document.getElementById("account-button");
     const dropdownMenu = document.getElementById("account-menu");
-    const cartIcon = document.getElementById("shopping-cart");
+    const cartIcon = document.querySelector('.js-shopping-cart');
 
 
     let isMainMenuOpen = false;

@@ -13,7 +13,7 @@
 {% block header %}
     <div class="back">
         <a href="/" title="Вернуться назад">
-            <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+            {{ custom_icon(size=35, cls="back") }}
         </a>
     </div>
 {% endblock %}
