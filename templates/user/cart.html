@@ -45,39 +45,49 @@
                             <span class="checkmark"></span>
                         </label>
                     </td>
-                    <td class="product-title">{{ item.product.title }}</td>
+                    <td>{{ item.product.title }}</td>
                     <td>{{ item.product.price }} ₽</td>
                     <td>
                         <div class="quantity-control">
-                            <input type="number" class="qty-input" value="{{ item.quantity }}" min="1"
-                                data-item-id="{{ item.id }}" data-product-id="{{ item.product_id }}">
+                            <input 
+                                type="number"
+                                class="qty-input"
+                                value="{{ item.quantity }}"
+                                min="1"
+                                max="{{ item.product.quantity }}"
+                                data-item-id="{{ item.id }}"
+                                data-product-id="{{ item.product_id }}"
+                                data-stock="{{ item.product.quantity }}"
+                            >
                         </div>
                     </td>
                     <td>
-                        <!-- Удаление: data-id — ID записи в корзине -->
-                        <button class="icon-button cart-icon" data-id="{{ item.id }}" aria-label="Удалить товар">
-                            {{ delete_product(size=24) }}
+                        <button class="cart-delete-icon icon-button" data-id="{{ item.id }}" aria-label="Удалить товар">
+                            {{ delete_product(cls="icon-button") }}
                         </button>
-                        <!-- Вопрос о товаре: data-product-id — ID самого товара -->
-                        <button class="icon-button cart-icon" 
-                                data-product-id="{{ item.product_id }}" 
-                                aria-label="Вопрос о товаре">
-                            {{ chat(size=24) }}
+                        <button class="cart-send_mess-icon icon-button" 
+                                data-id="{{ item.id }}" 
+                                data-product-id="{{ item.product.id }}" 
+                                aria-label="Отправить сообщение">
+                            {{ chat(cls="icon-button") }}
                         </button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
         <!-- Итоговая строка -->
         <div id="cart-summary" class="cart-summary">
             Всего товаров: <span id="total-items">0</span> |
             К оплате: <span id="total-price">0</span> ₽
         </div>
+
         <!-- Кнопка оформления заказа -->
         <div class="btn_order">
             <a href="#" class="bt reg_bt" id="checkout-button">Оформить заказ</a>
         </div>
+
         {% else %}
         <p class="cart_empty">Корзина пуста</p>
         {% endif %}
@@ -109,6 +119,7 @@
                             <label for="expiry">Срок действия</label>
                             <input type="text" id="expiry" inputmode="numeric" autocomplete="cc-exp" placeholder="ММ/ГГ">
                         </div>
+                        <!-- CVV пока не нужен для демо -->
                     </div>
 
                     <button type="submit" class="payment-btn" id="submit-payment-btn">
@@ -119,24 +130,35 @@
         </div>
 
     </div>
-</div>
 
-
-<div id="ask-about-product-modal" class="modal-overlay hidden">
-    <div class="modal-box">
-        <div class="modal-header">
-            <h3>Вопрос о товаре: <span id="modal-product-title">товар</span></h3>
-            <button id="close-ask-modal" class="modal-close">&times;</button>
-        </div>
-        <form id="ask-about-product-form">
-            <div class="form-group">
-                <textarea name="message" placeholder="Ваш вопрос..." required></textarea>
+    <!-- Модальное окно: задать вопрос о товаре из корзины -->
+    <div class="cart-ask-overlay hidden">
+        <div class="cart-ask-modal">
+            <div class="cart-ask-header">
+                <h3 class="cart-ask-title">
+                    Задать вопрос о товаре: <span class="cart-ask-product-title">...</span>
+                </h3>
+                <button class="cart-ask-close" aria-label="Закрыть">&times;</button>
             </div>
-            <input type="hidden" name="product_id" id="modal-product-id">
-            <input type="hidden" name="context" value="product_question">
-            <button type="submit" class="btn-submit">Отправить</button>
-        </form>
+
+            <form class="cart-ask-form">
+                <input type="hidden" class="cart-ask-product-id" name="product_id">
+                <input type="hidden" name="context" value="cart_product_question">
+
+                <div class="cart-ask-form-group">
+                    <textarea
+                        name="message"
+                        class="cart-ask-textarea"
+                        placeholder="Напишите ваш вопрос о товаре…"
+                        required
+                    ></textarea>
+                </div>
+
+                <button type="submit" class="cart-ask-submit-btn">Отправить вопрос</button>
+            </form>
+        </div>
     </div>
+
 </div>
 
 <!-- Передаем флаг наличия товаров в data-атрибуте -->
