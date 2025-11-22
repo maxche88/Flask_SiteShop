@@ -222,6 +222,69 @@ def get_all_products():
     return jsonify(result)
 
 
+@api_bp.route('/products/assign-uid', methods=['POST'])
+@jwt_required()
+def assign_user_to_products():
+    """
+    Назначить user_id выбранным товарам.
+    Доступно только suser и admin.
+    Проверяет, что целевой пользователь имеет роль suser или admin.
+    """
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if not current_user:
+        return jsonify({"error": "Пользователь не найден"}), 404
+
+    if current_user.role not in ('suser', 'admin'):
+        return jsonify({"error": "Недостаточно прав"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Тело запроса пустое"}), 400
+
+    product_ids = data.get('product_ids')
+    new_user_id = data.get('new_user_id')
+
+    if not product_ids or not isinstance(product_ids, list) or len(product_ids) == 0:
+        return jsonify({"error": "Необходимо указать хотя бы один ID товара"}), 400
+
+    if not new_user_id or not isinstance(new_user_id, int) or new_user_id <= 0:
+        return jsonify({"error": "new_user_id должен быть положительным целым числом"}), 400
+
+    # Проверяем, существует ли целевой пользователь и его роль
+    target_user = User.query.get(new_user_id)
+    if not target_user:
+        return jsonify({"error": "Пользователь с таким ID не найден"}), 404
+
+    if target_user.role not in ('suser', 'admin'):
+        return jsonify({"error": "Нельзя назначить товар пользователю без роли suser или admin"}), 400
+
+    try:
+        # Получаем товары, которые можно обновить
+        products = Shop.query.filter(Shop.id.in_(product_ids)).all()
+        if len(products) != len(product_ids):
+            found_ids = {p.id for p in products}
+            missing = [pid for pid in product_ids if pid not in found_ids]
+            return jsonify({"error": f"Товары не найдены: {missing}"}), 404
+
+        # Обновляем user_id
+        for product in products:
+            product.user_id = new_user_id
+
+        db.session.commit()
+
+        product_logger.info(f"Пользователь {current_user_id} назначил user_id={new_user_id} для товаров: {product_ids}")
+        return jsonify({
+            "success": True,
+            "message": f"UID {new_user_id} успешно назначен {len(products)} товарам"
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        product_logger.exception(f"Ошибка при назначении UID {new_user_id} товарам {product_ids}: {e}")
+        return jsonify({"error": "Ошибка при обновлении базы данных"}), 500
+
+
 @api_bp.route('/products', methods=['POST'])
 @jwt_required()
 def add_product():

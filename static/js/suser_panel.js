@@ -1,10 +1,11 @@
 // Панель управления товарами — менеджер (suser)
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Элементы DOM
+    const selectAllCheckbox = document.getElementById('select-all');
     const gridBody = document.getElementById('products-grid-body');
     const infoPanel = document.getElementById('info-panel');
 
-    // DOM-элементы фильтров
     const searchInput = document.getElementById('search-input');
     const sortSelect = document.getElementById('sort-select');
     const priceMinInput = document.getElementById('price_min');
@@ -15,6 +16,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const advancedFilters = document.getElementById('advanced-filters');
     const clearFiltersBtn = document.getElementById('clear-filters');
     const searchBtn = document.getElementById('search-btn');
+
+    // Элементы для массового назначения UID
+    const btnUpdateUid = document.getElementById('btnUpdateUid');
+    const uidInput = document.getElementById('uid-input');
 
     let isLoading = false;
     let currentProductCount = 0;
@@ -36,6 +41,89 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!el) return undefined;
         const value = parseFloat(el.value);
         return isNaN(value) ? undefined : value;
+    }
+
+    // Обновление состояния кнопки "Назначить uid"
+    function updateAssignButtonState() {
+        const anyChecked = gridBody.querySelectorAll('.row-checkbox:checked').length > 0;
+        if (btnUpdateUid) btnUpdateUid.disabled = !anyChecked;
+        if (uidInput) uidInput.disabled = !anyChecked;
+    }
+
+    // === Обработчики чекбоксов ===
+
+    if (selectAllCheckbox && gridBody) {
+        selectAllCheckbox.addEventListener('change', function () {
+            const checkboxes = gridBody.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAllCheckbox.checked;
+            });
+            updateAssignButtonState();
+        });
+
+        gridBody.addEventListener('change', function (e) {
+            if (e.target.classList.contains('row-checkbox')) {
+                const allCheckboxes = gridBody.querySelectorAll('.row-checkbox');
+                const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+                selectAllCheckbox.checked = allChecked;
+                updateAssignButtonState();
+            }
+        });
+    }
+
+    // === Отправка массового назначения UID ===
+
+    if (btnUpdateUid) {
+        btnUpdateUid.addEventListener('click', async function () {
+            const uidValue = uidInput?.value?.trim();
+            if (!uidValue) {
+                alert('Пожалуйста, введите ID пользователя');
+                return;
+            }
+
+            const uid = parseInt(uidValue, 10);
+            if (uid <= 0 || !Number.isInteger(uid)) {
+                alert('ID должен быть положительным целым числом');
+                return;
+            }
+
+            const checkedCheckboxes = gridBody.querySelectorAll('.row-checkbox:checked');
+            const productIds = Array.from(checkedCheckboxes)
+                .map(cb => cb.closest('.product-row')?.dataset.productId)
+                .filter(id => id); // игнорируем строки без data-product-id
+
+            if (productIds.length === 0) {
+                alert('Не выбрано ни одного товара');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/products/assign-uid', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // Если JWT в куках — заголовок не нужен
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        product_ids: productIds,
+                        new_user_id: uid
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('UID успешно назначен');
+                    loadProducts(); // перезагрузить список
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                console.error('Ошибка при назначении UID:', error);
+                alert('Ошибка сети. Проверьте консоль.');
+            }
+        });
     }
 
     // === Получение текущих фильтров ===
@@ -60,13 +148,15 @@ document.addEventListener('DOMContentLoaded', function () {
         isLoading = true;
 
         clearGrid();
+        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        updateAssignButtonState();
         showMessage('Загрузка...', 'info');
 
         const filters = getFilters();
         const url = new URL('/api/products', window.location.origin);
         url.searchParams.append('all', '1');
 
-        // Фильтр по владельцу (только свои товары)
+        // Фильтр по владельцу (только свои товары для suser)
         if (window.CURRENT_USER_ROLE === 'suser' && window.CURRENT_USER_ID) {
             url.searchParams.append('user_id', window.CURRENT_USER_ID);
         }
@@ -86,7 +176,8 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const response = await fetch(url, {
                 method: 'GET',
-                headers: { 'Accept': 'application/json' }
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin'
             });
 
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -101,6 +192,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     const fragment = template.content.cloneNode(true);
                     const row = fragment.querySelector('.product-row');
                     if (!row) return;
+
+                    // Присваиваем data-product-id для массовых операций
+                    row.dataset.productId = product.id;
 
                     // ID
                     const idCell = row.querySelector('.id-cell');
@@ -183,10 +277,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     }
 
-                    // Кнопки
+                    // Кнопки редактирования и удаления
                     const editBtn = row.querySelector('.edit-icon');
                     if (editBtn) {
-                        editBtn.href = `/edit-product/${product.id}`;
+                        // При клике кнопка ведёт на страницу редактирования
+                        const link = document.createElement('a');
+                        link.href = `/edit-product/${product.id}`;
+                        link.style.display = 'contents';
+                        editBtn.replaceWith(link);
+                        link.appendChild(editBtn.cloneNode(true));
                     }
 
                     const removeBtn = row.querySelector('.remove-icon');
@@ -203,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 const result = await res.json();
 
                                 if (res.ok) {
-                                    row.closest('.product-row')?.remove();
+                                    row.remove();
                                     currentProductCount = Math.max(0, currentProductCount - 1);
                                     showMessage(
                                         currentProductCount > 0 
@@ -238,25 +337,21 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // === Обработчики ===
+    // === Обработчики фильтров ===
 
-    // Переключение видимости фильтров
     toggleFiltersBtn?.addEventListener('click', () => {
         advancedFilters.classList.toggle('advanced_filters--visible');
     });
 
-    // Применение фильтров
     function applyFilters() {
         loadProducts();
     }
 
-    // Кнопка "Поиск"
     searchBtn?.addEventListener('click', applyFilters);
     searchInput?.addEventListener('keypress', e => {
         if (e.key === 'Enter') applyFilters();
     });
 
-    // Сортировка, чекбоксы, цена — применяются мгновенно
     sortSelect?.addEventListener('change', applyFilters);
     saleCheckbox?.addEventListener('change', applyFilters);
     priceMinInput?.addEventListener('change', applyFilters);
@@ -265,7 +360,6 @@ document.addEventListener('DOMContentLoaded', function () {
         cb.addEventListener('change', applyFilters);
     });
 
-    // Сброс фильтров
     clearFiltersBtn?.addEventListener('click', () => {
         searchInput.value = '';
         sortSelect.value = '';

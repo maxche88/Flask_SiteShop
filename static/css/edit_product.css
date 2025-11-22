@@ -1,10 +1,11 @@
 /* Основной контейнер панели */
 .container-panel {
-    max-width: 1400px;
-    margin: auto;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 24px;
+    box-sizing: border-box;
 }
-
-
 
 /*Контейнер с информацией о пользователе и заголовок*/
 .info-suser {
@@ -87,6 +88,63 @@
     align-items: center;
 }
 
+
+/* Контейнер для кнопки и поля ввода UID */
+.button-container {
+    display: flex;
+    align-items: center;
+    gap: 0; /* убираем зазор — они "склеятся" */
+    margin: 15px 0;
+}
+
+/* Кнопка */
+.btn-product {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    background-color: #0056b3;
+    border: 1px solid #004494;
+    border-radius: 4px 0 0 4px; /* скругление ТОЛЬКО слева */
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-product:hover:not(:disabled) {
+    background-color: #007bff;
+}
+
+.btn-product:disabled {
+    background-color: #ccc;
+    border-color: #bbb;
+    cursor: not-allowed;
+}
+
+/* Поле ввода UID */
+.uid-input {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #a3a3a3;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    outline: none;
+    width: 180px;
+    box-sizing: border-box;
+}
+
+.uid-input:disabled {
+    background-color: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.uid-input::-webkit-outer-spin-button,
+.uid-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
 /* Стиль для чекбокса в фильтрах */
 .filters-form .checkbox-label {
     display: flex;
@@ -98,7 +156,6 @@
     flex-direction: row;
 }
 
-
 .filters-form .checkbox-label input[type="checkbox"] {
     margin: 0;
     transform: scale(1.1);
@@ -106,7 +163,6 @@
 
 /* Информационные сообщения */
 .info-messages {
-    margin: 15px 0;
     padding: 10px 15px;
     border-radius: 4px;
     font-size: 14px;
@@ -114,11 +170,6 @@
     min-height: 24px;
 }
 
-.info-messages.info {
-    background-color: #e9ecef;
-    color: #495057;
-    border: 1px solid #ced4da;
-}
 
 .info-messages.success {
     background-color: #d4edda;
@@ -150,36 +201,39 @@
     margin: 20px 0;
 }
 
-/* Заголовок таблицы */
-.grid-header {
+/* Заголовок таблицы и строки */
+.grid-header,
+.product-row {
     display: grid;
-    /* Колонки */
     grid-template-columns:
+        [select] 40px
         [actions] 80px
-        [id] 30px
+        [id] 40px
         [article] 100px
-        [seller] 50px
+        [seller] 60px
         [image] 60px
-        [name] minmax(100px, 1fr)
+        [name] 1fr 
         [price] 90px
-        [qty] 80px
-        [category] 120px
+        [qty] 70px
+        [category] minmax(100px, 160px)
         [date] 140px
         [sale] 90px;
     gap: 0;
+    padding: 12px 0;
+    align-items: center;
+}
+
+.grid-header {
     background-color: #f8f9fa;
     font-weight: bold;
     color: #333;
     border-bottom: 2px solid #ddd;
-    padding: 12px 0;
-    align-items: center;
 }
 
 .grid-header > div {
     padding: 0 8px;
     text-align: center;
     font-size: 14px;
-    /* Добавлено для синхронизации с ячейками строк */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -192,25 +246,25 @@
     gap: 0;
 }
 
+/* Столбец с чекбоксами */
+.checkbox-cell,
+.checkbox-cell-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 8px;
+}
+
+.checkbox-cell input[type="checkbox"],
+.checkbox-cell-header input[type="checkbox"] {
+    margin: 0;
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
 /* Строка товара */
 .product-row {
-    display: grid;
-    grid-template-columns:
-        [actions] 80px
-        [id] 30px
-        [article] 100px
-        [seller] 50px
-        [image] 60px
-        [name] minmax(100px, 1fr)
-        [price] 90px
-        [qty] 80px
-        [category] 120px
-        [date] 140px
-        [sale] 90px;
-    gap: 0;
-    padding: 12px 0;
     border-bottom: 1px solid #eee;
-    align-items: center;
     background-color: #fff;
     transition: background-color 0.2s;
 }
@@ -250,7 +304,6 @@
     font-weight: bold;
     text-decoration: none;
     color: #333;
-    /* Добавлено, чтобы не ломалось при узкой колонке */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -280,7 +333,7 @@
 
 /* Бейдж "SALE" */
 .badge_edit {
-    display: none; /* по умолчанию скрыт */
+    display: none;
     padding: 2px 6px;
     font-size: 12px;
     font-weight: bold;
@@ -291,7 +344,6 @@
     text-align: center;
 }
 
-
 /* Кнопки действий */
 .actions-cell {
     display: flex;
@@ -299,16 +351,22 @@
     gap: 8px;
 }
 
-.actions-cell .edit-icon img,
-.actions-cell .remove-icon img {
+.actions-cell button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: black;
     width: 25px;
     height: 25px;
-    transition: filter 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
 }
 
-.actions-cell .edit-icon img:hover,
-.actions-cell .remove-icon img:hover {
-    filter: invert(28%) sepia(97%) saturate(1800%) hue-rotate(355deg) brightness(100%) contrast(100%);
+.actions-cell button:hover {
+    color: #1E90FF;
 }
 
 /* Кнопка добавления в товара */
