@@ -3,6 +3,28 @@
     box-sizing: border-box;
 }
 
+
+/* === Кнопка TEST_UI === */
+.test-ui-link {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  font-size: 10px;
+  text-align: center;
+  text-decoration: none;
+  color: #000;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.test-ui-link:hover {
+  background: #e0e0e0;
+}
+
 .scrollable-content {
     overflow-y: auto;
     max-height: calc(100vh - 280px); /* подстройте при необходимости */

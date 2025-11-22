@@ -1,0 +1,219 @@
+<!-- Личный кабинет user -->
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/qa.css') }}">
+{% endblock %}
+
+{% block title %}
+QA-инженер
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        {{ custom_icon(size=35, cls="back") }}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<button type="button" id="openBugReportModalBtn" class="add-test-case-btn">+</button>
+
+<div class="modal-backdrop" id="bugReportModalBackdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title-wrapper">
+                <h2 class="modal-title" id="bugReportModalTitle">Новый баг-репорт</h2>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-action-btn" id="clearFormBtn" title="Очистить форму">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M19 7l-.87.87a2 2 0 0 1-2.68.37L12 6l-3.45 2.24a2 2 0 0 1-2.68-.37L5 7m14 10v-9H5v9">
+                        </path>
+                        <path d="M12 17V5"></path>
+                    </svg>
+                </button>
+                <button type="button" class="modal-action-btn" id="copyTemplateBtn"
+                    title="Скопировать шаблон баг-репорта в JSON">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M8 12h8M8 16h8M8 8h4"></path>
+                        <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                    </svg>
+                </button>
+                <button type="button" class="modal-action-btn" id="pasteTemplateBtn"
+                    title="Вставить баг-репорт из JSON">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 2v4"></path>
+                        <path d="M3 13h18"></path>
+                        <path d="M3 17h18"></path>
+                        <path d="M3 9h18"></path>
+                        <rect x="6" y="2" width="12" height="4" rx="1"></rect>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <form id="createBugReportForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label class="form-label" for="bugTitle">
+                    Title / Заголовок <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о заголовке">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Краткое и точное описание проблемы.</span>
+                    </button>
+                </label>
+                <input type="text" id="bugTitle" class="form-input"
+                    placeholder="Например: Не работает кнопка 'Купить' для гостя" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugSeverity">
+                    Severity / Критичность <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о критичности">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">
+                            Выберите уровень критичности ошибки:<br>
+                            Blocker — работа системы невозможна;<br>
+                            Critical — серьезные нарушения ключевых функций;<br>
+                            Major — значительные проблемы, мешающие использованию;<br>
+                            Minor — мелкие неудобства, не влияют существенно;<br>
+                            Trivial — незначительные визуальные недостатки.<br>
+                        </span>
+                    </button>
+                </label>
+                <select id="bugSeverity" class="form-select" required>
+                    <option value="low">Low / Низкая</option>
+                    <option value="medium" selected>Medium / Средняя</option>
+                    <option value="high">High / Высокая</option>
+                    <option value="critical">Critical / Критическая</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugStatus">
+                    Status / Статус <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о статусе">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Текущее состояние бага.</span>
+                    </button>
+                </label>
+                <select id="bugStatus" class="form-select" required>
+                    <option value="new">New / Новый</option>
+                    <option value="open" selected>Open / Открыт</option>
+                    <option value="in_progress">In Progress / В работе</option>
+                    <option value="resolved">Resolved / Исправлен</option>
+                    <option value="closed">Closed / Закрыт</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugPrecondition">
+                    Precondition / Предусловия
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о предусловиях">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Что должно быть сделано до воспроизведения бага.</span>
+                    </button>
+                </label>
+                <textarea id="bugPrecondition" class="form-textarea"
+                    placeholder="Пользователь не авторизован, товар в наличии..." rows="2"></textarea>
+            </div>
+
+            <div class="form-group">
+                <div class="env_conteiner">
+                    <label class="form-label" for="bugEnvironment">
+                        Environment / Окружение <span class="required-asterisk">*</span>
+                        <button type="button" class="tooltip-trigger" aria-label="Подсказка об окружении">
+                            <span class="tooltip-icon-text">?</span>
+                            <span class="tooltip-text">Браузер, ОС, устройство, версия приложения, URL и т.д.</span>
+                        </button>
+                    </label>
+                    <button type="button" class="modal-env-btn" id="detectEnvBtn"
+                        title="Автоматически определить окружение">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </button>
+                </div>
+
+                <textarea id="bugEnvironment" class="form-textarea"
+                    placeholder="Chrome 124, Windows 11" rows="2"
+                    required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugSteps">
+                    Steps to reproduce / Шаги воспроизведения <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о шагах">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Пошаговая инструкция для воспроизведения ошибки. Нумеруйте
+                            шаги.</span>
+                    </button>
+                </label>
+                <textarea id="bugSteps" class="form-textarea"
+                    placeholder="1. Открыть страницу товара&#10;2. Нажать 'Купить' как гость&#10;3. ..." rows="4"
+                    required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugActual">
+                    Actual result / Фактический результат <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о фактическом результате">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Что произошло на самом деле.</span>
+                    </button>
+                </label>
+                <textarea id="bugActual" class="form-textarea"
+                    placeholder="Кнопка не реагирует, страница не обновляется" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugExpected">
+                    Expected result / Ожидаемый результат <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка об ожидаемом результате">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Что должно было произойти.</span>
+                    </button>
+                </label>
+                <textarea id="bugExpected" class="form-textarea"
+                    placeholder="Открывается страница корзины с добавленным товаром" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugAttachmentInput">
+                    Attachments / Вложения
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о вложениях">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Укажите ссылку на Google Drive или загрузите файлы.</span>
+                    </button>
+                </label>
+                <div class="attachment-input-wrapper">
+                    <input type="text" id="bugAttachmentInput" class="form-input"
+                        placeholder="Вставьте ссылку на Google Drive..." autocomplete="off">
+                    <button type="button" class="attachment-toggle-btn" id="toggleAttachmentType"
+                        title="Переключить на загрузку файла">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4-4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </button>
+                </div>
+                <input type="file" id="bugAttachmentFile" class="form-input attachment-file-input" multiple
+                    accept=".png,.jpg,.jpeg,.txt,.log" style="display: none;">
+                <small class="attachment-hint">Поддерживаются: PNG, JPG, TXT, LOG или публичная ссылка на Google
+                    Drive</small>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelBugReportBtn">Отмена</button>
+                <button type="submit" class="btn btn-primary" id="submitBugReportBtn">Создать</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/qa.js') }}"></script>
+{% endblock %}

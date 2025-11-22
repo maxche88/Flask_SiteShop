@@ -307,3 +307,36 @@ class Attachment(db.Model):
 
     def __repr__(self):
         return f'<Attachment {self.id} for message {self.message_id}>'
+    
+
+# ==============================================================================
+# Таблица TEST_UI.
+# ==============================================================================
+class BugReport(db.Model):
+    """
+    Хранит отчёты об ошибках (баг-репорты), созданные пользователями с ролью 'test' или 'admin'.
+    Привязан к автору, поддерживает статус, критичность, шаги воспроизведения и вложения.
+    """
+    __tablename__ = 'bug_reports'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    severity = db.Column(db.String(20), nullable=False, default='medium')  # low, medium, high, critical
+    status = db.Column(db.String(20), nullable=False, default='new')  # new, open, in_progress, resolved, closed
+    precondition = db.Column(db.Text, nullable=True)
+    environment = db.Column(db.Text, nullable=True)  # например: "Chrome 124, Windows 11, staging"
+    steps_to_reproduce = db.Column(db.Text, nullable=False)
+    actual_result = db.Column(db.Text, nullable=False)
+    expected_result = db.Column(db.Text, nullable=False)
+    attachments = db.Column(db.Text, nullable=True)
+    # Служебные поля
+    category = db.Column(db.String(100), nullable=True)  # опционально: "UI", "API", "Mobile", "Checkout"
+    created_at = db.Column(db.DateTime(timezone=True), default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Автор
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    author = db.relationship('User', backref=db.backref('bug_reports', lazy=True))
+
+    def __repr__(self):
+        return f'<BugReport {self.id}: {self.title}>'
