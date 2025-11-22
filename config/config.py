@@ -17,7 +17,7 @@ class Config:
 
     # === JWT-настройки ===
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or SECRET_KEY
-    JWT_TOKEN_LOCATION = ['cookies']
+    JWT_TOKEN_LOCATION = ['headers', 'cookies']
     JWT_COOKIE_SECURE = False          # отключено для локальной разработки
     JWT_COOKIE_SAMESITE = 'Lax'
     JWT_ACCESS_COOKIE_NAME = 'access_token'

@@ -18,6 +18,7 @@ from extensions import db
 
 sys_logger = logging.getLogger('app.system')
 
+
 def create_access_token_for_user(user_id):
     """
     Создаёт JWT access-токен для пользователя и сохраняет его в базу данных
@@ -27,7 +28,14 @@ def create_access_token_for_user(user_id):
     :return: str — JWT access token
     """
     # Генерация токена
-    access_token = create_access_token(identity=str(user_id))
+    # Передаём user_id как строку, потому что flask-jwt-extended в режиме работы с cookie
+    # (при JWT_TOKEN_LOCATION = ['cookies']) требует, чтобы значение identity было строкой.
+    # Несмотря на то, что PyJWT >= 2.0 формально поддерживает int в поле "sub",
+    # внутренняя логика flask-jwt-extended при генерации токена для cookie
+    # может вызывать ошибку "Subject must be a string", если identity не str.
+    # Это известное ограничение, связанное с совместимостью и сериализацией метаданных.
+    # В остальном коде (включая БД и бизнес-логику) user_id используется как int.
+    access_token = create_access_token(identity=str(user_id)) 
 
     # Извлечение JTI
     jti = get_jti(encoded_token=access_token)
@@ -54,17 +62,29 @@ def create_access_token_for_user(user_id):
 
     return access_token
 
+
 def get_safe_user_id():
+    """
+    Предназначена для безопасного извлечения идентификатора пользователя из JWT при наличии валидного токена.
+    проверяет, есть ли токен и не просрочен ли он,
+    извлекает user_id = get_jwt_identity(),
+    проверяет, существует ли пользователь с таким ID в БД,
+    и, если да — возвращает user_id.
+    """
     try:
         verify_jwt_in_request(optional=True)
         user_id = get_jwt_identity()
+
+        # if not isinstance(user_id, int):
+        #     sys_logger.warning(f"Некорректный тип user_id в JWT: {type(user_id)} = {user_id}")
+        #     return None
 
         if user_id is None:
             sys_logger.debug("JWT присутствует, но не содержит user_id (identity is None)")
             return None
 
         if User.query.get(user_id):
-            return str(user_id)
+            return user_id
         else:
             sys_logger.warning(f"JWT содержит user_id={user_id}, но пользователь не найден в БД")
             return None
