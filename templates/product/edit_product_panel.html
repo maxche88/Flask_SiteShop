@@ -3,8 +3,7 @@
 
 {% block link %}
   {{ super() }}  <!-- Подключает base.css из родителя -->
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/edit_product.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/product_panel.css') }}">
 {% endblock %}
 
 {% block title %}Панель управления товарами{% endblock %}
@@ -12,7 +11,7 @@
 {% block header %}
 <div class="back">
     <a href="/" title="Вернуться назад">
-        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+        {{ custom_icon(size=35, cls="back") }}
     </a>
 </div>
 {% endblock %}
@@ -27,6 +26,9 @@
                     <h2>Меню управления товарами</h2>
                 </div>
 
+                <!-- Информационная панель: сообщения и счётчик -->
+                <div id="info-panel" class="info-messages hidden"></div>
+
                 <div class="user_info">
                     <p>user_id: {{ user_id }}</p>
                     <p>role: {{ role }}</p>
@@ -40,7 +42,7 @@
                     </div>
                     <div class="filters-wrapper">
                         <button class="filter_toggle" id="toggle-filters">
-                            <img src="{{ url_for('static', filename='img/other/filter.png') }}" alt="filter" class="btn-icon">
+                            {{ icon_filter(size=24, cls="btn-icon") }}
                         </button>
                         <div class="advanced_filters" id="advanced-filters">
                             <div class="filters-inner">
@@ -131,20 +133,32 @@
         </div>
     </div>
 
-    <!-- Информационная панель: сообщения и счётчик -->
-    <div id="info-panel" class="info-messages hidden"></div>
+    <div class="button-container">
+        <button class="btn-product" id="btnUpdateUid" disabled>Назначить uid</button>
+        <input
+            type="number"
+            id="uid-input"
+            placeholder="Введите ID пользователя"
+            min="1"
+            disabled
+            class="uid-input"
+        >
+    </div>
 
     <!-- Сетка товаров (CSS Grid) -->
-    <div class="table-container">
+    <div class="table-container full-width-table">
         <div class="products-grid-table">
             <div class="grid-header">
+                <div class="checkbox-cell-header">
+                    <input type="checkbox" id="select-all" title="Выбрать все">
+                </div>
                 <div class="header-actions">
                     <a href="/add-product" class="add-btn" title="Добавить новый товар">+</a>
                 </div>
                 <div>ID</div>
                 <div>art.</div>
                 <div>uid</div>
-                <div></div> <!-- Изображение -->
+                <div></div>
                 <div>Название</div>
                 <div>Цена</div>
                 <div>Кол-во</div>
@@ -160,14 +174,19 @@
 
     <template id="product-row-template">
         <div class="product-row">
+            <!-- Чекбокс выбора -->
+            <div class="checkbox-cell">
+                <input type="checkbox" class="row-checkbox" title="Выбрать товар">
+            </div>
+
             <!-- Действия -->
             <div class="actions-cell">
-                <a href="#" class="edit-icon" title="Редактировать карточку">
-                    <img class="img_c" src="{{ url_for('static', filename='img/other/edit_product.png') }}" alt="Edit" width="25" height="25">
-                </a>
-                <a href="#" class="remove-icon" title="Удалить карточку">
-                    <img class="img_c" src="{{ url_for('static', filename='img/other/delete_product.png') }}" alt="Remove" width="25" height="25">
-                </a>
+                <button type="button" class="edit-icon" title="Редактировать карточку">
+                    {{ edit_product(size=25, cls="") }}
+                </button>
+                <button type="button" class="remove-icon" title="Удалить карточку">
+                    {{ delete_product(size=25, cls="") }}
+                </button>
             </div>
 
             <div class="cell id-cell"></div>
@@ -183,8 +202,7 @@
             <div class="cell quantity-cell"></div>
             <div class="cell category-cell"></div>
             <div class="cell created-at-cell"></div>
-            <span class="badge_edit"></span>
-            </div>
+            <div class="cell"><span class="badge_edit"></span></div>
         </div>
     </template>
 

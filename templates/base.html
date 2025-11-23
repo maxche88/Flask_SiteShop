@@ -11,10 +11,12 @@
 </head>
 
 <body class="page">
+    {# Подключаем макрос иконок #}
+    {% from 'macros/icons.html' import logo, shop_cart, user_account, filter as icon_filter, cart_add_mini, custom_icon, chat, delete_product, eye_close, eye_open, edit_product, ok, copy, paste, paste_env, update, upload_file, remove %}
     <header class="header">
         <div class="logo">
             <a href="/">
-                <img class="index" src="{{ url_for('static', filename='img/other/logo.svg') }}" alt="logo" width="140px">
+                {{ logo(size=140, cls="main-logo") }}
             </a>
         </div>
         {% block header %}{% endblock %}

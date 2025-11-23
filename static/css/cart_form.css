@@ -85,35 +85,30 @@ a {
     transition: background-color 0.2s, transform 0.15s ease;
 }
 
-/* Кнопка-иконка удаления */
-.cart-delete-icon {
-    background: transparent;
-    border: none;
-    padding: 15px;
-    margin: 0;
-    cursor: pointer;
-    outline: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    transition: background-color 0.2s;
+/* Кнопка-иконка удаления и чат*/
+.icon-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  outline: none;
 }
 
-.cart-delete-icon img {
-    display: block;
-    width: 25px;
-    height: 25px;
+/* Базовый цвет иконки */
+.icon-button .icon {
+  color: #3a3a3a;
+  transition: color 0.15s ease;
 }
 
-.cart-delete-icon:hover {
-    background-color: #007bffa2;
-}
-
-.cart-delete-icon:active {
-    background-color: #ff18189a;
+/* Цвет при наведении */
+.icon-button:hover .icon {
+  color: #3c9bf5;
 }
 
 
@@ -213,8 +208,8 @@ a {
     display: none;
     position: fixed;
     z-index: 1000;
-    left: 0;
     top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.4);
@@ -222,16 +217,26 @@ a {
     box-sizing: border-box;
 }
 
+/* Когда модалка открыта через JS (style.display = 'block') */
+.modal[style*="display: block"] {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
 .modal-content {
     background: #fff;
-    margin: 40px auto;
-    padding: 28px;
     border-radius: 16px;
     width: 100%;
     max-width: 480px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     position: relative;
     font-family: inherit;
+    padding: 28px;
+    box-sizing: border-box;
+    height: auto;
+    max-height: 90vh;
+    overflow: auto;
 }
 
 .close {
@@ -336,4 +341,112 @@ a {
 
 .payment-btn:active {
     transform: translateY(1px);
+}
+
+/* =============== Модальное окно: вопрос о товаре из корзины =============== */
+.cart-ask-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s, visibility 0.2s;
+}
+
+.cart-ask-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.cart-ask-modal {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    padding: 24px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.cart-ask-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.cart-ask-title {
+    margin: 0;
+    font-size: 18px;
+    color: #222;
+    font-weight: 600;
+}
+
+.cart-ask-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #888;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.cart-ask-close:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.cart-ask-form-group {
+    margin-bottom: 16px;
+}
+
+.cart-ask-textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    font-family: inherit;
+    box-sizing: border-box;
+    min-height: 90px;
+    resize: vertical;
+}
+
+.cart-ask-textarea:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.cart-ask-submit-btn {
+    width: 100%;
+    padding: 11px;
+    background: #1a56db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.cart-ask-submit-btn:hover:not(:disabled) {
+    background: #1647ba;
 }

@@ -13,7 +13,7 @@
 {% block header %}
 <div class="back">
     <a href="/" title="Вернуться назад">
-        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+        {{ custom_icon(size=35, cls="back") }}
     </a>
 </div>
 {% endblock %}
@@ -56,18 +56,18 @@
                     <p class="price-value">{{ product.price }} ₽</p>
                 </div>
 
-                <!-- Кнопки для корзины (видимость управляется JS) -->
+                <!-- Кнопки корзины ТОЛЬКО для авторизованных пользователей -->
+                {% if role %}
                 <div class="user-actions">
                     <div class="btn_buy" data-product-id="{{ product.id }}">
                         <div class="btn_text"></div>
                         Купить
                     </div>
                     <a href="#" class="cart-icon" data-product-id="{{ product.id }}" title="Добавить в корзину">
-                        <img class="img_c" 
-                             src="{{ url_for('static', filename='img/other/cart-add-mini.svg') }}" 
-                             alt="В корзину" width="25" height="25">
+                        {{ cart_add_mini(size=24, cls="img_c") }}
                     </a>
                 </div>
+                {% endif %}
             </div>
 
             <!-- Характеристики -->
@@ -85,11 +85,11 @@
             </div>
         </div>
 
-        <!-- Модальное окно на странице товара -->
+        <!-- Модальное окно отправить сообщение на странице товара -->
         <div id="ask-about-product-modal" class="modal-overlay hidden">
             <div class="modal-box">
                 <div class="modal-header">
-                    <h3>Вопрос о товаре: {{ product.title }}</h3>
+                    <h3>Задать вопрос о товаре: {{ product.title }}</h3>
                     <button id="close-ask-modal" class="modal-close">&times;</button>
                 </div>
 
@@ -129,8 +129,9 @@
 
 <script src="{{ url_for('static', filename='js/view_product.js') }}"></script>
 
-{% if role %}
+{% if role == 'user' %}
 <script src="{{ url_for('static', filename='js/cart-ui.js') }}"></script>
 {% endif %}
+
 
 {% endblock %}

@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', function () {
         e.preventDefault();
 
         const isGuest = form.querySelector('[name="name"]') !== null;
-
         const message = form.querySelector('[name="message"]')?.value.trim() || '';
         const productId = form.querySelector('[name="product_id"]')?.value || '';
 

@@ -1,0 +1,561 @@
+.button_container {
+  display: flex;
+  gap: 10px;
+}
+
+.title_bug_info {
+  height: 15px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* Кнопки "btn-control" */
+.btn-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 32px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #0d6efd;
+  border: 1px solid #0b5ed7;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  outline: none;
+}
+
+.btn-control:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-control:focus {
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25),
+    0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+/* Dropdown статуса */
+.status-dropdown {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    padding: 6px 0;
+    min-width: 180px;
+    z-index: 1001;
+}
+
+.status-option {
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s;
+}
+
+.status-option:hover {
+    background-color: #f0f5ff;
+    color: #4a6cf7;
+}
+
+.status-option + .status-option {
+    border-top: 1px solid #f0f0f0;
+}
+
+/* Затемнение фона */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 60px;
+  padding-bottom: 60px;
+  box-sizing: border-box;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-backdrop.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Карточка модального окна */
+.modal-card {
+  width: 95%;
+  max-width: 900px;
+  height: calc(100vh - 120px);
+  background: #ffffff;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Заголовок и кнопки */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.modal-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-action-btn,
+.modal-env-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.modal-env-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  padding: 2px;
+  border: none;
+}
+
+.modal-action-btn:hover,
+.modal-env-btn:hover {
+  background: #f0f5ff;
+  color: #4a6cf7;
+  border-color: #4a6cf7;
+}
+
+.modal-action-btn svg,
+.modal-env-btn svg {
+  display: block;
+}
+
+/* Поля формы */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1f2937;
+  font-size: 16px;
+}
+
+.required-asterisk {
+  color: #ef4444;
+}
+
+.tooltip-trigger {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.tooltip-icon {
+  display: block;
+  fill: #6b7280;
+}
+
+.tooltip-text {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: #374151;
+  color: white;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.tooltip-trigger:hover .tooltip-text {
+  opacity: 1;
+  visibility: visible;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #4a6cf7;
+  box-shadow: 0 0 0 2px rgba(74, 108, 247, 0.15);
+}
+
+.form-textarea {
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+.btn-outline:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.btn-primary {
+  background: #4a6cf7;
+  color: white;
+  border-color: #4a6cf7;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #3a5ce5;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Вложения */
+.attachment-input-wrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.attachment-input-wrapper .form-input {
+  flex: 1;
+}
+
+.attachment-toggle-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.attachment-toggle-btn:hover {
+  border-color: #4a6cf7;
+  color: #4a6cf7;
+}
+
+.attachment-file-input {
+  margin-top: 8px;
+}
+
+.attachment-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.env_conteiner {
+  display: flex;
+}
+
+.tooltip-icon-text {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 14px;
+  text-align: center;
+  color: #4a6cf7;
+  background: #f0f5ff;
+  border: 1px solid #cbd5ff;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tooltip-icon-text:hover {
+  background: #e0eaff;
+  border-color: #a0bfff;
+}
+
+/* === Таблица баг-репортов (Grid) === */
+
+.bug-reports-grid-table {
+  width: 100%;
+  font-family: Arial, sans-serif;
+  margin: 20px 0;
+}
+
+.grid-header,
+.bug-report-row {
+  display: grid;
+  grid-template-columns:
+    [select] 40px 
+    [id] 60px 
+    [author] 100px 
+    [title] 1fr 
+    [severity] 120px
+    [status] 120px 
+    [updated] 160px;
+  gap: 0;
+  padding: 12px 0;
+  align-items: center;
+}
+
+.grid-header {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+}
+
+.grid-header>div {
+  padding: 0 8px;
+  text-align: center;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grid-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.checkbox-cell,
+.checkbox-cell-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.checkbox-cell input[type="checkbox"],
+.checkbox-cell-header input[type="checkbox"] {
+  margin: 0;
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+.bug-report-row {
+  border-bottom: 1px solid #eee;
+  background-color: #fff;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.bug-report-row:hover {
+  background-color: #f9f9f9;
+}
+
+.bug-report-row>.cell {
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #333;
+  text-align: center;
+}
+
+.bug-report-row .title-cell {
+  text-align: left;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.bug-report-row .status-cell {
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.bug-report-row .updated-at-cell {
+  font-size: 0.9em;
+  color: #6b7280;
+}
+
+.bug-report-row .severity-cell {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+/* Цвета по уровню severity */
+.bug-report-row .severity-cell[data-severity="critical"] {
+    color: #ef4444; /* красный */
+}
+.bug-report-row .severity-cell[data-severity="high"] {
+    color: #f97316; /* оранжевый */
+}
+.bug-report-row .severity-cell[data-severity="medium"] {
+    color: #eab308; /* жёлтый */
+}
+.bug-report-row .severity-cell[data-severity="low"] {
+    color: #22c55e; /* зелёный */
+}
+
+/* Стили для просмотра (read-only) */
+.view-field {
+    margin-bottom: 16px;
+}
+
+.view-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #374151;
+    font-size: 14px;
+}
+
+.view-value {
+    display: block;
+    padding: 10px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 15px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.view-value.empty {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.view-severity.critical { color: #ef4444; font-weight: bold; }
+.view-severity.high { color: #f97316; font-weight: bold; }
+.view-severity.medium { color: #eab308; }
+.view-severity.low { color: #22c55e; }
+
+.view-attachments {
+    margin-top: 4px;
+}
+
+.view-attachments a {
+    color: #4a6cf7;
+    text-decoration: underline;
+}
+
+/* Кнопка закрыти модалки read */
+.icon-btn {
+    width: auto;
+    height: auto;
+    border: none;
+    background: transparent;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #555;
+}
+
+.icon-btn:hover {
+    color: #4a6cf7;
+}
+
+/* Сообщения */
+.info-messages {
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+  min-height: 24px;
+}
+
+.info-messages.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}

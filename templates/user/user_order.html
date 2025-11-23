@@ -12,7 +12,7 @@
 {% block header %}
 <div class="back">
     <a href="/" title="Вернуться назад">
-        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px" height="35px">
+        {{ custom_icon(size=35, cls="back") }}
     </a>
 </div>
 {% endblock %}
@@ -20,7 +20,7 @@
 {% block content %}
 <div class="conteiner_forms">
     {% if order_items %}
-    <div class="table-responsive">
+    <div class="table-wrapper">
         <table class="styled-orders-table">
             <thead>
                 <tr>
@@ -30,7 +30,6 @@
                     <th>Кол-во</th>
                     <th>Цена</th>
                     <th>Дата заказа</th>
-                    <th>Действия</th>
                 </tr>
             </thead>
             <tbody>
@@ -42,12 +41,6 @@
                     <td>{{ item.quantity }}</td>
                     <td>{{ item.price_at_purchase }} ₽</td>
                     <td>{{ item.order.created_at.strftime('%d.%m.%Y') }}</td>
-                    <td class="actions-cell">
-                        <!-- Иконка подтверждения (чек) -->
-                        <span class="icon-check">✓</span>
-                        <!-- Кнопка отказа (пока без функционала) -->
-                        <button class="btn-cancel-order" disabled>Отказаться</button>
-                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -11,8 +11,7 @@
 {% block header %}
 <div class="back">
     <a href="/" title="Вернуться назад">
-        <img class="account" src="{{ url_for('static', filename='img/other/back.png') }}" alt="Назад" width="35px"
-            height="35px">
+        {{ custom_icon(size=35, cls="back") }}
     </a>
 </div>
 {% endblock %}
@@ -50,31 +49,45 @@
                     <td>{{ item.product.price }} ₽</td>
                     <td>
                         <div class="quantity-control">
-                            <input type="number" class="qty-input" value="{{ item.quantity }}" min="1"
-                                data-item-id="{{ item.id }}" data-product-id="{{ item.product_id }}">
+                            <input 
+                                type="number"
+                                class="qty-input"
+                                value="{{ item.quantity }}"
+                                min="1"
+                                max="{{ item.product.quantity }}"
+                                data-item-id="{{ item.id }}"
+                                data-product-id="{{ item.product_id }}"
+                                data-stock="{{ item.product.quantity }}"
+                            >
                         </div>
                     </td>
                     <td>
-                        <button class="cart-delete-icon" data-id="{{ item.id }}" aria-label="Удалить товар">
-                            <img src="{{ url_for('static', filename='img/other/delete_product.png') }}" alt="Удалить" width="25" height="25">
+                        <button class="cart-delete-icon icon-button" data-id="{{ item.id }}" aria-label="Удалить товар">
+                            {{ delete_product(cls="icon-button") }}
                         </button>
-                        <button class="cart-delete-icon" data-id="#" aria-label="Отправить сообщение">
-                            <img src="{{ url_for('static', filename='img/other/send-mess.png') }}" alt="Отправить сообщение продавцу" width="25" height="25">
+                        <button class="cart-send_mess-icon icon-button" 
+                                data-id="{{ item.id }}" 
+                                data-product-id="{{ item.product.id }}" 
+                                aria-label="Отправить сообщение">
+                            {{ chat(cls="icon-button") }}
                         </button>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
         <!-- Итоговая строка -->
         <div id="cart-summary" class="cart-summary">
             Всего товаров: <span id="total-items">0</span> |
             К оплате: <span id="total-price">0</span> ₽
         </div>
+
         <!-- Кнопка оформления заказа -->
         <div class="btn_order">
             <a href="#" class="bt reg_bt" id="checkout-button">Оформить заказ</a>
         </div>
+
         {% else %}
         <p class="cart_empty">Корзина пуста</p>
         {% endif %}
@@ -117,6 +130,35 @@
         </div>
 
     </div>
+
+    <!-- Модальное окно: задать вопрос о товаре из корзины -->
+    <div class="cart-ask-overlay hidden">
+        <div class="cart-ask-modal">
+            <div class="cart-ask-header">
+                <h3 class="cart-ask-title">
+                    Задать вопрос о товаре: <span class="cart-ask-product-title">...</span>
+                </h3>
+                <button class="cart-ask-close" aria-label="Закрыть">&times;</button>
+            </div>
+
+            <form class="cart-ask-form">
+                <input type="hidden" class="cart-ask-product-id" name="product_id">
+                <input type="hidden" name="context" value="cart_product_question">
+
+                <div class="cart-ask-form-group">
+                    <textarea
+                        name="message"
+                        class="cart-ask-textarea"
+                        placeholder="Напишите ваш вопрос о товаре…"
+                        required
+                    ></textarea>
+                </div>
+
+                <button type="submit" class="cart-ask-submit-btn">Отправить вопрос</button>
+            </form>
+        </div>
+    </div>
+
 </div>
 
 <!-- Передаем флаг наличия товаров в data-атрибуте -->

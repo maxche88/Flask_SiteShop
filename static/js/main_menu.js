@@ -2,8 +2,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // === Элементы основного меню ===
     const accountButton = document.getElementById("account-button");
     const dropdownMenu = document.getElementById("account-menu");
-    const cartIcon = document.getElementById("shopping-cart");
-
+    const cartIcon = document.querySelector('.js-shopping-cart');
+    const messBadge = document.getElementById('mess-count-badge');
 
     let isMainMenuOpen = false;
 
@@ -44,4 +44,26 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+
+    // 3. Бэйдж для отображения кол-ва не прочитаных сообщений
+    if (!messBadge) return;
+    fetch('/api/chat/unread-count', { credentials: 'include' })
+        .then(response => response.json())
+        .then(data => {
+            const badge = document.getElementById('mess-count-badge');
+            if (!badge) return;
+
+            if (data.unread_count > 0) {
+                badge.textContent = '+' + data.unread_count; // ← плюсик здесь
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        })
+        .catch(err => {
+            console.warn('Не удалось загрузить статус сообщений:', err);
+            const badge = document.getElementById('mess-count-badge');
+            if (badge) badge.style.display = 'none';
+        });
+
 });

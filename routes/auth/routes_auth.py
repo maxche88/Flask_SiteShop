@@ -194,14 +194,14 @@ def login():
             auth_logger.warning(f"Вход: неверный формат данных, IP: {client_ip}")
             return jsonify({'success': False, 'errors': ['Неверный формат данных']}), 400
 
-        # === ПРОВЕРКА: ЗАБЛОКИРОВАН ЛИ IP? ===
+        # ПРОВЕРКА: ЗАБЛОКИРОВАН ЛИ IP?
         ip_log = IPAttemptLog.query.filter_by(ip_address=client_ip).first()
         if ip_log and ip_log.is_blocked:
             auth_logger.warning(f"Вход заблокирован: IP {client_ip} находится в чёрном списке")
             return jsonify({
                 'success': False,
                 'errors': ['Ваш IP-адрес заблокирован. Обратитесь к администратору.']
-            }), 403  # Forbidden
+            }), 403
 
         username_or_email = data.get('username')
         password = data.get('password')

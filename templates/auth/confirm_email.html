@@ -11,7 +11,9 @@
     {% endif %}
   </div>
 
-  <button class="action-btn" type="button" onclick="redirectToLogin()">OK</button>
+  <form action="{{ url_for('session.login') }}" method="get" style="display: inline;">
+    <button class="action-btn" type="submit">OK</button>
+  </form>
 
 </div>
 {% endblock %}
@@ -21,9 +23,4 @@
 {% endblock %}
 
 {% block js %}
-<script>
-  function redirectToLogin() {
-    window.location.href = "{{ url_for('session.login') }}";
-  }
-</script>
 {% endblock %}

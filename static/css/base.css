@@ -216,11 +216,13 @@ html, body {
 
 /* === Кнопка "Назад" === */
 .back {
-    padding-right: 10px;
+  color: red;
+  transition: color 0.2s ease;
 }
 
-.back:hover .account {
-    content: url('/static/img/other/back_g.png');
+/* Зелёный при наведении */
+.back:hover {
+  color: #4CAF50;
 }
 
 /* === Иконки пользователей и корзины === */
@@ -261,7 +263,7 @@ html, body {
 /* Значок количества в корзине */
 .cart-badge {
     position: absolute;
-    top: 25px;
+    top: 0px;
     right: 75px;
     transform: translateX(-50%);
     color: #000;
@@ -274,7 +276,8 @@ html, body {
     min-width: 18px;
     padding: 0 6px;
     box-sizing: border-box;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 11px, 100% 100%, 0 100%);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 11px), calc(100% - 6px) 100%, 0 100%);
+                    
     display: none;
     pointer-events: none;
     white-space: nowrap;
@@ -309,6 +312,40 @@ html, body {
 
 .dropdown-menu a:hover {
     background-color: #f1f1f1;
+}
+
+/* Значок количества не прочитанных сообщений */
+/* Родительский элемент (ссылка) */
+.menu-item-with-badge {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Бейдж */
+.mess-badge {
+    position: absolute;
+    left: 110px;
+    transform: translateY(-50%);
+    color: #000;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 18px;
+    text-align: center;
+    background: #fbff00;
+    height: 18px;
+    min-width: 18px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    display: none;
+    pointer-events: none;
+    white-space: nowrap;
+    font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+    z-index: 9000;
+    border-radius: 9px; /* скругление для "капсулы" */
 }
 
 /* === Приветствие пользователя === */

@@ -23,6 +23,56 @@ def get_message_topics():
     ]), 200
 
 
+@chat_bp.route('/unread-count', methods=['GET'])
+def get_unread_message_count():
+    """
+    Возвращает количество непрочитанных сообщений для ТЕКУЩЕГО пользователя.
+    
+    - Для авторизованного 'user': непрочитанные сообщения от поддержки.
+    - Для авторизованного 'suser'/'admin': непрочитанные сообщения от пользователей.
+    - Для гостей: возвращает 0 (гости не имеют аккаунта и не получают сообщений в системе).
+    
+    """
+    user_id_str = get_safe_user_id()
+    
+    # Гости не имеют непрочитанных сообщений в системе
+    if not user_id_str:
+        return jsonify({'unread_count': 0}), 200
+
+    try:
+        user_id = int(user_id_str)
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'unread_count': 0}), 200
+    except (TypeError, ValueError):
+        return jsonify({'unread_count': 0}), 200
+
+    try:
+        if user.role == 'user':
+            # Только его диалоги, сообщения от поддержки
+            count = db.session.query(Message).join(Dialog).filter(
+                Dialog.user_id == user.id,
+                Message.sender_role.in_(['suser', 'admin']),
+                Message.is_read == False
+            ).count()
+
+        elif user.role in ('suser', 'admin'):
+            # Все сообщения от пользователей (в любых диалогах)
+            count = db.session.query(Message).filter(
+                Message.sender_role == 'user',
+                Message.is_read == False
+            ).count()
+
+        else:
+            count = 0
+
+        return jsonify({'unread_count': count}), 200
+
+    except Exception as e:
+        chat_logger.exception("Ошибка при подсчёте непрочитанных сообщений")
+        return jsonify({'unread_count': 0}), 200  # не ломаем фронтенд
+
+
 @chat_bp.route('/dialogs', methods=['POST'])
 def create_dialog_api():
     """
@@ -210,6 +260,18 @@ def get_user_dialog_messages(dialog_id):
         return jsonify({'error': 'Диалог не найден или недоступен'}), 404
 
     try:
+         # Помечаем сообщения от поддержки как прочитанные
+        unread_support_messages = Message.query.filter(
+            Message.dialog_id == dialog_id,
+            Message.sender_role.in_(['suser', 'admin']),
+            Message.is_read == False
+        ).all()
+
+        for msg in unread_support_messages:
+            msg.is_read = True
+
+        db.session.commit()
+
         messages = Message.query.filter_by(dialog_id=dialog_id).order_by(Message.created_at.asc()).all()
         return jsonify([{
             'id': msg.id,
@@ -361,9 +423,7 @@ def get_dialog_messages(dialog_id):
     Возвращает все сообщения в указанном диалоге.
     
     Доступ: только для авторизованных suser/admin.
-    Проверяет:
-      - существование диалога (404, если не найден),
-      - права доступа (403, если роль не разрешена).
+    При открытии диалога автоматически помечает сообщения от пользователя как прочитанные.
     
     Args:
         dialog_id (int): ID диалога
@@ -383,15 +443,31 @@ def get_dialog_messages(dialog_id):
 
     user = User.query.get(current_user_id)
     if not user or user.role not in ('suser', 'admin'):
-        chat_logger.warning(f"Попытка доступа к диалогу {dialog_id} от недопустимой роли: {user.role if user else 'None'}")
+        chat_logger.warning(
+            f"Попытка доступа к диалогу {dialog_id} от недопустимой роли: "
+            f"{user.role if user else 'None'} (user_id={current_user_id})"
+        )
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     try:
-        # Проверяем существование диалога (404 если не найден)
+        # Проверяем существование диалога
         dialog = Dialog.query.get(dialog_id)
         if not dialog:
             return jsonify({'error': 'Диалог не найден'}), 404
 
+        # Помечаем сообщения ОТ ПОЛЬЗОВАТЕЛЯ как прочитанные
+        unread_user_messages = Message.query.filter(
+            Message.dialog_id == dialog_id,
+            Message.sender_role == 'user',
+            Message.is_read == False
+        ).all()
+
+        for msg in unread_user_messages:
+            msg.is_read = True
+
+        db.session.commit()
+
+        # Загружаем все сообщения
         messages = Message.query.filter_by(
             dialog_id=dialog_id
         ).order_by(
@@ -402,10 +478,12 @@ def get_dialog_messages(dialog_id):
             'id': msg.id,
             'sender_role': msg.sender_role,
             'text': msg.text,
-            'created_at': msg.created_at.isoformat()
+            'created_at': msg.created_at.isoformat(),
+            'is_read': msg.is_read
         } for msg in messages]), 200
 
     except Exception as e:
+        db.session.rollback()
         chat_logger.exception(f"Ошибка при загрузке сообщений диалога {dialog_id}")
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
 

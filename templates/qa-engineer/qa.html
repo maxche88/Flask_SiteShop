@@ -1,0 +1,220 @@
+<!-- QA-инженер -->
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/qa.css') }}">
+{% endblock %}
+
+{% block title %}
+QA-инженер
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        {{ custom_icon(size=35, cls="back") }}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="title_bug_info">
+    <h4>Баг-репорты</h4>
+</div>
+
+<div class="button_container">
+    <button type="button" id="openBugReportModalBtn" class="btn-control">add-bug</button>
+    <button type="button" id="editBugReportStatusBtn" class="btn-control">edit-status</button>
+</div>
+
+<!-- Dropdown для изменения статуса -->
+<div id="statusDropdown" class="status-dropdown" style="display: none; position: absolute; z-index: 1001;">
+    <div class="status-option" data-status="new">New / Новый</div>
+    <div class="status-option" data-status="open">Open / Открыт</div>
+    <div class="status-option" data-status="in_progress">In Progress / В работе</div>
+    <div class="status-option" data-status="resolved">Resolved / Исправлен</div>
+    <div class="status-option" data-status="closed">Closed / Закрыт</div>
+</div>
+
+<!-- Сетка баг-репортов -->
+<div class="table-container full-width-table">
+    <div class="bug-reports-grid-table">
+        <div class="grid-header">
+            <div class="checkbox-cell-header">
+                <input type="checkbox" id="selectAllReports" title="Выбрать все">
+            </div>
+            <div>ID</div>
+            <div>Автор (ID)</div>
+            <div>Заголовок</div>
+            <div>Критичность</div>
+            <div>Статус</div>
+            <div>Обновлено</div>
+        </div>
+        <div class="grid-body" id="bugReportsTableBody"></div>
+    </div>
+</div>
+
+<div id="bugReportsError" class="info-messages error" style="display: none;"></div>
+
+<!-- Модальное окно просмотра баг-репорта -->
+<div class="modal-backdrop" id="viewBugReportModalBackdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title-wrapper">
+                <h2 class="modal-title">Баг-репорт #<span id="viewBugId"></span></h2>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="icon-btn" id="closeViewModalBtn" title="Закрыть">
+                    {{ remove(size=40, cls="") }}
+                </button>
+            </div>
+        </div>
+
+        <div class="view-bug-content" id="viewBugContent">
+            <!-- Контент подгружается через JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно -->
+<div class="modal-backdrop" id="bugReportModalBackdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title-wrapper">
+                <h2 class="modal-title">Новый баг-репорт</h2>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-action-btn" id="clearFormBtn" title="Очистить форму">
+                    {{ delete_product(size=24, cls="") }}
+                </button>
+                <button type="button" class="modal-action-btn" id="copyTemplateBtn" title="Скопировать шаблон в JSON">
+                    {{ copy(size=24, cls="") }}
+                </button>
+                <button type="button" class="modal-action-btn" id="pasteTemplateBtn" title="Вставить из JSON">
+                    {{ paste(size=24, cls="") }}
+                </button>
+            </div>
+        </div>
+
+        <form id="createBugReportForm" enctype="multipart/form-data">
+            <!-- Поля формы (без изменений, как у вас) -->
+            <div class="form-group">
+                <label class="form-label" for="bugTitle">
+                    Title / Заголовок <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о заголовке">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Краткое и точное описание проблемы.</span>
+                    </button>
+                </label>
+                <input type="text" id="bugTitle" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugSeverity">
+                    Severity / Критичность <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о критичности">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Blocker, Critical, Major, Minor, Trivial</span>
+                    </button>
+                </label>
+                <select id="bugSeverity" class="form-select" required>
+                    <option value="low">Low / Низкая</option>
+                    <option value="medium" selected>Medium / Средняя</option>
+                    <option value="high">High / Высокая</option>
+                    <option value="critical">Critical / Критическая</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugStatus">
+                    Status / Статус <span class="required-asterisk">*</span>
+                    <button type="button" class="tooltip-trigger" aria-label="Подсказка о статусе">
+                        <span class="tooltip-icon-text">?</span>
+                        <span class="tooltip-text">Текущее состояние бага.</span>
+                    </button>
+                </label>
+                <select id="bugStatus" class="form-select" required>
+                    <option value="new">New / Новый</option>
+                    <option value="open" selected>Open / Открыт</option>
+                    <option value="in_progress">In Progress / В работе</option>
+                    <option value="resolved">Resolved / Исправлен</option>
+                    <option value="closed">Closed / Закрыт</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugPrecondition">Precondition / Предусловия</label>
+                <textarea id="bugPrecondition" class="form-textarea" rows="2"></textarea>
+            </div>
+
+            <div class="form-group">
+                <div class="env_conteiner">
+                    <label class="form-label" for="bugEnvironment">
+                        Environment / Окружение <span class="required-asterisk">*</span>
+                        <button type="button" class="tooltip-trigger" aria-label="Подсказка об окружении">
+                            <span class="tooltip-icon-text">?</span>
+                            <span class="tooltip-text">Браузер, ОС, устройство и т.д.</span>
+                        </button>
+                    </label>
+                    <button type="button" class="modal-env-btn" id="detectEnvBtn" title="Определить окружение">
+                        {{ paste_env(size=24, cls="") }}
+                    </button>
+                </div>
+                <textarea id="bugEnvironment" class="form-textarea" rows="2" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugSteps">Steps to reproduce / Шаги воспроизведения <span class="required-asterisk">*</span></label>
+                <textarea id="bugSteps" class="form-textarea" rows="4" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugActual">Actual result / Фактический результат <span class="required-asterisk">*</span></label>
+                <textarea id="bugActual" class="form-textarea" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugExpected">Expected result / Ожидаемый результат <span class="required-asterisk">*</span></label>
+                <textarea id="bugExpected" class="form-textarea" rows="3" required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="bugAttachmentInput">Attachments / Вложения</label>
+                <div class="attachment-input-wrapper">
+                    <input type="text" id="bugAttachmentInput" class="form-input" placeholder="Ссылка на Google Drive..." autocomplete="off">
+                    <button type="button" class="attachment-toggle-btn" id="toggleAttachmentType" title="Загрузить файл">
+                        {{ upload_file(size=24, cls="") }}
+                    </button>
+                </div>
+                <input type="file" id="bugAttachmentFile" class="form-input attachment-file-input" multiple accept=".png,.jpg,.jpeg,.txt,.log" style="display: none;">
+                <div id="filePreview" style="margin-top: 6px; font-size: 14px; color: #4a6cf7;"></div>
+                <small class="attachment-hint">Поддерживаются: PNG, JPG, TXT, LOG или публичная ссылка</small>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelBugReportBtn">Отмена</button>
+                <button type="submit" class="btn btn-primary" id="submitBugReportBtn">Создать</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Шаблон строки -->
+<template id="bug-report-row-template">
+    <div class="bug-report-row">
+        <div class="checkbox-cell">
+            <input type="checkbox" class="report-checkbox" title="Выбрать">
+        </div>
+        <div class="cell id-cell"></div>
+        <div class="cell author-id-cell"></div>
+        <div class="cell title-cell"></div>
+        <div class="cell severity-cell"></div>
+        <div class="cell status-cell"></div>
+        <div class="cell updated-at-cell"></div>
+    </div>
+</template>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/qa.js') }}"></script>
+{% endblock %}
