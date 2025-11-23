@@ -3,7 +3,7 @@
 
 {% block link %}
   {{ super() }}  <!-- Подключает base.css из родителя -->
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/edit_product.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/product_panel.css') }}">
 {% endblock %}
 
 {% block title %}Панель управления товарами{% endblock %}

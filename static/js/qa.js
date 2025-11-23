@@ -1,252 +1,376 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // === Элементы DOM ===
     const modal = document.getElementById('bugReportModalBackdrop');
     const openBtn = document.getElementById('openBugReportModalBtn');
     const cancelBtn = document.getElementById('cancelBugReportBtn');
     const form = document.getElementById('createBugReportForm');
-    const copyTemplateBtn = document.getElementById('copyTemplateBtn');
-    const pasteTemplateBtn = document.getElementById('pasteTemplateBtn');
-    const toggleBtn = document.getElementById('toggleAttachmentType');
-    const linkInput = document.getElementById('bugAttachmentInput');
-    const fileInput = document.getElementById('bugAttachmentFile');
     const clearFormBtn = document.getElementById('clearFormBtn');
     const detectEnvBtn = document.getElementById('detectEnvBtn');
+    const triggerBtn = document.getElementById('toggleAttachmentType');
+    const linkInput = document.getElementById('bugAttachmentInput');
+    const fileInput = document.getElementById('bugAttachmentFile');
+    const filePreview = document.getElementById('filePreview');
+    const tableBody = document.getElementById('bugReportsTableBody');
+    const errorDiv = document.getElementById('bugReportsError');
+    const selectAll = document.getElementById('selectAllReports');
+    const editStatusBtn = document.getElementById('editBugReportStatusBtn');
+    const statusDropdown = document.getElementById('statusDropdown');
+    const viewModal = document.getElementById('viewBugReportModalBackdrop');
+    const closeViewBtn = document.getElementById('closeViewModalBtn');
 
-    // Определение окружения
-    function detectEnvironment() {
-        const ua = navigator.userAgent;
-        let os = 'Unknown OS';
-        let browser = 'Unknown Browser';
+    // === Вспомогательные функции ===
+    const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
 
-        // Определение ОС с версией
-        if (ua.includes('Windows')) {
-            if (ua.includes('Windows NT 10.0')) os = 'Windows 10';
-            else if (ua.includes('Windows NT 6.3')) os = 'Windows 8.1';
-            else if (ua.includes('Windows NT 6.2')) os = 'Windows 8';
-            else if (ua.includes('Windows NT 6.1')) os = 'Windows 7';
-            else os = 'Windows';
-        } else if (ua.includes('Mac OS X')) {
-            const match = ua.match(/Mac OS X (\d+)[._](\d+)(?:[._](\d+))?/);
-            if (match) {
-            const major = match[1];
-            const minor = match[2];
-            os = `macOS ${major}.${minor}`;
-            } else {
-            os = 'macOS';
+    const formatDateTime = (isoString) => {
+        if (!isoString) return '—';
+        return new Date(isoString).toLocaleString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const handleSelectAll = () => {
+        const checkboxes = document.querySelectorAll('.report-checkbox');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    };
+
+    // === Загрузка баг-репортов ===
+    const loadBugReports = async () => {
+        if (!tableBody) return;
+
+        try {
+            const response = await fetch('api/bug-reports');
+            if (!response.ok) throw new Error('Ошибка загрузки');
+
+            const reports = await response.json();
+            tableBody.innerHTML = '';
+
+            const template = document.getElementById('bug-report-row-template');
+            reports.forEach(report => {
+                const row = template.content.cloneNode(true);
+                const container = row.querySelector('.bug-report-row');
+
+                container.querySelector('.report-checkbox').dataset.id = report.id;
+                container.querySelector('.id-cell').textContent = report.id;
+                container.querySelector('.author-id-cell').textContent = report.author_id;
+                container.querySelector('.title-cell').textContent = escapeHtml(report.title);
+
+                const severityCell = container.querySelector('.severity-cell');
+                severityCell.textContent = report.severity;
+                severityCell.dataset.severity = report.severity;
+
+                container.querySelector('.status-cell').textContent = report.status;
+                container.querySelector('.updated-at-cell').textContent = formatDateTime(report.updated_at);
+
+                tableBody.appendChild(container);
+            });
+
+            if (selectAll) {
+                selectAll.checked = false;
+                selectAll.removeEventListener('change', handleSelectAll);
+                selectAll.addEventListener('change', handleSelectAll);
             }
-        } else if (ua.includes('Linux')) {
-            os = 'Linux';
-        } else if (ua.includes('Android')) {
-            const match = ua.match(/Android ([\d.]+)/);
-            os = match ? `Android ${match[1]}` : 'Android';
-        } else if (ua.includes('iPhone') || ua.includes('iPad')) {
-            const match = ua.match(/OS (\d+)_(\d+)_?(\d+)?/);
-            if (match) {
-            os = `iOS ${match[1]}.${match[2]}`;
-            } else {
-            os = 'iOS';
+
+            if (errorDiv) errorDiv.style.display = 'none';
+        } catch (err) {
+            console.error('Ошибка загрузки баг-репортов:', err);
+            if (errorDiv) {
+                errorDiv.textContent = 'Не удалось загрузить список баг-репортов';
+                errorDiv.style.display = 'block';
             }
         }
+    };
 
-        // Определение браузера с версией
-        if (ua.includes('Chrome') && !ua.includes('Edg') && !ua.includes('OPR')) {
-            const match = ua.match(/Chrome\/([\d.]+)/);
-            browser = match ? `Chrome ${match[1].split('.')[0]}` : 'Chrome';
-        } else if (ua.includes('Firefox')) {
-            const match = ua.match(/Firefox\/([\d.]+)/);
-            browser = match ? `Firefox ${match[1].split('.')[0]}` : 'Firefox';
-        } else if (ua.includes('Safari') && !ua.includes('Chrome') && !ua.includes('Chromium')) {
-            const match = ua.match(/Version\/([\d.]+)/);
-            browser = match ? `Safari ${match[1].split('.')[0]}` : 'Safari';
-        } else if (ua.includes('Edg')) {
-            const match = ua.match(/Edg\/([\d.]+)/);
-            browser = match ? `Edge ${match[1].split('.')[0]}` : 'Edge';
-        } else if (ua.includes('OPR')) {
-            const match = ua.match(/OPR\/([\d.]+)/);
-            browser = match ? `Opera ${match[1].split('.')[0]}` : 'Opera';
-        }
-
-        return `${browser}, ${os}`;
+    // === Модалка просмотра баг-репорта ===
+    if (closeViewBtn && viewModal) {
+        closeViewBtn.addEventListener('click', () => {
+            viewModal.classList.remove('is-open');
+        });
     }
 
-    // Кнопка определения окружения
+    if (tableBody) {
+        tableBody.addEventListener('click', async (e) => {
+            const titleCell = e.target.closest('.title-cell');
+            if (!titleCell) return;
+
+            const row = titleCell.closest('.bug-report-row');
+            const bugId = row.querySelector('.report-checkbox').dataset.id;
+
+            try {
+                const response = await fetch(`api/bug-reports/${bugId}`);
+                if (!response.ok) throw new Error('Баг-репорт не найден');
+
+                const report = await response.json();
+                renderViewModal(report);
+                viewModal.classList.add('is-open');
+            } catch (err) {
+                alert('Ошибка загрузки баг-репорта');
+                console.error(err);
+            }
+        });
+    }
+
+    const renderViewModal = (report) => {
+        document.getElementById('viewBugId').textContent = report.id;
+
+        const content = `
+            <div class="view-field">
+                <span class="view-label">Title / Заголовок</span>
+                <span class="view-value">${escapeHtml(report.title)}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Severity / Критичность</span>
+                <span class="view-value view-severity ${report.severity}">${report.severity}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Status / Статус</span>
+                <span class="view-value">${report.status}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Author ID</span>
+                <span class="view-value">${report.author_id}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Environment / Окружение</span>
+                <span class="view-value ${!report.environment ? 'empty' : ''}">${report.environment || '—'}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Precondition / Предусловия</span>
+                <span class="view-value ${!report.precondition ? 'empty' : ''}">${report.precondition || '—'}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Steps to reproduce / Шаги воспроизведения</span>
+                <span class="view-value">${escapeHtml(report.steps_to_reproduce)}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Actual result / Фактический результат</span>
+                <span class="view-value">${escapeHtml(report.actual_result)}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Expected result / Ожидаемый результат</span>
+                <span class="view-value">${escapeHtml(report.expected_result)}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Attachments / Вложения</span>
+                <div class="view-attachments">
+                    ${renderAttachments(report.attachments)}
+                </div>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Created</span>
+                <span class="view-value">${formatDateTime(report.created_at)}</span>
+            </div>
+            <div class="view-field">
+                <span class="view-label">Updated</span>
+                <span class="view-value">${formatDateTime(report.updated_at)}</span>
+            </div>
+        `;
+
+        document.getElementById('viewBugContent').innerHTML = content;
+    };
+
+    const renderAttachments = (attachments) => {
+        if (!attachments) return '<span class="empty">—</span>';
+        if (attachments.startsWith('http')) {
+            return `<a href="${escapeHtml(attachments)}" target="_blank" rel="noopener">Открыть ссылку</a>`;
+        }
+        const paths = attachments.split(',');
+        return paths.map(path => {
+            const filename = path.split('/').pop();
+            return `<a href="${escapeHtml(path)}" target="_blank" rel="noopener">${escapeHtml(filename)}</a>`;
+        }).join('<br>');
+    };
+
+    // === Массовое изменение статуса ===
+    if (editStatusBtn && statusDropdown) {
+        const positionDropdown = () => {
+            const rect = editStatusBtn.getBoundingClientRect();
+            statusDropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
+            statusDropdown.style.left = `${rect.left + window.scrollX}px`;
+            statusDropdown.style.display = 'block';
+        };
+
+        const hideDropdown = () => {
+            statusDropdown.style.display = 'none';
+        };
+
+        editStatusBtn.addEventListener('click', () => {
+            const checked = document.querySelectorAll('.report-checkbox:checked');
+            if (checked.length === 0) {
+                alert('Выберите хотя бы один баг-репорт.');
+                return;
+            }
+            positionDropdown();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!statusDropdown.contains(e.target) && e.target !== editStatusBtn) {
+                hideDropdown();
+            }
+        });
+
+        statusDropdown.addEventListener('click', async (e) => {
+            const option = e.target.closest('.status-option');
+            if (!option) return;
+
+            const newStatus = option.dataset.status;
+            const reportIds = Array.from(document.querySelectorAll('.report-checkbox:checked'))
+                                   .map(cb => cb.dataset.id);
+
+            const statusLabels = {
+                new: 'New / Новый',
+                open: 'Open / Открыт',
+                in_progress: 'In Progress / В работе',
+                resolved: 'Resolved / Исправлен',
+                closed: 'Closed / Закрыт'
+            };
+
+            if (!confirm(`Вы действительно хотите изменить статус на "${statusLabels[newStatus]}" у ${reportIds.length} баг-репорт(ов)?`)) {
+                hideDropdown();
+                return;
+            }
+
+            try {
+                const res = await fetch('api/bug-reports/bulk-update-status', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: reportIds, status: newStatus })
+                });
+
+                if (res.ok) {
+                    alert('Статус успешно обновлён.');
+                    loadBugReports();
+                } else {
+                    const err = await res.json();
+                    alert('Ошибка: ' + (err.error || 'не удалось обновить'));
+                }
+            } catch (err) {
+                console.error('Ошибка обновления:', err);
+                alert('Ошибка сети');
+            } finally {
+                hideDropdown();
+            }
+        });
+    }
+
+    // === Окружение ===
     if (detectEnvBtn) {
         detectEnvBtn.addEventListener('click', () => {
             const envInput = document.getElementById('bugEnvironment');
-            if (envInput) {
-                envInput.value = detectEnvironment();
-            }
-        });
-    }
+            if (envInput) envInput.value = (function detectEnv() {
+                const ua = navigator.userAgent;
+                let os = 'Unknown OS', browser = 'Unknown Browser';
 
-    // Переключение режима вложений
-    if (toggleBtn && linkInput && fileInput) {
-        toggleBtn.addEventListener('click', () => {
-            if (fileInput.style.display === 'none' || fileInput.style.display === '') {
-                fileInput.style.display = 'block';
-                linkInput.value = '';
-                toggleBtn.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M15 22a1 1 0 0 1-1-1V3a1 1 0 0 1 2 0v18a1 1 0 0 1-1 1z"></path>
-                        <path d="M10 19a1 1 0 0 1-1-1V6a1 1 0 0 1 2 0v12a1 1 0 0 1-1 1z"></path>
-                        <path d="M5 16a1 1 0 0 1-1-1V9a1 1 0 0 1 2 0v6a1 1 0 0 1-1 1z"></path>
-                    </svg>
-                `;
-            } else {
-                fileInput.style.display = 'none';
-                fileInput.value = '';
-                toggleBtn.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4-4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                `;
-            }
-        });
-    }
-
-    const getFormDataAsJSON = () => {
-        if (!form) {
-            return {
-                title: "",
-                severity: "medium",
-                status: "open",
-                precondition: "",
-                environment: "",
-                steps_to_reproduce: "",
-                actual_result: "",
-                expected_result: "",
-                attachments: []
-            };
-        }
-
-        return {
-            title: form.bugTitle?.value || "",
-            severity: form.bugSeverity?.value || "medium",
-            status: form.bugStatus?.value || "open",
-            precondition: form.bugPrecondition?.value || "",
-            environment: form.bugEnvironment?.value || "",
-            steps_to_reproduce: form.bugSteps?.value || "",
-            actual_result: form.bugActual?.value || "",
-            expected_result: form.bugExpected?.value || "",
-            attachments: []
-        };
-    };
-
-    copyTemplateBtn?.addEventListener('click', async () => {
-        const data = getFormDataAsJSON();
-        const jsonStr = JSON.stringify(data, null, 2);
-        try {
-            await navigator.clipboard.writeText(jsonStr);
-        } catch (err) {
-            console.warn('Не удалось скопировать:', err);
-        }
-    });
-
-    pasteTemplateBtn?.addEventListener('click', async () => {
-        try {
-            const text = await navigator.clipboard.readText();
-            const data = JSON.parse(text);
-
-            if (typeof data !== 'object' || data === null) return;
-
-            const fieldMap = {
-                'title': 'bugTitle',
-                'severity': 'bugSeverity',
-                'status': 'bugStatus',
-                'precondition': 'bugPrecondition',
-                'environment': 'bugEnvironment',
-                'steps_to_reproduce': 'bugSteps',
-                'actual_result': 'bugActual',
-                'expected_result': 'bugExpected'
-            };
-
-            for (const [jsonKey, fieldId] of Object.entries(fieldMap)) {
-                const el = document.getElementById(fieldId);
-                if (el && data.hasOwnProperty(jsonKey)) {
-                    el.value = data[jsonKey] ?? '';
+                if (ua.includes('Windows')) {
+                    if (ua.includes('Windows NT 10.0')) os = 'Windows 10';
+                    else if (ua.includes('Windows NT 6.3')) os = 'Windows 8.1';
+                    else if (ua.includes('Windows NT 6.2')) os = 'Windows 8';
+                    else if (ua.includes('Windows NT 6.1')) os = 'Windows 7';
+                    else os = 'Windows';
+                } else if (ua.includes('Mac OS X')) {
+                    const m = ua.match(/Mac OS X (\d+)[._](\d+)/);
+                    os = m ? `macOS ${m[1]}.${m[2]}` : 'macOS';
+                } else if (ua.includes('Linux')) {
+                    os = 'Linux';
+                } else if (ua.includes('Android')) {
+                    const m = ua.match(/Android ([\d.]+)/);
+                    os = m ? `Android ${m[1]}` : 'Android';
+                } else if (ua.includes('iPhone') || ua.includes('iPad')) {
+                    const m = ua.match(/OS (\d+)_(\d+)/);
+                    os = m ? `iOS ${m[1]}.${m[2]}` : 'iOS';
                 }
-            }
-        } catch (err) {
-            console.warn('Вставка не удалась:', err);
-        }
-    });
 
-    clearFormBtn?.addEventListener('click', () => {
-        if (form) form.reset();
-        const fileInput = document.getElementById('bugAttachmentFile');
-        const toggleBtn = document.getElementById('toggleAttachmentType');
-        if (fileInput && toggleBtn) {
-            fileInput.style.display = 'none';
-            fileInput.value = '';
-            toggleBtn.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4-4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-            `;
-        }
-    });
+                if (ua.includes('Chrome') && !ua.includes('Edg') && !ua.includes('OPR')) {
+                    browser = ua.match(/Chrome\/(\d+)/)?.[1] ? `Chrome ${ua.match(/Chrome\/(\d+)/)[1]}` : 'Chrome';
+                } else if (ua.includes('Firefox')) {
+                    browser = ua.match(/Firefox\/(\d+)/)?.[1] ? `Firefox ${ua.match(/Firefox\/(\d+)/)[1]}` : 'Firefox';
+                } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+                    browser = ua.match(/Version\/(\d+)/)?.[1] ? `Safari ${ua.match(/Version\/(\d+)/)[1]}` : 'Safari';
+                } else if (ua.includes('Edg')) {
+                    browser = ua.match(/Edg\/(\d+)/)?.[1] ? `Edge ${ua.match(/Edg\/(\d+)/)[1]}` : 'Edge';
+                } else if (ua.includes('OPR')) {
+                    browser = ua.match(/OPR\/(\d+)/)?.[1] ? `Opera ${ua.match(/OPR\/(\d+)/)[1]}` : 'Opera';
+                }
 
-    if (!modal || !openBtn || !cancelBtn || !form) {
-        console.warn('Один из элементов модального окна не найден');
-        return;
+                return `${browser}, ${os}`;
+            })();
+        });
     }
 
-    const closeModal = () => {
-        modal.classList.remove('is-open');
-    };
-
-    openBtn.addEventListener('click', () => {
-        modal.classList.add('is-open');
-    });
-
-    cancelBtn.addEventListener('click', closeModal);
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const linkInput = document.getElementById('bugAttachmentInput');
-        const fileInput = document.getElementById('bugAttachmentFile');
-        const formData = new FormData();
-
-        const fields = [
-            'bugTitle', 'bugSeverity', 'bugStatus', 'bugPrecondition',
-            'bugEnvironment', 'bugSteps', 'bugActual', 'bugExpected'
-        ];
-        fields.forEach(name => {
-            const el = document.getElementById(name);
-            if (el) formData.append(name, el.value);
+    // === Вложения ===
+    if (triggerBtn && fileInput) {
+        triggerBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => {
+            const files = fileInput.files;
+            if (files.length > 0) {
+                const names = Array.from(files).map(f => f.name).join(', ');
+                if (filePreview) filePreview.textContent = `Выбраны файлы: ${names}`;
+                if (linkInput) linkInput.value = '';
+            } else if (filePreview) {
+                filePreview.textContent = '';
+            }
         });
+    }
 
-        const linkValue = linkInput?.value.trim() || '';
-        const files = fileInput?.files || [];
+    // === Форма ===
+    if (clearFormBtn) {
+        clearFormBtn.addEventListener('click', () => {
+            if (form) form.reset();
+            if (fileInput) fileInput.value = '';
+            if (filePreview) filePreview.textContent = '';
+        });
+    }
 
-        if (linkValue) {
-            formData.append('attachment_link', linkValue);
-        } else if (files.length > 0) {
-            for (let file of files) {
-                formData.append('attachment_files', file);
+    if (openBtn && modal) openBtn.addEventListener('click', () => modal.classList.add('is-open'));
+    if (cancelBtn && modal) cancelBtn.addEventListener('click', () => modal.classList.remove('is-open'));
+
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+
+            ['bugTitle', 'bugSeverity', 'bugStatus', 'bugPrecondition', 'bugEnvironment', 'bugSteps', 'bugActual', 'bugExpected']
+                .forEach(name => {
+                    const el = document.getElementById(name);
+                    if (el) formData.append(name, el.value);
+                });
+
+            const linkValue = linkInput?.value.trim() || '';
+            const files = fileInput?.files || [];
+
+            if (linkValue) {
+                formData.append('attachment_link', linkValue);
+            } else if (files.length > 0) {
+                for (const file of files) formData.append('attachment_files', file);
             }
-        }
 
-        try {
-            const response = await fetch('/api/bug-reports', {
-                method: 'POST',
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                alert('Баг-репорт успешно создан!');
-                form.reset();
-                closeModal();
-            } else {
-                const msg = result.error || 'Неизвестная ошибка при создании баг-репорта';
-                alert('Ошибка: ' + msg);
-                console.error('Ошибка API:', result);
+            try {
+                const response = await fetch('api/bug-reports', { method: 'POST', body: formData });
+                if (response.ok) {
+                    alert('Баг-репорт успешно создан!');
+                    form.reset();
+                    if (fileInput) fileInput.value = '';
+                    if (filePreview) filePreview.textContent = '';
+                    modal.classList.remove('is-open');
+                    loadBugReports();
+                } else {
+                    const result = await response.json();
+                    alert('Ошибка: ' + (result.error || 'неизвестная'));
+                }
+            } catch (err) {
+                alert('Ошибка сети');
+                console.error(err);
             }
-        } catch (err) {
-            alert('Ошибка сети: не удалось отправить баг-репорт');
-            console.error('Ошибка сети:', err);
-        }
-    });
+        });
+    }
+
+    // === Загрузка при старте ===
+    loadBugReports();
 });

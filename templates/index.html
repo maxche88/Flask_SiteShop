@@ -263,7 +263,7 @@
 
                 <div class="user-actions" style="display: none;">
                     <a href="#" class="cart-icon" title="Добавить в корзину">
-                        {{ cart_add_mini(size=24, cls="img_c") }}
+                        {{ cart_add_mini(size=24, cls="") }}
                     </a>
                     <div class="btn_buy" data-product-id="">
                         <div class="btn_text">
@@ -283,9 +283,14 @@
     window.userRole = "{{ role }}";
 </script>
 <script src="{{ url_for('static', filename='js/main_menu.js') }}"></script>
+
+{% if role == 'user' %}
 <script src="{{ url_for('static', filename='js/cart-ui.js') }}"></script>
+{% endif %}
+
 <script src="{{ url_for('static', filename='js/filters_category.js') }}"></script>
 <script src="{{ url_for('static', filename='js/menu_category.js') }}"></script>
+
 {% if not role %}
 <script src="{{ url_for('static', filename='js/chat_guest.js') }}"></script>
 {% endif %}

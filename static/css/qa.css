@@ -1,20 +1,75 @@
-/* Кнопка "+" */
-.add-test-case-btn {
-  width: 48px;
-  height: 48px;
-  font-size: 28px;
-  font-weight: bold;
-  background: #4a6cf7;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  margin: 20px;
+.button_container {
+  display: flex;
+  gap: 10px;
 }
 
-.add-test-case-btn:hover {
-  background: #3a5ce5;
+.title_bug_info {
+  height: 15px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* Кнопки "btn-control" */
+.btn-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 32px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #0d6efd;
+  border: 1px solid #0b5ed7;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  outline: none;
+}
+
+.btn-control:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-control:focus {
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25),
+    0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+/* Dropdown статуса */
+.status-dropdown {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    padding: 6px 0;
+    min-width: 180px;
+    z-index: 1001;
+}
+
+.status-option {
+    padding: 8px 16px;
+    font-size: 14px;
+    color: #374151;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.15s;
+}
+
+.status-option:hover {
+    background-color: #f0f5ff;
+    color: #4a6cf7;
+}
+
+.status-option + .status-option {
+    border-top: 1px solid #f0f0f0;
 }
 
 /* Затемнение фона */
@@ -309,4 +364,198 @@
 .tooltip-icon-text:hover {
   background: #e0eaff;
   border-color: #a0bfff;
+}
+
+/* === Таблица баг-репортов (Grid) === */
+
+.bug-reports-grid-table {
+  width: 100%;
+  font-family: Arial, sans-serif;
+  margin: 20px 0;
+}
+
+.grid-header,
+.bug-report-row {
+  display: grid;
+  grid-template-columns:
+    [select] 40px 
+    [id] 60px 
+    [author] 100px 
+    [title] 1fr 
+    [severity] 120px
+    [status] 120px 
+    [updated] 160px;
+  gap: 0;
+  padding: 12px 0;
+  align-items: center;
+}
+
+.grid-header {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  color: #333;
+  border-bottom: 2px solid #ddd;
+}
+
+.grid-header>div {
+  padding: 0 8px;
+  text-align: center;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grid-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.checkbox-cell,
+.checkbox-cell-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.checkbox-cell input[type="checkbox"],
+.checkbox-cell-header input[type="checkbox"] {
+  margin: 0;
+  transform: scale(1.1);
+  cursor: pointer;
+}
+
+.bug-report-row {
+  border-bottom: 1px solid #eee;
+  background-color: #fff;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.bug-report-row:hover {
+  background-color: #f9f9f9;
+}
+
+.bug-report-row>.cell {
+  padding: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #333;
+  text-align: center;
+}
+
+.bug-report-row .title-cell {
+  text-align: left;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.bug-report-row .status-cell {
+  text-transform: capitalize;
+  font-weight: 500;
+}
+
+.bug-report-row .updated-at-cell {
+  font-size: 0.9em;
+  color: #6b7280;
+}
+
+.bug-report-row .severity-cell {
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+/* Цвета по уровню severity */
+.bug-report-row .severity-cell[data-severity="critical"] {
+    color: #ef4444; /* красный */
+}
+.bug-report-row .severity-cell[data-severity="high"] {
+    color: #f97316; /* оранжевый */
+}
+.bug-report-row .severity-cell[data-severity="medium"] {
+    color: #eab308; /* жёлтый */
+}
+.bug-report-row .severity-cell[data-severity="low"] {
+    color: #22c55e; /* зелёный */
+}
+
+/* Стили для просмотра (read-only) */
+.view-field {
+    margin-bottom: 16px;
+}
+
+.view-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: #374151;
+    font-size: 14px;
+}
+
+.view-value {
+    display: block;
+    padding: 10px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 15px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.view-value.empty {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.view-severity.critical { color: #ef4444; font-weight: bold; }
+.view-severity.high { color: #f97316; font-weight: bold; }
+.view-severity.medium { color: #eab308; }
+.view-severity.low { color: #22c55e; }
+
+.view-attachments {
+    margin-top: 4px;
+}
+
+.view-attachments a {
+    color: #4a6cf7;
+    text-decoration: underline;
+}
+
+/* Кнопка закрыти модалки read */
+.icon-btn {
+    width: auto;
+    height: auto;
+    border: none;
+    background: transparent;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #555;
+}
+
+.icon-btn:hover {
+    color: #4a6cf7;
+}
+
+/* Сообщения */
+.info-messages {
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+  min-height: 24px;
+}
+
+.info-messages.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }

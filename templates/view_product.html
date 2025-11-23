@@ -56,7 +56,8 @@
                     <p class="price-value">{{ product.price }} ₽</p>
                 </div>
 
-                <!-- Кнопки для корзины (видимость управляется JS) -->
+                <!-- Кнопки корзины ТОЛЬКО для авторизованных пользователей -->
+                {% if role %}
                 <div class="user-actions">
                     <div class="btn_buy" data-product-id="{{ product.id }}">
                         <div class="btn_text"></div>
@@ -66,6 +67,7 @@
                         {{ cart_add_mini(size=24, cls="img_c") }}
                     </a>
                 </div>
+                {% endif %}
             </div>
 
             <!-- Характеристики -->
@@ -127,8 +129,9 @@
 
 <script src="{{ url_for('static', filename='js/view_product.js') }}"></script>
 
-{% if role %}
+{% if role == 'user' %}
 <script src="{{ url_for('static', filename='js/cart-ui.js') }}"></script>
 {% endif %}
+
 
 {% endblock %}
