@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // === Загрузка диалогов ===
     async function loadDialogs() {
         try {
-            const response = await fetch('/api/chat/user-dialogs', {
+            const response = await fetch('/api/chat/dialogs', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin'
@@ -69,34 +69,84 @@ document.addEventListener('DOMContentLoaded', function () {
         dialogsList.innerHTML = '';
 
         if (!dialogs || dialogs.length === 0) {
-            dialogsList.innerHTML = `
-                <tr>
-                    <td colspan="4" style="text-align:center; padding:20px; color:#777;">
-                        У вас пока нет сообщений
-                    </td>
-                </tr>
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="5" style="text-align:center; padding:20px; color:#777;">
+                    У вас пока нет сообщений
+                </td>
             `;
+            dialogsList.appendChild(row);
             return;
         }
 
         dialogs.forEach(dialog => {
             const row = document.createElement('tr');
             row.className = 'dialog-row';
+            if (dialog.unread_count > 0) {
+                row.classList.add('has-unread'); // ← подсветка
+            }
             row.dataset.dialogId = dialog.id;
 
+            // Определяем собеседника
             const partnerLabel = dialog.last_sender_role === 'suser' ? 'Менеджер' :
                                 (dialog.last_sender_role === 'admin' ? 'Администратор' : 'Поддержка');
 
+            // Иконка закрытия (можно заменить на SVG или другую иконку)
+            const closeIcon = `
+                <button class="dialog-close-btn" title="Закрыть диалог">
+                    ✕
+                </button>
+            `;
+
             row.innerHTML = `
+                <td class="dialog-actions">${closeIcon}</td>
                 <td>${escapeHtml(dialog.topic_name)}</td>
                 <td>${partnerLabel}</td>
                 <td class="last-message-preview">${escapeHtml(dialog.last_message_preview?.substring(0, 50) || '—')}</td>
                 <td>${formatDate(dialog.updated_at)}</td>
             `;
 
-            row.addEventListener('click', () => openChatModal(dialog.id));
+            // Обработчик клика по строке — открыть чат
+            row.addEventListener('click', (e) => {
+                // Игнорируем клик по кнопке закрытия
+                if (e.target.closest('.dialog-close-btn')) return;
+                openChatModal(dialog.id);
+            });
+
+            // Обработчик клика по кнопке закрытия
+            const closeBtn = row.querySelector('.dialog-close-btn');
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // не открывать чат
+                confirmCloseDialog(dialog.id);
+            });
+
             dialogsList.appendChild(row);
         });
+    }
+
+    async function confirmCloseDialog(dialogId) {
+        if (!confirm('Вы уверены, что хотите закрыть этот диалог?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/chat/dialogs/${dialogId}/close`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || `HTTP ${response.status}`);
+            }
+
+            loadDialogs(); 
+
+        } catch (error) {
+            console.error('Ошибка при закрытии диалога:', error);
+            showMessage(`Не удалось закрыть диалог: ${error.message}`, 'error');
+        }
     }
 
     // === Открытие чата ===

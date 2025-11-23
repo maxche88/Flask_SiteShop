@@ -258,7 +258,7 @@ class Message(db.Model):
 
     # Отправитель
     sender_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    sender_role = db.Column(db.String(20), nullable=False)  # guest | user | suser | admin
+    sender_role = db.Column(db.String(20), nullable=False)  # user | suser | admin
 
     # Содержимое
     text = db.Column(db.Text, nullable=False)
