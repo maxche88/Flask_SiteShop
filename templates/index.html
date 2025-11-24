@@ -15,6 +15,7 @@
     <!-- Контейнер иконки администратора -->
     <div id="account-icon-container" class="head_user_icons role-admin">
         {{ user_account(size=40, cls="account", id="account-button") }}
+        <span class="info-badge">Admin</span>
     </div>
 
     <!-- Выпадающее меню администратора -->
@@ -35,6 +36,7 @@
     <!-- Контейнер иконки продавца -->
     <div id="account-icon-container" class="head_user_icons role-suser">
         {{ user_account(size=40, cls="account", id="account-button") }}
+        <span class="info-badge">Manager</span>
     </div>
 
     <!-- Выпадающее меню менеджера -->
@@ -69,8 +71,9 @@
 
     {% elif role == 'tester' %}
     <!-- Контейнер иконки тестеровщика -->
-    <div id="account-icon-container" class="head_user_icons role-suser">
+    <div id="account-icon-container" class="head_user_icons role-tester">
         {{ user_account(size=40, cls="account", id="account-button") }}
+        <span class="info-badge">Tester</span>
     </div>
 
     <!-- Контейнер иконки и тестировщика -->

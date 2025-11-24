@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let topicsLoaded = false;
 
-    // === Загрузка категорий ===
+    // Загрузка категорий
     async function loadTopics() {
         if (topicsLoaded || !categorySelect) return;
 
@@ -19,10 +19,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const topics = await response.json();
 
-            // Очистка селекта
             categorySelect.innerHTML = '';
 
-            // Плейсхолдер
             const placeholder = document.createElement('option');
             placeholder.value = '';
             placeholder.text = '— Выберите категорию —';
@@ -30,7 +28,6 @@ document.addEventListener('DOMContentLoaded', function () {
             placeholder.selected = true;
             categorySelect.appendChild(placeholder);
 
-            // Добавление тем
             topics.forEach(topic => {
                 const option = document.createElement('option');
                 option.value = topic.id;
@@ -48,16 +45,35 @@ document.addEventListener('DOMContentLoaded', function () {
     // === Управление окном ===
     function closeWindow() {
         wrapper.classList.remove('expanded');
+        if (form) {
+            const activeElement = document.activeElement;
+            if (activeElement && wrapper.contains(activeElement)) {
+                activeElement.blur();
+            }
+        }
     }
 
     function openWindow() {
-        // Закрыть фильтры
         const filters = document.getElementById('advanced-filters');
         if (filters) {
             filters.classList.remove('advanced_filters--visible');
         }
 
-        // Загрузить темы и открыть
+        const content = wrapper.querySelector('.guest-contact-content');
+        if (content) {
+            // Сброс высоты
+            content.style.height = '';
+
+            // На мобильных — ограничим высоту окна
+            if (window.innerWidth <= 768) {
+                const maxHeight = Math.min(window.innerHeight * 0.8, 600);
+                content.style.height = `${maxHeight}px`;
+            } else {
+                // На десктопе — фиксированная высота
+                content.style.height = '400px';
+            }
+        }
+
         if (!topicsLoaded) {
             loadTopics().then(() => {
                 wrapper.classList.add('expanded');
@@ -67,7 +83,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Обработчики открытия/закрытия
+    window.addEventListener('resize', () => {
+        if (wrapper.classList.contains('expanded')) {
+            const content = wrapper.querySelector('.guest-contact-content');
+            if (content && window.innerWidth <= 768) {
+                const maxHeight = Math.min(window.innerHeight * 0.8, 600);
+                content.style.height = `${maxHeight}px`;
+            }
+        }
+    });
+
+    // Обработчик переключения по заголовку
     tab?.addEventListener('click', function () {
         if (wrapper.classList.contains('expanded')) {
             closeWindow();
@@ -76,16 +102,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Кнопка "закрыть" (если есть) тоже закрывает
     closeBtn?.addEventListener('click', closeWindow);
-
-    // Закрытие по клику вне
-    document.addEventListener('click', function (e) {
-        if (wrapper.classList.contains('expanded') &&
-            !wrapper.contains(e.target) &&
-            !e.target.closest('.guest-contact-tab')) {
-            closeWindow();
-        }
-    });
 
     // Отправка формы
     if (form) {

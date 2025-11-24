@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from extensions import db
 from models import Dialog, Message, User, MessageTopic
 from services.chat_service import create_guest_dialog, create_user_dialog, send_message_in_dialog
-from utils.mail import send_guest_dialog_reply
+from utils.mail import send_guest_dialog_reply, normalize_email
 from utils.user_sessions import get_safe_user_id
 import logging
 import re
@@ -132,13 +132,17 @@ def create_dialog_api():
 
     if is_guest:
         guest_name = data.get('guest_name', '').strip()
-        guest_email = data.get('guest_email', '').strip()
+        raw_guest_email = data.get('guest_email', '').strip()
         if not guest_name:
             errors.append('Имя обязательно.')
-        if not guest_email:
+        if not raw_guest_email:
             errors.append('Email обязателен.')
-        elif not re.match(r'^[^@]+@[^@]+\.[^@]+$', guest_email):
-            errors.append('Некорректный email.')
+        else:
+            normalized_email = normalize_email(raw_guest_email)
+            if normalized_email is None:
+                errors.append('Некорректный email.')
+            else:
+                guest_email = normalized_email
 
 
     # Категория (topic_id)
@@ -532,7 +536,7 @@ def send_reply_to_dialog(dialog_id):
     text = data.get('text', '').strip()
     if not text:
         return jsonify({'error': 'Сообщение не может быть пустым'}), 400
-
+    
     # Сохранение сообщения и отправка уведомлений
     try:
         # Создаём новое сообщение от админа/менеджера
@@ -542,12 +546,15 @@ def send_reply_to_dialog(dialog_id):
             sender_role=user.role,
             text=text
         )
+
         db.session.add(new_message)
         dialog.updated_at = func.now()  # Обновляем время последней активности
         db.session.commit()
 
+        
         # Если диалог от гостя — отправляем email
         if dialog.user_id is None:
+            
             email_sent = send_guest_dialog_reply(
                 dialog_id=dialog.id,
                 guest_name=dialog.name,
@@ -555,6 +562,7 @@ def send_reply_to_dialog(dialog_id):
                 reply_text=text,
                 sender_role=user.role
             )
+            
             if not email_sent:
                 chat_logger.warning(f"Не удалось отправить email гостю в диалоге {dialog.id}")
 
