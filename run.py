@@ -13,7 +13,7 @@ from routes.chat.routes_api import chat_bp
 from routes.chat.routes_ui import chat_ui_bp
 from routes.qa_engineer.qa import qa_bp
 from extensions import mail, jwt, db, migrate
-from config.config import Config, INSTANCE_DIR
+from config.config import Config
 from utils.logger import app_loggers
 from models import IPAttemptLog
 
@@ -27,13 +27,13 @@ def create_app():
     """
     app = Flask(__name__)
     app.config.from_object(Config)
-    os.makedirs(INSTANCE_DIR, exist_ok=True)
     
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
     jwt.init_app(app)
 
+    app_loggers(app)
 
     # Регистрация blueprint'ов
     app.register_blueprint(api_bp)
@@ -86,6 +86,5 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app_loggers(app)
     # app.run(host='0.0.0.0', port=5000, debug=True)
     app.run(debug=True)

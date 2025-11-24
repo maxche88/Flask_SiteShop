@@ -14,7 +14,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     hash_passwd = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(5), default="user")
+    role = db.Column(db.String(6), default="user")
     avatar_url = db.Column(db.String(255), default="/img/avatars/default_user.png")
     confirm_email = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now(), nullable=False)

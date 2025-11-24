@@ -105,13 +105,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const response = await fetch(`api/bug-reports/${bugId}`);
+                
                 if (!response.ok) throw new Error('Баг-репорт не найден');
 
                 const report = await response.json();
                 renderViewModal(report);
                 viewModal.classList.add('is-open');
+
             } catch (err) {
-                alert('Ошибка загрузки баг-репорта');
+                alert(err);
                 console.error(err);
             }
         });

@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!query.trim()) {
-            renderOpenedLogs(); // сброс → полный файл
+            renderOpenedLogs();
             return;
         }
 
@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         roleDropdown = document.createElement('div');
         roleDropdown.className = 'role-select-dropdown';
 
-        ['admin', 'suser', 'user'].forEach(role => {
+        ['admin', 'suser', 'user', 'tester'].forEach(role => {
             const item = document.createElement('div');
             item.className = 'role-select-item';
             item.textContent = role;

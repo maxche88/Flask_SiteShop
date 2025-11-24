@@ -1,6 +1,6 @@
 import os
 import uuid
-from flask import Blueprint, render_template, redirect, url_for
+from flask import current_app, Blueprint, render_template, redirect, url_for
 from werkzeug.utils import secure_filename
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -17,20 +17,11 @@ def qa_dashboard():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
-    # роль 'test' или 'admin' имеет доступ
-    if user.role not in ['test', 'admin']:
-        return redirect(url_for('main.index'))  # или 403
+    # роль 'tester' или 'admin' имеет доступ
+    if user.role not in ['tester', 'admin']:
+        return redirect(url_for('main.index'))
     return render_template('qa-engineer/qa.html')
 
-
-# Настройки загрузки (лучше вынести в config)
-UPLOAD_FOLDER = 'static/uploads/bug_reports'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'txt', 'log'}
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @qa_bp.route('/api/bug-reports', methods=['POST'])
 @jwt_required()
@@ -38,8 +29,18 @@ def create_bug_report():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
-    if not user or user.role not in ['test', 'admin']:
+    if not user or user.role not in ['tester', 'admin']:
         return jsonify({'error': 'Доступ запрещён'}), 403
+
+    # Получаем настройки из конфига
+    upload_folder = current_app.config['BUG_REPORT_UPLOAD_FOLDER']
+    allowed_extensions = current_app.config['BUG_REPORT_ALLOWED_EXTENSIONS']
+
+    # Создаём папку, если не существует
+    os.makedirs(upload_folder, exist_ok=True)
+
+    def allowed_file(filename):
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
 
     try:
         # Обработка ссылки
@@ -47,7 +48,7 @@ def create_bug_report():
         attachments_value = None
 
         if attachment_link:
-            # Просто сохраняем ссылку как строку
+            # Cохраняем ссылку как строку
             attachments_value = attachment_link
         else:
             # Обработка файлов
@@ -57,9 +58,9 @@ def create_bug_report():
                 if file and file.filename != '' and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
                     unique_filename = f"{uuid.uuid4().hex}.{filename.rsplit('.', 1)[1].lower()}"
-                    filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+                    filepath = os.path.join(upload_folder, unique_filename)
                     file.save(filepath)
-                    saved_paths.append(f"/{UPLOAD_FOLDER}/{unique_filename}")
+                    saved_paths.append(f"/static/uploads/bug_reports/{unique_filename}")
             if saved_paths:
                 attachments_value = ','.join(saved_paths)
 
@@ -94,7 +95,7 @@ def get_bug_reports():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
-    if not user or user.role not in ['test', 'admin']:
+    if not user or user.role not in ['tester', 'admin']:
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     # Определяем порядок severity для сортировки в PostgreSQL
@@ -131,7 +132,7 @@ def bulk_update_bug_status():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
-    if not user or user.role not in ['test', 'admin']:
+    if not user or user.role not in ['tester', 'admin']:
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     data = request.get_json()
@@ -163,20 +164,29 @@ def bulk_update_bug_status():
 @qa_bp.route('/api/bug-reports/<int:bug_id>', methods=['GET'])
 @jwt_required()
 def get_bug_report(bug_id):
+    """
+    Получение деталей конкретного баг-репорта по его ID.
+    
+    Доступ разрешён только:
+      - Администраторам (могут читать любые репорты)
+    
+    Возвращает 403 при недостатке прав, 404 если репорт не найден.
+    """
+    # Получаем ID текущего пользователя из JWT-токена
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
-    
-    if not user or user.role not in ['test', 'admin']:
+
+    # Проверяем, существует ли пользователь и имеет ли допустимую роль
+    if not user or user.role not in ['tester', 'admin']:
         return jsonify({'error': 'Доступ запрещён'}), 403
 
+    # Ищем баг-репорт по переданному ID
     report = BugReport.query.get(bug_id)
+
     if not report:
         return jsonify({'error': 'Баг-репорт не найден'}), 404
 
-    # если не admin — только свои
-    if user.role != 'admin' and report.author_id != current_user_id:
-        return jsonify({'error': 'Доступ запрещён'}), 403
-
+    # Возвращаем данные репорта в стандартизированном формате
     return jsonify({
         'id': report.id,
         'author_id': report.author_id,

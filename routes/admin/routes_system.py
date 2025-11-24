@@ -145,7 +145,7 @@ def get_all_users():
 @jwt_required()
 def update_user_role(user_id):
     """
-    Изменяет роль пользователя (admin/suser/user). Доступен только администраторам. 
+    Изменяет роль пользователя (admin/suser/user/tester). Доступен только администраторам. 
     """
     current_user_id = get_jwt_identity()
     current_user = User.query.get(current_user_id)
@@ -155,7 +155,7 @@ def update_user_role(user_id):
     data = request.get_json()
     new_role = data.get('role')
 
-    if new_role not in ['admin', 'suser', 'user']:
+    if new_role not in ['admin', 'suser', 'user', 'tester']:
         return jsonify({'error': 'Недопустимая роль'}), 400
 
     user = User.query.get(user_id)

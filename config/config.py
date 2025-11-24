@@ -61,6 +61,10 @@ class Config:
     CHAT_ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'GIF'}
     CHAT_MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
+    # === Вложения в баг-репортах ===
+    BUG_REPORT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'bug_reports')
+    BUG_REPORT_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'txt', 'log'}
+
 
 """
 .env

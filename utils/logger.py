@@ -6,6 +6,7 @@ from logging.handlers import RotatingFileHandler
 def app_loggers(app):
     """Настраивает логгеры: auth, product, system, order, chat."""
     log_dir = app.config.get('LOG_DIR', 'logs')
+    os.makedirs(log_dir, exist_ok=True)
     max_bytes = app.config.get('LOG_MAX_BYTES', 10 * 1024 * 1024)  # 10 MB
     backup_count = app.config.get('LOG_BACKUP_COUNT', 5)
     log_level_name = app.config.get('LOG_LEVEL', 'INFO')
