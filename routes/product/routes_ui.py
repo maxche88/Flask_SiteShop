@@ -1,7 +1,7 @@
 # Маршруты для пользователя с ролью suser.
-from flask import Blueprint, render_template, redirect, url_for
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import User, Shop
+from flask import Blueprint, render_template, redirect, url_for, g
+from models import Shop
+from extensions import db
 
 
 product_bp = Blueprint('product_edit', __name__)
@@ -9,44 +9,36 @@ product_bp = Blueprint('product_edit', __name__)
 
 # Страница управления товарами.
 @product_bp.route('/product')
-@jwt_required()
 def product():
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    
-    if not user:
-        return redirect(url_for('session.login'))
+    user = g.current_user
     
     if user.role not in ('suser', 'admin'):
         return redirect(url_for('session.login'))
     
     return render_template('product/edit_product_panel.html',
-                         user_id=current_user_id,
+                         user_id=g.current_user_id,
                          role=user.role)
 
 # Форма добавления товара.
 @product_bp.route('/add-product')
-@jwt_required()
 def add_product():
+    # Доступ уже проверен в before_request, но проверим роль
+    if g.current_user.role not in ('suser', 'admin'):
+        return redirect(url_for('session.login'))
     return render_template('product/add_product.html')
 
-# Форма редактирования товара.
+# Форма редактирования товара. 
 @product_bp.route('/edit-product/<int:product_id>')
-@jwt_required()
 def edit_product(product_id):
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    
-    if not user:
-        return render_template('404.html'), 404
+    user = g.current_user
 
-    product = Shop.query.get(product_id)
+    product = db.session.get(Shop, product_id)
     if not product:
         return render_template('404.html'), 404
 
     # Проверка прав доступа
     # Админ может редактировать и видеть все товары. suser — только свои товары.
-    if user.role != 'admin' and int(product.user_id) != int(current_user_id):
+    if user.role != 'admin' and int(product.user_id) != g.current_user_id:
         return render_template(
             'error.html',
             message="Нет прав доступа. Вы можете редактировать только свои товары."

@@ -6,7 +6,7 @@ from sqlalchemy import func
 class User(db.Model):
     """
     Хранит учётные данные зарегистрированных пользователей.
-    Поддерживает роли: user, suser, admin.
+    Поддерживает роли: user, suser, admin, tester.
     """
     __tablename__ = 'users'
 

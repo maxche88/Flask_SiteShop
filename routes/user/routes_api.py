@@ -1,8 +1,8 @@
 import logging
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, CartItem, Shop, User, OrderItem, Order
+from flask import Blueprint, request, jsonify, g
+from models import CartItem, Shop, OrderItem, Order
 from datetime import datetime, timezone
+from extensions import db
 
 
 user_api_bp = Blueprint('user_api', __name__, url_prefix='/api/user')
@@ -11,12 +11,8 @@ order_logger = logging.getLogger('app.orders')
 
 # === ДОБАВЛЕНИЕ В КОРЗИНУ ===
 @user_api_bp.route('/cart', methods=['POST'])
-@jwt_required()
 def add_to_cart():
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if not user:
-        return jsonify({"error": "Пользователь не найден"}), 404
+    user = g.current_user
 
     product_id = request.form.get('product_id')
     if not product_id:
@@ -29,7 +25,7 @@ def add_to_cart():
     except (TypeError, ValueError):
         quantity = 1
 
-    product = Shop.query.get(product_id)
+    product = db.session.get(Shop, product_id)
     if not product:
         return jsonify({"error": "Товар не найден"}), 404
 
@@ -65,12 +61,8 @@ def add_to_cart():
 
 # === УДАЛЕНИЕ ИЗ КОРЗИНЫ ===
 @user_api_bp.route('/cart', methods=['DELETE'])
-@jwt_required()  # ← ОБЯЗАТЕЛЬНО!
 def remove_from_cart():
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if not user:
-        return jsonify({"error": "Пользователь не найден"}), 404
+    user = g.current_user
 
     item_id = request.args.get('item_id')
     clear_all = request.args.get('clear') == 'all'
@@ -102,13 +94,8 @@ def remove_from_cart():
 
 # ОФОРМЛЕНИЕ ЗАКАЗА
 @user_api_bp.route('/checkout', methods=['POST'])
-@jwt_required()
 def checkout():
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if not user:
-        order_logger.warning(f"Попытка оформить заказ несуществующим пользователем: user_id={current_user_id}")
-        return jsonify({"error": "Пользователь не найден"}), 404
+    user = g.current_user
 
     data = request.get_json()
     if not data:
@@ -203,13 +190,10 @@ def checkout():
         order_logger.exception(f"Критическая ошибка при оформлении заказа: user_id={user.id}")
         return jsonify({"error": "Ошибка при создании заказа"}), 500
 
+
 @user_api_bp.route('/cart/count')
-@jwt_required()
 def cart_count():
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if not user:
-        return jsonify({"count": 0}), 404
+    user = g.current_user
 
     total_quantity = db.session.query(db.func.sum(CartItem.quantity)) \
         .filter_by(user_id=user.id) \

@@ -25,7 +25,7 @@ class Config:
     JWT_COOKIE_CSRF_PROTECT = False
     JWT_ACCESS_COOKIE_PATH = '/'
     JWT_REFRESH_COOKIE_PATH = '/token/refresh'
-    JWT_ACCESS_TOKEN_EXPIRES = 3600    # жизнь токена указывается в секундах 3600 - (1 час) 
+    JWT_ACCESS_TOKEN_EXPIRES = 6600    # жизнь токена указывается в секундах 3600 - (1 час) 
 
     # === Время жизни токенов подтверждения и восстановления ===
     # Указывается в МИНУТАХ (удобно для теста: 1 минута, продакшен: 1440 = 24 часа)

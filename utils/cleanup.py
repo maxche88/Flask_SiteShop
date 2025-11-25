@@ -1,6 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from flask import current_app
-from models import db, User, IPAttemptLog
+from models import User, IPAttemptLog
+from extensions import db
 
 
 def get_unconfirmed_cutoff():

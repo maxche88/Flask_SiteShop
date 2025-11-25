@@ -31,8 +31,9 @@ def check_if_token_revoked(_, jwt_payload):
     token = UserToken.query.filter_by(jti=jti).first()
 
     is_revoked = token is not None and token.revoked
-
+    short_jti = jti[:8] if jti else "none"
+    
     if is_revoked:
-        sys_logger.warning(f"Обнаружена попытка использования ОТЗВАННОГО токена! user_id={user_id}, jti={jti}")
+        sys_logger.warning(f"Обнаружена попытка использования ОТЗВАННОГО токена! user_id={user_id}, jti={short_jti}")
 
     return is_revoked
