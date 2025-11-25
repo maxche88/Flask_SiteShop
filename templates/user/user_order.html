@@ -18,24 +18,26 @@
 {% endblock %}
 
 {% block content %}
+<div class="conteiner_title">
+    <h4>История покупок.</h4>
+</div>
+
 <div class="conteiner_forms">
     {% if order_items %}
     <div class="table-wrapper">
         <table class="styled-orders-table">
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="select-all-orders"></th>
                     <th>ID заказа</th>
                     <th>Товар</th>
                     <th>Кол-во</th>
                     <th>Цена</th>
-                    <th>Дата заказа</th>
+                    <th>Дата покупки</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in order_items %}
                 <tr>
-                    <td><input type="checkbox" class="order-item-checkbox" value="{{ item.id }}"></td>
                     <td>{{ item.order.id }}</td>
                     <td>{{ item.product.title if item.product else 'Товар удалён' }}</td>
                     <td>{{ item.quantity }}</td>
@@ -47,11 +49,7 @@
         </table>
     </div>
     {% else %}
-        <p class="no-orders">У вас пока нет оформленных заказов.</p>
+        <p class="no-orders">У вас пока нет купленных товаров.</p>
     {% endif %}
 </div>
-{% endblock %}
-
-{% block js %}
-<script src="{{ url_for('static', filename='js/user_orders.js') }}"></script>
 {% endblock %}
