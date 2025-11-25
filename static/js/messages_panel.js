@@ -11,8 +11,139 @@ document.addEventListener('DOMContentLoaded', function () {
     const infoPanel = document.getElementById('messages-info-panel');
 
     let currentDialogId = null;
+    let isGuestDialog = false;
 
-    // === Утилиты ===
+    // === Чекбоксы для выбора диалогов ===
+    document.getElementById('select-all-dialogs').addEventListener('change', function () {
+        const isChecked = this.checked;
+        document.querySelectorAll('.dialog-checkbox').forEach(checkbox => {
+            checkbox.checked = isChecked;
+        });
+    });
+
+    document.getElementById('dialogs-list').addEventListener('change', function (e) {
+        if (e.target.classList.contains('dialog-checkbox')) {
+            const allCheckboxes = document.querySelectorAll('.dialog-checkbox');
+            const checkedCheckboxes = document.querySelectorAll('.dialog-checkbox:checked');
+            document.getElementById('select-all-dialogs').checked = (allCheckboxes.length === checkedCheckboxes.length);
+        }
+    });
+
+    function getSelectedDialogIds() {
+        const selected = [];
+        document.querySelectorAll('.dialog-checkbox:checked').forEach(checkbox => {
+            const row = checkbox.closest('.dialog-item');
+            if (row) {
+                const id = row.dataset.dialogId;
+                if (id) selected.push(parseInt(id, 10));
+            }
+        });
+        return selected;
+    }
+
+    // Выпадающее меню статуса
+    const changeStatusBtn = document.getElementById('change-status-btn');
+    const statusDropdown = document.getElementById('status-dropdown');
+
+    changeStatusBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        statusDropdown.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.status-dropdown-wrapper')) {
+            statusDropdown.classList.add('hidden');
+        }
+    });
+
+    statusDropdown.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('status-option')) {
+            const newStatus = e.target.dataset.status;
+            const dialogIds = getSelectedDialogIds();
+
+            if (dialogIds.length === 0) {
+                showMessage('Выберите хотя бы один диалог', 'warning');
+                return;
+            }
+
+            statusDropdown.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/chat/dialogs/bulk-update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        dialog_ids: dialogIds,
+                        status: newStatus
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    throw new Error(err.error || 'Не удалось обновить статус');
+                }
+
+                showMessage(`Статус обновлён на "${newStatus}" для ${dialogIds.length} диалогов`, 'success');
+                loadDialogs();
+
+            } catch (error) {
+                console.error('Ошибка обновления статуса:', error);
+                showMessage(`Ошибка: ${error.message}`, 'error');
+            }
+        }
+    });
+
+    function updateStatusButtonState() {
+        const hasSelected = getSelectedDialogIds().length > 0;
+        changeStatusBtn.disabled = !hasSelected;
+    }
+
+    document.getElementById('select-all-dialogs').addEventListener('change', updateStatusButtonState);
+    document.getElementById('dialogs-list').addEventListener('change', updateStatusButtonState);
+
+    // Удаление диалогов
+    const deleteDialogsBtn = document.getElementById('delete-dialogs-btn');
+
+    function updateDeleteButtonState() {
+        const hasSelected = getSelectedDialogIds().length > 0;
+        deleteDialogsBtn.disabled = !hasSelected;
+    }
+
+    document.getElementById('select-all-dialogs').addEventListener('change', updateDeleteButtonState);
+    document.getElementById('dialogs-list').addEventListener('change', updateDeleteButtonState);
+
+    deleteDialogsBtn.addEventListener('click', async () => {
+        const dialogIds = getSelectedDialogIds();
+        if (dialogIds.length === 0) return;
+
+        if (!confirm(`Вы уверены, что хотите удалить ${dialogIds.length} диалог(ов)? Это действие нельзя отменить.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/chat/dialogs/bulk-delete', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ dialog_ids: dialogIds })
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || 'Не удалось удалить диалоги');
+            }
+
+            showMessage(`Удалено ${dialogIds.length} диалог(ов)`, 'success');
+            loadDialogs();
+
+        } catch (error) {
+            console.error('Ошибка удаления диалогов:', error);
+            showMessage(`Ошибка: ${error.message}`, 'error');
+        }
+    });
+
+    // Утилиты
     function showMessage(message, type = 'info') {
         if (infoPanel) {
             infoPanel.textContent = message;
@@ -44,11 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return labels[role] || role;
     }
 
-    function getRoleClass(role) {
-        return ['admin', 'suser', 'user', 'guest'].includes(role) ? role : 'user';
-    }
-
-    // === 1. Загрузка списка диалогов ===
+    // Загрузка списка диалогов
     async function loadDialogs() {
         try {
             const response = await fetch('/api/chat/dialogs', {
@@ -71,11 +198,8 @@ document.addEventListener('DOMContentLoaded', function () {
         dialogsList.innerHTML = '';
 
         if (!dialogs || dialogs.length === 0) {
-            dialogsList.innerHTML = `
-                <div class="dialog-item" style="grid-column: 1 / -1; text-align: center; padding: 20px; color: #666;">
-                    Нет доступных диалогов
-                </div>
-            `;
+            dialogsList.innerHTML = '';
+            showMessage('Нет доступных диалогов', 'info');
             return;
         }
 
@@ -84,14 +208,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const item = row.querySelector('.dialog-item');
 
             item.dataset.dialogId = dialog.id;
+            item.dataset.userId = dialog.user_id; // Сохраняем user_id
 
             item.querySelector('.id-col').textContent = dialog.id;
             item.querySelector('.topic-col').textContent = dialog.topic_name || '—';
             
-            const client = dialog.name && dialog.email
-                ? `${dialog.name} (${dialog.email})`
-                : (dialog.name || '—');
-            item.querySelector('.client-col').textContent = client;
+            const usernameEl = item.querySelector('.username');
+            if (dialog.user_id != null && dialog.username) {
+                usernameEl.textContent = dialog.username;
+            } else {
+                usernameEl.textContent = 'Гость';
+            }
+
+            const emailEl = item.querySelector('.client-col');
+            emailEl.textContent = dialog.email || '—';
 
             const context = dialog.order_id 
                 ? `Заказ #${dialog.order_id}` 
@@ -100,19 +230,30 @@ document.addEventListener('DOMContentLoaded', function () {
             item.querySelector('.context-col').textContent = context;
 
             const statusEl = item.querySelector('.status-col');
-            statusEl.textContent = dialog.status === 'open' ? 'Открыт' : 'Закрыт';
-            statusEl.classList.add(dialog.status);
+            statusEl.textContent = 
+                dialog.status === 'open' ? 'Открыт' :
+                dialog.status === 'closed' ? 'Закрыт' : 'Архив';
+            statusEl.className = 'dialogs-col status-col ' + dialog.status;
 
             item.querySelector('.updated-col').textContent = formatDate(dialog.updated_at);
             item.querySelector('.count-col').textContent = dialog.message_count || 0;
             item.querySelector('.last-sender-col').textContent = getRoleLabel(dialog.last_sender_role) || '—';
 
-            item.addEventListener('click', () => openChatModal(dialog.id));
+            if (dialog.unread_count > 0) {
+                item.classList.add('has-unread');
+            }
+
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.dialog-checkbox')) {
+                    return;
+                }
+                openChatModal(dialog.id);
+            });
             dialogsList.appendChild(item);
         });
     }
 
-    // === 2. Открытие модального окна ===
+    // Открытие модального окна
     async function openChatModal(dialogId) {
         currentDialogId = dialogId;
         modalDialogId.textContent = dialogId;
@@ -122,6 +263,10 @@ document.addEventListener('DOMContentLoaded', function () {
         chatMessageInput.focus();
 
         try {
+            // Определяем, гость ли (user_id === null)
+            const dialogRow = document.querySelector(`.dialog-item[data-dialog-id="${dialogId}"]`);
+            isGuestDialog = dialogRow ? (dialogRow.dataset.userId === 'null') : false;
+
             const response = await fetch(`/api/chat/dialogs/${dialogId}/messages`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
@@ -132,6 +277,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const messages = await response.json();
             renderMessages(messages);
+
+            // Обновляем текст кнопки
+            if (sendChatMessageBtn) {
+                sendChatMessageBtn.textContent = isGuestDialog ? 'Отправить на email' : 'Отправить';
+            }
+
         } catch (error) {
             console.error(`Ошибка загрузки сообщений диалога ${dialogId}:`, error);
             chatMessagesContainer.innerHTML = '<div style="color:red; padding:10px;">Не удалось загрузить сообщения.</div>';
@@ -147,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         messages.forEach(msg => {
-            const isSent = msg.sender_role === window.CURRENT_USER_ROLE; // админ/менеджер
+            const isSent = msg.sender_role === window.CURRENT_USER_ROLE;
             const senderLabel = getRoleLabel(msg.sender_role);
 
             const messageEl = document.createElement('div');
@@ -163,14 +314,13 @@ document.addEventListener('DOMContentLoaded', function () {
         chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
     }
 
-    // Защита от XSS
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    // === 3. Отправка нового сообщения ===
+    // Отправка нового сообщения
     async function sendNewMessage() {
         const text = chatMessageInput.value.trim();
         if (!text) {
@@ -197,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 credentials: 'same-origin',
                 body: JSON.stringify({
                     text: text,
-                    sender_role: window.CURRENT_USER_ROLE // 'suser' или 'admin'
+                    sender_role: window.CURRENT_USER_ROLE
                 })
             });
 
@@ -206,11 +356,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(err.message || `HTTP ${response.status}`);
             }
 
-            // Очистка поля
             chatMessageInput.value = '';
             chatMessageInput.focus();
 
-            // Перезагрузка сообщений (или можно добавить вручную)
             const res = await fetch(`/api/chat/dialogs/${currentDialogId}/messages`);
             const messages = await res.json();
             renderMessages(messages);
@@ -224,16 +372,23 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // === Обработчики событий ===
-    closeChatModalBtn.addEventListener('click', () => {
+    // Закрытие чата — сброс флага
+    function closeChatModal() {
         chatModal.classList.add('hidden');
-        currentDialogId = null;
-    });
+        if (currentDialogId) {
+            const dialogRow = document.querySelector(`.dialog-item[data-dialog-id="${currentDialogId}"]`);
+            if (dialogRow) {
+                dialogRow.classList.remove('has-unread');
+            }
+            currentDialogId = null;
+            isGuestDialog = false;
+        }
+    }
 
+    closeChatModalBtn.addEventListener('click', closeChatModal);
     chatModal.querySelector('.chat-modal-overlay').addEventListener('click', (e) => {
         if (e.target === chatModal.querySelector('.chat-modal-overlay')) {
-            chatModal.classList.add('hidden');
-            currentDialogId = null;
+            closeChatModal();
         }
     });
 
@@ -246,6 +401,5 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // === Запуск ===
     loadDialogs();
 });

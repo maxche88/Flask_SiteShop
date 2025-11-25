@@ -66,7 +66,7 @@ def send_guest_dialog_reply(
     subject = "Ответ на ваш вопрос"
     body = f"""Здравствуйте, {guest_name}!
 
-    Вам ответил(а) {sender_display_name} (диалог #{dialog_id}):
+    Вам ответил {sender_display_name} (диалог #{dialog_id}):
 
     {reply_text}
 

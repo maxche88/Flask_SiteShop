@@ -18,22 +18,45 @@
 
 {% block content %}
 <div class="messages-page">
+    <div class="info_container">
+        <!-- Информация о текущем пользователе -->
+        <div class="messages-user-info">
+            <p>user_id: {{ user_id }}</p>
+            <p>role: {{ role }}</p>
+        </div>
 
-    <!-- Информационная панель -->
-    <div id="messages-info-panel" class="messages-info hidden"></div>
-
-    <!-- Информация о текущем пользователе -->
-    <div class="messages-user-info">
-        <p>user_id: {{ user_id }}</p>
-        <p>role: {{ role }}</p>
+        <!-- Информационная панель -->
+        <div id="messages-info-panel" class="messages-info hidden"></div>
     </div>
+
+    <!-- Кнопки управления диалогами -->
+    <div class="dialog-actions-bar">
+        <div class="status-dropdown-wrapper">
+            <button id="change-status-btn" class="btn-status-toggle" disabled>
+                Изменить статус
+            </button>
+            <button id="delete-dialogs-btn" class="btn-delete-dialogs" disabled>
+                Удалить
+            </button>
+            <div id="status-dropdown" class="status-dropdown hidden">
+                <div class="status-option" data-status="open">Открыт</div>
+                <div class="status-option" data-status="closed">Закрыт</div>
+                <div class="status-option" data-status="archived">Архив</div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Список диалогов -->
     <div class="dialogs-list-container">
         <div class="dialogs-header">
+            <div class="dialogs-col select-all-col">
+                <input type="checkbox" id="select-all-dialogs">
+            </div>
             <div class="dialogs-col">ID</div>
             <div class="dialogs-col">Тема</div>
-            <div class="dialogs-col">Имя/email</div>
+            <div class="dialogs-col">Имя</div>
+            <div class="dialogs-col">email</div>
             <div class="dialogs-col">Контекст</div>
             <div class="dialogs-col">Статус</div>
             <div class="dialogs-col">Обновлено</div>
@@ -47,8 +70,12 @@
     <!-- Шаблон строки диалога -->
     <template id="dialog-row-template">
         <div class="dialog-item" data-dialog-id="">
+            <div class="dialogs-col select-col">
+                <input type="checkbox" class="dialog-checkbox">
+            </div>
             <div class="dialogs-col id-col"></div>
             <div class="dialogs-col topic-col"></div>
+            <div class="dialogs-col username"></div>
             <div class="dialogs-col client-col"></div>
             <div class="dialogs-col context-col"></div>
             <div class="dialogs-col status-col"></div>

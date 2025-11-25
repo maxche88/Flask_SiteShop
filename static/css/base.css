@@ -40,20 +40,23 @@ html, body {
 .guest-contact-wrapper {
     position: fixed;
     bottom: 0;
-    right: 32px;
-    width: 280px;
+    right: 16px; 
+    left: auto; 
     z-index: 10000;
-    height: 30px;
+    width: 280px;
+    max-width: calc(100vw - 32px);
     overflow: hidden;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
-    transition: height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    height: 34px;
+    margin: 0;
 }
 
-/* Вкладка — всегда видна */
 .guest-contact-tab {
-    height: 30px;
+    height: 34px;
     background: #333;
     color: white;
     display: flex;
@@ -62,19 +65,52 @@ html, body {
     font-weight: bold;
     cursor: pointer;
     user-select: none;
+    flex-shrink: 0;
 }
 
-/* Содержимое — изначально скрыто */
 .guest-contact-content {
     background: #fafafa;
     border: 1px solid #e0e0e0;
-    border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    height: 400px;
+    display: none;
+    flex-direction: column;
+    width: 100%;
 }
 
 .guest-contact-wrapper.expanded {
-    height: calc(30px + 400px);
+    height: auto;
+    max-height: 90dvh; /* dynamic viewport height */
+    /* fallback для старых браузеров */
+    max-height: -webkit-fill-available;
+    max-height: -moz-available;
+    max-height: fill-available;
+}
+
+.guest-contact-wrapper.expanded .guest-contact-content {
+    display: flex;
+}
+
+/* Содержимое прокручивается, кнопка всегда видна */
+.modal-content {
+    padding: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+    min-height: 0; /* критически важно для flex + overflow */
+}
+
+/* Кнопка "прилипает" к низу формы */
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 12px;
+    min-height: 0;
+}
+
+.btn-submit {
+    margin-top: auto;
+    flex-shrink: 0;
 }
 
 /* Стили формы */
@@ -230,6 +266,7 @@ html, body {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-top: 3px;
 }
 
 .account,
@@ -244,17 +281,50 @@ html, body {
     position: relative;
 }
 
+/* Бейдж иконки профиля */
+.role-tester {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.info-badge {
+    position: absolute;
+    top: -5px;
+    right: 24px;
+    left: auto;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 12px;
+    color: #000;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* === Цвета бейджа по ролям === */
+.role-admin .info-badge    { background-color: #72f436; color: #000000;}
+.role-suser .info-badge    { background-color: #f38021; color: #000000;}
+.role-tester .info-badge   { background-color: #42f19f; color: #000000;}
+
+
+
 /* Цвета иконок по ролям */
 .role-admin .account { color: #F44336; }
 .role-suser .account { color: #2196F3; }
-.role-user .account { color: #FFD600; }
+.role-user .account { color: #ffffff; }
+.role-tester .account { color: #33ff00; }
 .role-guest .account { color: #9E9E9E; }
-.role-user .shopping-cart_login { color: #FFD600; }
+.role-user .shopping-cart_login { color: #ffffff; }
 
 /* Эффект наведения — зелёный для всех */
 .role-admin .account:hover,
 .role-suser .account:hover,
 .role-user .account:hover,
+.role-tester .account:hover,
 .role-guest .account:hover,
 .role-user .shopping-cart_login:hover {
     color: #4CAF50;
@@ -271,7 +341,7 @@ html, body {
     font-weight: bold;
     line-height: 18px;
     text-align: center;
-    background: #fbff00;
+    background: #cccccc;
     height: 18px;
     min-width: 18px;
     padding: 0 6px;
@@ -866,4 +936,15 @@ html, body {
 
 .img_c:hover {
     filter: brightness(0) saturate(100%) invert(48%) sepia(99%) saturate(2476%) hue-rotate(86deg) brightness(70%) contrast(98%);
+}
+
+
+@media (max-width: 768px) {
+    .guest-contact-wrapper {
+        right: 0;
+        left: 0;
+        margin: 0 auto;
+        width: calc(100vw - 32px);
+        max-width: 400px;
+    }
 }

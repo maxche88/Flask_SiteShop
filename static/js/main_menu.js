@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 3. Бэйдж для отображения кол-ва не прочитаных сообщений
+    // Бэйдж для отображения кол-ва не прочитаных сообщений
     if (!messBadge) return;
     fetch('/api/chat/unread-count', { credentials: 'include' })
         .then(response => response.json())
@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (!badge) return;
 
             if (data.unread_count > 0) {
-                badge.textContent = '+' + data.unread_count; // ← плюсик здесь
+                badge.textContent = '+' + data.unread_count;
                 badge.style.display = 'inline-block';
             } else {
                 badge.style.display = 'none';

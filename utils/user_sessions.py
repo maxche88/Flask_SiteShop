@@ -75,10 +75,6 @@ def get_safe_user_id():
         verify_jwt_in_request(optional=True)
         user_id = get_jwt_identity()
 
-        # if not isinstance(user_id, int):
-        #     sys_logger.warning(f"Некорректный тип user_id в JWT: {type(user_id)} = {user_id}")
-        #     return None
-
         if user_id is None:
             sys_logger.debug("JWT присутствует, но не содержит user_id (identity is None)")
             return None

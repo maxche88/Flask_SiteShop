@@ -14,7 +14,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     hash_passwd = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(5), default="user")
+    role = db.Column(db.String(6), default="user")
     avatar_url = db.Column(db.String(255), default="/img/avatars/default_user.png")
     confirm_email = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now(), nullable=False)
@@ -258,7 +258,7 @@ class Message(db.Model):
 
     # Отправитель
     sender_user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    sender_role = db.Column(db.String(20), nullable=False)  # guest | user | suser | admin
+    sender_role = db.Column(db.String(20), nullable=False)  # user | suser | admin
 
     # Содержимое
     text = db.Column(db.Text, nullable=False)

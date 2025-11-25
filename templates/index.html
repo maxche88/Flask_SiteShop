@@ -15,12 +15,14 @@
     <!-- Контейнер иконки администратора -->
     <div id="account-icon-container" class="head_user_icons role-admin">
         {{ user_account(size=40, cls="account", id="account-button") }}
+        <span class="info-badge">Admin</span>
     </div>
 
     <!-- Выпадающее меню администратора -->
     <div class="dropdown-menu" id="account-menu">
         <a href="{{ url_for('panel_a.admin_acaunt') }}">Личный кабинет</a>
         <a href="{{ url_for('panel_a.admin_panel') }}">Admin panel</a>
+        <a href="{{ url_for('qa-engineer.qa_dashboard') }}">Testing</a>
         <a href="{{ url_for('product_edit.product') }}">Управление товарами</a>
         <a href="{{ url_for('chat_ui.messages_panel') }}" class="menu-item-with-badge">
             Cообщения
@@ -34,6 +36,7 @@
     <!-- Контейнер иконки продавца -->
     <div id="account-icon-container" class="head_user_icons role-suser">
         {{ user_account(size=40, cls="account", id="account-button") }}
+        <span class="info-badge">Manager</span>
     </div>
 
     <!-- Выпадающее меню менеджера -->
@@ -59,7 +62,6 @@
     <div class="dropdown-menu" id="account-menu">
         <a href="{{ url_for('user_ui.user_accaunt') }}">Личный кабинет</a>
         <a href="{{ url_for('user_ui.user_order') }}">Мои заказы</a>
-        <span class="order-badge" id="order-count-badge"></span>
         <a href="{{ url_for('chat_ui.my_messages') }}" class="menu-item-with-badge">
             Cообщения
             <span class="mess-badge" id="mess-count-badge"></span>
@@ -67,8 +69,21 @@
         <a href="{{ url_for('session.logout') }}">Выйти</a>
     </div>
 
-    {% else %}
+    {% elif role == 'tester' %}
+    <!-- Контейнер иконки тестеровщика -->
+    <div id="account-icon-container" class="head_user_icons role-tester">
+        {{ user_account(size=40, cls="account", id="account-button") }}
+        <span class="info-badge">Tester</span>
+    </div>
 
+    <!-- Контейнер иконки и тестировщика -->
+    <div class="dropdown-menu" id="account-menu">
+        <a href="{{ url_for('user_ui.user_accaunt') }}">Личный кабинет</a>
+        <a href="{{ url_for('qa-engineer.qa_dashboard') }}">Testing</a>
+        <a href="{{ url_for('session.logout') }}">Выйти</a>
+    </div>
+
+    {% else %}
     <!-- Контейнер иконки гостя -->
     <div id="account-icon-container" class="head_user_icons role-guest">
         {{ user_account(size=40, cls="account", id="account-button") }}

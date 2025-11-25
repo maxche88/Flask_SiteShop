@@ -25,7 +25,7 @@ class Config:
     JWT_COOKIE_CSRF_PROTECT = False
     JWT_ACCESS_COOKIE_PATH = '/'
     JWT_REFRESH_COOKIE_PATH = '/token/refresh'
-    JWT_ACCESS_TOKEN_EXPIRES = 3600    # жизнь токена 1 час
+    JWT_ACCESS_TOKEN_EXPIRES = 3600    # жизнь токена указывается в секундах 3600 - (1 час) 
 
     # === Время жизни токенов подтверждения и восстановления ===
     # Указывается в МИНУТАХ (удобно для теста: 1 минута, продакшен: 1440 = 24 часа)
@@ -60,6 +60,10 @@ class Config:
     CHAT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads', 'chat')
     CHAT_ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'GIF'}
     CHAT_MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+    # === Вложения в баг-репортах ===
+    BUG_REPORT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'bug_reports')
+    BUG_REPORT_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'txt', 'log'}
 
 
 """

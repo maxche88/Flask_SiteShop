@@ -11,6 +11,7 @@ migrate = Migrate()
 jwt = JWTManager()
 mail = Mail()
 
+# Получаем ссылку на логгер
 sys_logger = logging.getLogger('app.system')
 
 

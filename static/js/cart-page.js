@@ -1,14 +1,39 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // Функция пересчёта итогов
+    // === Форматирование поля "Срок действия" ===
+    const expiryInput = document.getElementById('expiry');
+    if (expiryInput) {
+        expiryInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 4) {
+                value = value.substring(0, 4);
+            }
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2);
+            }
+            e.target.value = value;
+        });
+
+        expiryInput.addEventListener('focus', function () {
+            if (!this.hasAttribute('data-focused')) {
+                this.select();
+                this.setAttribute('data-focused', 'true');
+            }
+        });
+        expiryInput.addEventListener('blur', function () {
+            this.removeAttribute('data-focused');
+        });
+    }
+
+    // === Функция пересчёта итогов ===
     function updateCartSummary() {
         let totalItems = 0;
         let totalPrice = 0;
 
-        document.querySelectorAll('#cart-table-body tr').forEach(row => {
+        document.querySelectorAll('#cart-table-body .cart-row').forEach(row => {
             const checkbox = row.querySelector('.item-checkbox');
             if (checkbox && checkbox.checked) {
                 const quantityInput = row.querySelector('.qty-input');
-                const priceCell = row.querySelector('td:nth-child(3)');
+                const priceCell = row.querySelector('.cart-cell-price');
 
                 const quantity = parseInt(quantityInput.value) || 0;
                 const priceText = priceCell.textContent.trim();
@@ -25,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (totalPriceEl) totalPriceEl.textContent = totalPrice;
     }
 
-    // Вспомогательные функции для оплаты
+    // === Вспомогательные функции для оплаты ===
     function formatCardNumber(value) {
         const digits = value.replace(/\D/g, '');
         const formatted = digits.match(/.{1,4}/g)?.join(' ') || '';
@@ -50,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return true;
     }
 
-    // Инициализация чекбоксов
+    // === Инициализация чекбоксов ===
     document.querySelectorAll('.item-checkbox').forEach(cb => {
         cb.checked = true;
     });
@@ -75,7 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Ограничение количества по остатку на складе
+    // === Ограничение количества по остатку на складе ===
     document.querySelectorAll('.qty-input').forEach(input => {
         const max = parseInt(input.getAttribute('data-stock')) || 1;
         const min = 1;
@@ -100,7 +125,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Удаление товаров
+    // === Удаление товаров ===
     document.querySelectorAll(".cart-delete-icon").forEach((btn) => {
         btn.addEventListener("click", function (e) {
             e.preventDefault();
@@ -118,16 +143,16 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(response => {
                 if (response.ok) {
-                    const row = this.closest('tr');
+                    const row = this.closest('.cart-row');
                     if (row) row.remove();
 
-                    if (document.querySelectorAll('#cart-table-body tr').length === 0) {
-                        const table = document.getElementById('cart-table');
-                        if (table) {
+                    if (document.querySelectorAll('#cart-table-body .cart-row').length === 0) {
+                        const cartItems = document.getElementById('cart-table');
+                        if (cartItems) {
                             const msg = document.createElement('p');
                             msg.className = 'cart_empty';
                             msg.textContent = 'Корзина пуста';
-                            table.replaceWith(msg);
+                            cartItems.replaceWith(msg);
                         }
                         document.querySelector('.btn_order')?.remove();
                         document.getElementById('cart-summary')?.remove();
@@ -146,7 +171,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-    // Модальное окно оплаты
+    // === Модальное окно оплаты ===
     const checkoutButton = document.getElementById("checkout-button");
     const modal = document.getElementById("payment-modal");
     const closeModal = document.querySelector(".close");
@@ -162,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             document.getElementById('modal-total-price').textContent = totalPrice + ' ₽';
             document.getElementById('btn-amount').textContent = totalPrice + ' ₽';
-            modal.style.display = "block";
+            modal.style.display = "flex";
         });
     }
 
@@ -173,7 +198,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (e.target === modal) modal.style.display = "none";
     });
 
-    // Отправка формы оплаты
+    // === Отправка формы оплаты ===
     if (paymentForm) {
         const cardNumberInput = document.getElementById("card-number");
         cardNumberInput.addEventListener("input", function (e) {
@@ -189,7 +214,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const selectedItems = [];
             document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
-                const row = cb.closest('tr');
+                const row = cb.closest('.cart-row');
                 const itemId = cb.value;
                 const qtyInput = row.querySelector('.qty-input');
                 const quantity = parseInt(qtyInput.value) || 1;
@@ -238,14 +263,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     alert("Ошибка: " + errorMsg);
                 }
             })
-                    .catch(err => {
-                        console.error("Ошибка сети:", err);
-                        alert("Не удалось отправить заказ.");
-                    });
-                });
-            }
+            .catch(err => {
+                console.error("Ошибка сети:", err);
+                alert("Не удалось отправить заказ.");
+            });
+        });
+    }
 
-    // Модальное окно: задать вопрос о товаре из корзины
+    // === Модальное окно: задать вопрос о товаре из корзины ===
     const askModal = document.querySelector('.cart-ask-overlay');
     const askForm = document.querySelector('.cart-ask-form');
     const askTitleSpan = document.querySelector('.cart-ask-product-title');
@@ -256,9 +281,9 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.cart-send_mess-icon').forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
-                const row = this.closest('tr');
+                const row = this.closest('.cart-row');
                 const productId = this.getAttribute('data-product-id');
-                const productTitle = row.querySelector('td:nth-child(2)')?.textContent?.trim() || 'Неизвестный товар';
+                const productTitle = row.querySelector('.cart-cell-title')?.textContent?.trim() || 'Неизвестный товар';
                 askTitleSpan.textContent = productTitle;
                 askProductIdInput.value = productId;
                 askModal.classList.remove('hidden');
@@ -322,6 +347,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Инициализация
+    // === Инициализация ===
     updateCartSummary();
 });

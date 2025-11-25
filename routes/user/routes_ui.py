@@ -1,3 +1,4 @@
+from flask_jwt_extended import unset_jwt_cookies
 from flask import Blueprint, render_template, make_response, redirect, url_for
 from utils.user_sessions import get_safe_user_id
 from models import db, CartItem, User, Order, OrderItem
@@ -14,7 +15,8 @@ def user_accaunt():
     # Если токен недействителен — очищаем и редиректим
     if user_id_or_signal == "CLEAR_COOKIE":
         response = make_response(redirect(url_for('session.login')))
-        response.set_cookie('access_token_cookie', '', expires=0)
+        # response.set_cookie('access_token', '', expires=0)
+        unset_jwt_cookies(response)
         return response
 
     # Если пользователь не авторизован — редирект на логин
@@ -32,7 +34,8 @@ def user_order():
     # Если токен недействителен — очищаем и редиректим
     if user_id_or_signal == "CLEAR_COOKIE":
         response = make_response(redirect(url_for('session.login')))
-        response.set_cookie('access_token_cookie', '', expires=0)
+        # response.set_cookie('access_token', '', expires=0)
+        unset_jwt_cookies(response)
         return response
 
     # Если пользователь не авторизован — редирект на логин
@@ -56,16 +59,24 @@ def user_order():
 
 
 @user_ui_bp.route('/cart')
-
 def cart_page():
-    user_id = get_safe_user_id()
+    user_id_or_signal = get_safe_user_id()
 
-    if user_id is None:
+    if user_id_or_signal == "CLEAR_COOKIE":
         response = make_response(redirect(url_for('session.login')))
-        response.set_cookie('access_token', '', expires=0)
+        # response.set_cookie('access_token', '', expires=0)
+        unset_jwt_cookies(response)
         return response
 
-    user = User.query.get(int(user_id))
+    if user_id_or_signal is None:
+        return redirect(url_for('session.login'))
+
+    try:
+        user_id = int(user_id_or_signal)
+    except (TypeError, ValueError):
+        return redirect(url_for('session.login'))
+
+    user = User.query.get(user_id)
     if not user:
         return redirect(url_for('session.login'))
 

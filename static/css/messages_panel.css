@@ -5,13 +5,20 @@
     margin: 0 auto;
 }
 
+.info_container {
+    display: flex;
+    width: 100%;
+    height: 70px;
+}
+
 /* Информационная панель */
 .messages-info {
     margin-bottom: 16px;
     padding: 10px 15px;
-    border-radius: 4px;
     font-size: 14px;
     text-align: center;
+    width: auto;
+    height: 80%;
 }
 
 .messages-info.info {
@@ -52,23 +59,102 @@
     color: #495057;
 }
 
+/* Панель управления */
+.dialog-actions-bar {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Кнопка смены статуса */
+.btn-status-toggle {
+    padding: 8px 16px;
+    background-color: #0056b3;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-status-toggle:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-status-toggle:hover:not(:disabled) {
+    background-color: #004a99;
+}
+
+/* Выпадающее меню */
+.status-dropdown-wrapper {
+    position: relative;
+}
+
+.status-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    z-index: 100;
+    min-width: 140px;
+    overflow: hidden;
+}
+
+.status-dropdown.hidden {
+    display: none;
+}
+
+.status-option {
+    padding: 10px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    color: #333;
+}
+
+.status-option:hover {
+    background-color: #f0f8ff;
+}
+
+/* Статусы в списке диалогов */
+.status-col.open { color: #28a745; }
+.status-col.closed { color: #6c757d; }
+.status-col.archived { color: #ffc107; font-weight: 600; }
+
+.btn-delete-dialogs {
+    padding: 8px 16px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-delete-dialogs:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.btn-delete-dialogs:hover:not(:disabled) {
+    background-color: #c82333;
+}
+
+
 /* Контейнер списка диалогов */
 .dialogs-list-container {
     width: 100%;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
     overflow: hidden;
-}
-
-/* Заголовок таблицы */
-.dialogs-header {
-    display: grid;
-    width: 100%;
-    min-width: 0;
-    background-color: #f1f3f5;
-    font-weight: bold;
-    color: #333;
-    border-bottom: 2px solid #ddd;
 }
 
 /* Тело таблицы */
@@ -79,7 +165,27 @@
     overflow-y: auto;
 }
 
-/* Общая колонка */
+/* Сетка: заголовок и строки */
+.dialogs-header,
+.dialog-item {
+    display: grid;
+    width: 100%;
+    grid-template-columns:
+        40px    /* Чекбокс */
+        0.6fr   /* ID */
+        0.8fr   /* Тема */
+        1fr     /* Имя */
+        1.8fr   /* email */
+        1.3fr   /* Контекст */
+        0.5fr   /* Статус */
+        0.7fr   /* Обновлено */
+        0.6fr   /* Сообщений */
+        0.7fr;  /* Последнее */
+    align-items: center;
+    gap: 0;
+}
+
+/* === Общие стили для ячеек === */
 .dialogs-col {
     padding: 12px 14px;
     font-size: 14px;
@@ -88,24 +194,43 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     display: flex;
-    align-items: center;
+    justify-content: center;
 }
 
-/* Сетка: гибкие столбцы */
-.dialogs-header,
-.dialog-item {
-    grid-template-columns:
-        minmax(50px, 0.6fr)   /* ID */
-        minmax(120px, 1.2fr)  /* Тема */
-        minmax(150px, 1.8fr)  /* Клиент */
-        minmax(120px, 1.5fr)  /* Контекст */
-        minmax(80px, 0.8fr)   /* Статус */
-        minmax(130px, 1.3fr)  /* Обновлено */
-        minmax(60px, 0.6fr)   /* Сообщений */
-        minmax(100px, 1fr);   /* Последнее */
-    display: grid;
-    width: 100%;
-    min-width: 0;
+/* === Центрируем только нужные колонки === */
+.dialogs-col.id-col,
+.dialogs-col.status-col,
+.dialogs-col.count-col,
+.dialogs-col.updated-col,
+.dialogs-col.last-sender-col {
+    justify-content: center;
+    text-align: center;
+}
+
+/* === Заголовки === */
+.dialogs-header {
+    background-color: #f1f3f5;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+}
+
+
+/* === Колонка с чекбоксами — отдельно! === */
+.dialogs-col.select-all-col,
+.dialogs-col.select-col {
+    width: 40px;
+    padding: 0 !important;
+    justify-content: center;
+    text-align: center;
+    overflow: visible; /* чтобы чекбокс не обрезался */
+}
+
+.dialogs-col.select-all-col input,
+.dialogs-col.select-col input {
+    margin: 0;
+    transform: scale(1.2);
+    cursor: pointer;
 }
 
 /* Строка диалога */
@@ -115,8 +240,12 @@
     border-bottom: 1px solid #eee;
 }
 
+.dialog-item.has-unread {
+    background-color: #fcdada;
+}
+
 .dialog-item:hover {
-    background-color: #f8f9fa;
+    background-color: #b7dbff;
 }
 
 /* Статус */
@@ -126,36 +255,7 @@
 }
 
 .status-col.closed {
-    color: #6c757d;
-}
-
-/* Адаптивность на мобильных */
-@media (max-width: 768px) {
-    .dialogs-col {
-        white-space: normal;
-        word-break: break-word;
-        text-align: left;
-    }
-
-    .dialogs-header,
-    .dialog-item {
-        grid-template-columns:
-            minmax(40px, 0.5fr)
-            minmax(100px, 1fr)
-            minmax(120px, 1.5fr)
-            minmax(100px, 1.2fr)
-            minmax(60px, 0.6fr)
-            minmax(100px, 1fr)
-            minmax(50px, 0.5fr)
-            minmax(80px, 0.9fr);
-    }
-
-    .messages-user-info,
-    .dialogs-list-container {
-        padding: 0;
-        margin: 0 -8px;
-        border-radius: 0;
-    }
+    color: #ff6060;
 }
 
 /* === Модальное окно чата === */
@@ -335,21 +435,45 @@
     cursor: not-allowed;
 }
 
-/* Адаптивность для чата */
-@media (max-width: 600px) {
-    .chat-modal-content {
-        margin: 20px;
-        padding: 18px;
-        max-width: calc(100% - 30px);
+
+/* === Адаптивность на мобильных === */
+@media (max-width: 768px) {
+    .dialogs-col {
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+        justify-content: flex-start;
     }
 
-    .chat-input-area textarea {
-        height: 40px;
-        font-size: 14px;
+    /* На мобильных — всё по левому краю */
+    .dialogs-col.id-col,
+    .dialogs-col.status-col,
+    .dialogs-col.count-col,
+    .dialogs-col.updated-col,
+    .dialogs-col.last-sender-col {
+        justify-content: flex-start;
+        text-align: left;
     }
 
-    .chat-input-area .btn-send {
-        padding: 10px;
-        font-size: 14px;
+    .dialogs-header,
+    .dialog-item {
+        grid-template-columns:
+            40px
+            minmax(40px, 0.5fr)
+            minmax(80px, 1fr)
+            minmax(80px, 1fr)
+            minmax(100px, 1.3fr)
+            minmax(100px, 1.2fr)
+            minmax(60px, 0.6fr)
+            minmax(90px, 1fr)
+            minmax(50px, 0.5fr)
+            minmax(80px, 0.9fr);
+    }
+
+    .messages-user-info,
+    .dialogs-list-container {
+        padding: 0;
+        margin: 0 -8px;
+        border-radius: 0;
     }
 }
