@@ -6,7 +6,6 @@
 Поддерживает только разрешённые форматы изображений (JPEG, PNG, GIF и др.).
 Возвращает относительный путь для сохранения в БД.
 """
-
 import os
 from werkzeug.utils import secure_filename
 import uuid

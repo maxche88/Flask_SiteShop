@@ -1,7 +1,5 @@
 # Добавление файла с изображением товара.
-
 import os
-
 from werkzeug.utils import secure_filename
 import uuid
 from flask import current_app

@@ -1,5 +1,6 @@
 from flask import request
-from models import db, IPAttemptLog
+from models import IPAttemptLog
+from extensions import db
 
 
 def get_client_ip():

@@ -1,9 +1,9 @@
 import logging
 import os
-from flask import Blueprint, jsonify, request, current_app, abort
+from flask import Blueprint, jsonify, request, current_app, abort, g
 from werkzeug.exceptions import NotFound
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, User, IPAttemptLog, UserToken
+from models import User, IPAttemptLog, UserToken
+from extensions import db
 from utils.cleanup import get_unconfirmed_cutoff
 from datetime import datetime, timezone
 
@@ -48,8 +48,6 @@ def _serialize_users(users):
             if minutes_left > 0:
                 session_minutes_left = minutes_left
 
-        
-  
         result.append({
             'id': u.id,
             'username': u.username,
@@ -68,15 +66,13 @@ def _serialize_users(users):
 # === Роуты ===
 
 @admin_system_bp.route('/users/search', methods=['GET'])
-@jwt_required()
 def search_users():
     """
     Поиск пользователей в админке по ID, имени, email или дате регистрации.
     Поддерживает форматы даты: DD.MM.YYYY и YYYY-MM-DD. 
     """
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     query = request.args.get('q', '').strip()
@@ -109,11 +105,8 @@ def search_users():
     try:
         dt_part = query.split(',', 1)[0].strip() if ',' in query else query
         if '.' in dt_part:
-
             parsed_date = datetime.strptime(dt_part, '%d.%m.%Y').date()
-
         else:
-
             parsed_date = datetime.fromisoformat(dt_part).date()
         date_matches = User.query.filter(db.cast(User.created_at, db.Date) == parsed_date).all()
     except (ValueError, TypeError):
@@ -125,31 +118,26 @@ def search_users():
 
 
 @admin_system_bp.route('/users', methods=['GET'])
-@jwt_required()
 def get_all_users():
     try:
-        current_user_id = get_jwt_identity()
-        current_user = User.query.get(current_user_id)
-        if current_user.role != 'admin':
+        user = g.current_user
+        if user.role != 'admin':
             return jsonify({'error': 'Доступ запрещён'}), 403
 
         users = User.query.all()
         return jsonify(_serialize_users(users))
     except Exception as e:
-
         sys_logger.error(f"Ошибка в get_all_users: {e}")
         return jsonify({'error': 'Ошибка при загрузке пользователей'}), 500
 
 
 @admin_system_bp.route('/users/<int:user_id>/role', methods=['PATCH'])
-@jwt_required()
 def update_user_role(user_id):
     """
     Изменяет роль пользователя (admin/suser/user/tester). Доступен только администраторам. 
     """
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Только администратор может менять роли'}), 403
 
     data = request.get_json()
@@ -158,18 +146,17 @@ def update_user_role(user_id):
     if new_role not in ['admin', 'suser', 'user', 'tester']:
         return jsonify({'error': 'Недопустимая роль'}), 400
 
-    user = User.query.get(user_id)
-    if not user:
+    target_user = db.session.get(User, user_id)
+    if not target_user:
         return jsonify({'error': 'Пользователь не найден'}), 404
 
-    user.role = new_role
+    target_user.role = new_role
     db.session.commit()
 
-    return jsonify({'success': True, 'role': user.role})
+    return jsonify({'success': True, 'role': target_user.role})
 
 
 @admin_system_bp.route('/users/delete-selected', methods=['DELETE'])
-@jwt_required()
 def delete_selected_users():
     """
     Удаляет выбранных пользователей.
@@ -179,10 +166,9 @@ def delete_selected_users():
       - Shop.user_id → обнуляется (SET NULL), товары остаются
     Токены отзываются (revoked=True).
     """
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
+    user = g.current_user
 
-    if not current_user or current_user.role != 'admin':
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     data = request.get_json()
@@ -195,7 +181,7 @@ def delete_selected_users():
     except (ValueError, TypeError):
         return jsonify({'error': 'Некорректный формат ID'}), 400
 
-    if current_user_id in user_ids:
+    if user.id in user_ids:
         return jsonify({'error': 'Нельзя удалить самого себя'}), 400
 
     # Отзываем токены (логическая операция — не удаляем физически)
@@ -217,16 +203,13 @@ def delete_selected_users():
 
 
 @admin_system_bp.route('/users/delete-old-unconfirmed', methods=['DELETE'])
-@jwt_required()
 def delete_old_unconfirmed():
     """
     Массово удаляет неподтверждённые аккаунты, созданные более 24 часов назад (или другого срока из настроек).
     """
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
-
 
     cutoff_naive = get_unconfirmed_cutoff()
 
@@ -247,12 +230,10 @@ def delete_old_unconfirmed():
 
 
 @admin_system_bp.route('/users/revoke-sessions', methods=['POST'])
-@jwt_required()
 def revoke_user_sessions():
     """Отзыв всех сессий выбранных пользователей через UserToken."""
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     user_ids = request.get_json().get('user_ids', [])
@@ -263,7 +244,7 @@ def revoke_user_sessions():
     for uid in user_ids:
         try:
             user_id = int(uid)
-            if User.query.get(user_id):
+            if db.session.get(User, user_id):
                 UserToken.query.filter_by(user_id=user_id).update({'revoked': True})
                 revoked_count += 1
         except (ValueError, TypeError):
@@ -274,11 +255,9 @@ def revoke_user_sessions():
 
 
 @admin_system_bp.route('/users/delete-tokens', methods=['DELETE'])
-@jwt_required()
 def delete_user_tokens():
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     now = datetime.now(timezone.utc)
@@ -305,13 +284,16 @@ def delete_user_tokens():
     return jsonify({'success': True, 'deleted_count': deleted_count})
 
 
-
 # Получить все логи
 @admin_system_bp.route('/logs')
 def get_logs():
+    user = g.current_user
+    if user.role != 'admin':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+        
     logs = IPAttemptLog.query.order_by(IPAttemptLog.id.desc()).all()
     return jsonify([{
-        'user_id': log.user_id,  # ← будет null, если нет привязки
+        'user_id': log.user_id,
         'ip_address': log.ip_address,
         'recovery_attempts_count': log.recovery_attempts_count,
         'is_blocked': log.is_blocked
@@ -321,6 +303,10 @@ def get_logs():
 # Поиск
 @admin_system_bp.route('/logs/search')
 def search_logs():
+    user = g.current_user
+    if user.role != 'admin':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+        
     q = request.args.get('q', '').strip()
     is_blocked = request.args.get('is_blocked')
 
@@ -337,19 +323,18 @@ def search_logs():
 
     logs = query.order_by(IPAttemptLog.id.desc()).all()
     return jsonify([{
-        'user_id': log.user_id,  # ← null, а не '-'
+        'user_id': log.user_id,
         'ip_address': log.ip_address,
         'recovery_attempts_count': log.recovery_attempts_count,
         'is_blocked': log.is_blocked
     } for log in logs])
 
+
 # Блокировка записей
 @admin_system_bp.route('/logs/block', methods=['PATCH'])
-@jwt_required()
 def block_logs():
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     data = request.get_json()
@@ -378,6 +363,10 @@ def block_logs():
 
 @admin_system_bp.route('/logs/unblock', methods=['PATCH'])
 def unblock_logs():
+    user = g.current_user
+    if user.role != 'admin':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+        
     ip_addresses = request.get_json().get('ip_addresses', [])
     IPAttemptLog.query.filter(IPAttemptLog.ip_address.in_(ip_addresses)) \
                       .update({'is_blocked': False})
@@ -388,12 +377,10 @@ def unblock_logs():
 # ФАЙЛОВЫЕ ЛОГИ
 
 @admin_system_bp.route('/logs/files')
-@jwt_required()
 def list_log_files():
     """Возвращает список .log файлов из папки LOG_DIR"""
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     log_dir = current_app.config.get('LOG_DIR')
@@ -409,12 +396,10 @@ def list_log_files():
 
 
 @admin_system_bp.route('/logs/files/<filename>')
-@jwt_required()
 def get_log_file_content(filename):
     """Возвращает содержимое указанного .log файла как plain text"""
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     # Защита от path traversal
@@ -447,12 +432,11 @@ def get_log_file_content(filename):
         sys_logger.error("Ошибка чтения лог-файла %s: %s", safe_filename, e)
         abort(500)
 
+
 @admin_system_bp.route('/logs/files/<filename>/clear', methods=['POST'])
-@jwt_required()
 def clear_log_file(filename):
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != 'admin':
+    user = g.current_user
+    if user.role != 'admin':
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     # Защита от path traversal

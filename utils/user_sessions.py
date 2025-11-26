@@ -16,6 +16,7 @@ from models import UserToken, User
 from extensions import db
 
 
+auth_logger = logging.getLogger('app.auth')
 sys_logger = logging.getLogger('app.system')
 
 
@@ -66,41 +67,30 @@ def create_access_token_for_user(user_id):
 def get_safe_user_id():
     """
     Предназначена для безопасного извлечения идентификатора пользователя из JWT при наличии валидного токена.
-    проверяет, есть ли токен и не просрочен ли он,
-    извлекает user_id = get_jwt_identity(),
-    проверяет, существует ли пользователь с таким ID в БД,
-    и, если да — возвращает user_id.
     """
     try:
         verify_jwt_in_request(optional=True)
         user_id = get_jwt_identity()
 
         if user_id is None:
-            sys_logger.debug("JWT присутствует, но не содержит user_id (identity is None)")
+            auth_logger.debug("JWT присутствует, но не содержит user_id (identity is None)")
             return None
 
         if User.query.get(user_id):
             return user_id
         else:
-            sys_logger.warning(f"JWT содержит user_id={user_id}, но пользователь не найден в БД")
+            auth_logger.warning(f"JWT содержит user_id={user_id}, но пользователь не найден в БД")
             return None
 
-    except ExpiredSignatureError:
-        sys_logger.debug("JWT просрочен — трактуем как отсутствие аутентификации")
-        return None
-
-    except JWTExtendedException as e:
-        error_msg = str(e).lower()
-        if "revoked" in error_msg:
-            sys_logger.debug("Получен отозванный JWT — трактуем как отсутствие аутентификации")
-        else:
-            sys_logger.debug(f"JWT недействителен: {e}")
-        return None
-
-    except DecodeError as e:
-        sys_logger.debug(f"JWT не может быть обработан: {type(e).__name__}: {e}")
+    except (ExpiredSignatureError, DecodeError, JWTExtendedException) as e:
+        # Все JWT-специфичные ошибки: просрочен, подделан, отозван, не раскодирован и т.д.
+        # Отозванные токены уже залогированы в @jwt.token_in_blocklist_loader,
+        # поэтому здесь логируем всё единообразно без специальной обработки "revoked".
+        error_type = type(e).__name__
+        auth_logger.debug(f"JWT недействителен: {error_type}: {e}")
         return None
 
     except Exception as e:
-        sys_logger.error(f"Неожиданная ошибка в get_safe_user_id: {e}", exc_info=True)
+        # Любые другие неожиданные ошибки (например, проблемы с БД)
+        sys_logger.error(f"Неожиданная ошибка в get_safe_user_id: {type(e).__name__}: {e}", exc_info=True)
         return None

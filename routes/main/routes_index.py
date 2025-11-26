@@ -1,6 +1,8 @@
 from flask import Blueprint, render_template, make_response
+from flask_jwt_extended import unset_jwt_cookies
 from utils.user_sessions import get_safe_user_id
 from models import User, Shop
+from extensions import db
 
 
 main_bp = Blueprint('main', __name__)
@@ -13,11 +15,11 @@ def index():
 
     if user_id is None:
         response = make_response(render_template('index.html', username="Гость", role=None))
-        response.set_cookie('access_token', '', expires=0)
+        unset_jwt_cookies(response)
         return response
 
     # Пользователь авторизован
-    user = User.query.get(int(user_id))
+    user = db.session.get(User, int(user_id))
     context = {
         "username": user.username if user else "Гость",
         "role": user.role if user else None
@@ -33,7 +35,7 @@ def product_page(product_id):
     - если токен валиден — показывает данные пользователя,
     - если токен недействителен или отсутствует — очищает куку и показывает как гостя.
     """
-    product = Shop.query.get(product_id)
+    product = db.session.get(Shop, product_id)
     if not product:
         return render_template('404.html'), 404
 
@@ -43,11 +45,11 @@ def product_page(product_id):
     # Если нет валидной сессии — всегда очищаем куку и показываем как гостя
     if user_id is None:
         response = make_response(render_template('view_product.html', product=product, username=None, role=None))
-        response.set_cookie('access_token', '', expires=0)
+        unset_jwt_cookies(response)
         return response
 
     # Пользователь авторизован — подгружаем его данные
-    user = User.query.get(int(user_id))
+    user = db.session.get(User, int(user_id))
     context = {
         "username": user.username if user else None,
         "role": user.role if user else None

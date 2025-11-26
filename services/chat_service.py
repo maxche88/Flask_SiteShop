@@ -3,9 +3,8 @@
 Содержит функции создания диалогов, отправки сообщений, управления статусом.
 Не зависит от Flask, JWT, HTTP или фронтенда.
 """
-
-from models import Dialog, Message, MessageTopic, Shop, Order, User, db
-from sqlalchemy.exc import IntegrityError
+from models import Dialog, Message, MessageTopic, Shop, Order, User
+from extensions import db
 
 
 # Создание диалогов
@@ -27,7 +26,7 @@ def create_user_dialog(user_id, topic_id, text, product_id=None, order_id=None):
         ValueError: при недопустимых данных
         IntegrityError: при нарушении целостности БД
     """
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         raise ValueError("Пользователь не найден")
 
@@ -128,13 +127,13 @@ def send_message_in_dialog(dialog_id, sender_user_id, sender_role, text):
     """
     _validate_message_text(text)
 
-    dialog = Dialog.query.get(dialog_id)
+    dialog = db.session.get(Dialog, dialog_id)
     if not dialog:
         raise ValueError("Диалог не найден")
     if dialog.status != 'open':
         raise ValueError("Нельзя отправлять сообщения в закрытый диалог")
 
-    # Для авторизованных — проверяем, что пользователь имеет доступ
+    # Для авторизованных — проверяем, что пользователь имеет доступ 
     if sender_role in ('user', 'suser', 'admin'):
         if sender_role == 'user' and dialog.user_id != sender_user_id:
             raise ValueError("Вы не можете писать в этот диалог")
@@ -184,7 +183,7 @@ def get_dialog_history(dialog_id):
 
 def get_dialog_by_id(dialog_id):
     """Возвращает диалог по ID."""
-    return Dialog.query.get(dialog_id)
+    return db.session.get(Dialog, dialog_id)
 
 
 # Управление статусом
@@ -199,11 +198,11 @@ def close_dialog(dialog_id, closed_by_user_id):
     Returns:
         Dialog
     """
-    user = User.query.get(closed_by_user_id)
+    user = db.session.get(User, closed_by_user_id)
     if not user or user.role not in ('suser', 'admin'):
         raise ValueError("Только менеджер или админ может закрывать диалоги")
 
-    dialog = Dialog.query.get(dialog_id)
+    dialog = db.session.get(Dialog, dialog_id)
     if not dialog:
         raise ValueError("Диалог не найден")
 
@@ -214,20 +213,20 @@ def close_dialog(dialog_id, closed_by_user_id):
 
 # Вспомогательные функции валидации
 def _validate_user(user_id):
-    if not User.query.get(user_id):
+    if not db.session.get(User, user_id): 
         raise ValueError("Пользователь не найден")
 
 
 def _validate_topic(topic_id):
-    topic = MessageTopic.query.get(topic_id)
+    topic = db.session.get(MessageTopic, topic_id)
     if not topic or not topic.is_active:
         raise ValueError("Выбранная тема обращения недоступна")
 
 
 def _validate_product_or_order(product_id, order_id):
-    if product_id is not None and not Shop.query.get(product_id):
+    if product_id is not None and not db.session.get(Shop, product_id): 
         raise ValueError("Указанный товар не найден")
-    if order_id is not None and not Order.query.get(order_id):
+    if order_id is not None and not db.session.get(Order, order_id): 
         raise ValueError("Указанный заказ не найден")
 
 

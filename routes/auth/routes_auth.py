@@ -1,7 +1,7 @@
 # Регистрация. Аутентификация и управление сессией.
 import logging
 from flask import Blueprint, request, redirect, url_for, render_template, jsonify, make_response
-from flask_jwt_extended import get_jwt_identity, jwt_required, get_jwt_identity, decode_token, verify_jwt_in_request, get_jwt
+from flask_jwt_extended import get_jwt_identity, get_jwt_identity, decode_token, verify_jwt_in_request, get_jwt, unset_jwt_cookies
 from flask import request
 from extensions import db
 from models import User, UserToken, IPAttemptLog
@@ -245,35 +245,6 @@ def login():
         return jsonify(response_data)
 
 
-@auth_bp.route('/auth', methods=['GET'])
-@jwt_required()  # Декоратор проверки JWT-токена
-def auth():
-    """
-    API-эндпоинт для проверки текущей сессии.
-    Возвращает данные авторизованного пользователя (id, имя, email, роль) или ошибку 401,
-    если токен недействителен. 
-    """
-    try:
-        current_user_id = get_jwt_identity()  # Извлекаем идентификатор текущего пользователя
-        user = User.query.get(current_user_id)
-        
-        if not user:
-            return jsonify({"msg": "Пользователь не найден"}), 404
-            
-        # Формируем ответ с информацией о пользователе
-        response_data = {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "role": user.role
-        }
-        
-        return jsonify(response_data), 200
-    except Exception as e:
-        return jsonify({"msg": str(e)}), 500
-
-
-
 @auth_bp.route('/logout', methods=['GET'])
 def logout():
     try:
@@ -288,8 +259,7 @@ def logout():
         pass
 
     response = make_response(redirect(url_for('main.index')))
-
-    response.set_cookie('access_token', '', expires=0, path='/')
+    unset_jwt_cookies(response)
 
     return response
 

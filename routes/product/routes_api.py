@@ -1,9 +1,9 @@
 import logging
 import os
-from flask import Blueprint, request, jsonify, current_app
-from models import User, Shop, db
+from flask import Blueprint, request, jsonify, current_app, g
+from models import User, Shop
+from extensions import db
 from utils.add_img import save_product_image
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -18,7 +18,7 @@ def get_product_by_id(id):
     Получить данные одного товара по ID.
     Доступен всем, включая гостей.
     """
-    product = Shop.query.get(id)
+    product = db.session.get(Shop, id)
     if not product:
         product_logger.info(f"Запрос несуществующего товара с ID={id}")
         return jsonify({"error": "Товар не найден"}), 404
@@ -223,17 +223,13 @@ def get_all_products():
 
 
 @api_bp.route('/products/assign-uid', methods=['POST'])
-@jwt_required()
 def assign_user_to_products():
     """
     Назначить user_id выбранным товарам.
     Доступно только suser и admin.
-    Проверяет, что целевой пользователь имеет роль suser или admin.
     """
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if not current_user:
-        return jsonify({"error": "Пользователь не найден"}), 404
+    # Используем пользователя из g (уже проверен в before_request)
+    current_user = g.current_user
 
     if current_user.role not in ('suser', 'admin'):
         return jsonify({"error": "Недостаточно прав"}), 403
@@ -252,7 +248,7 @@ def assign_user_to_products():
         return jsonify({"error": "new_user_id должен быть положительным целым числом"}), 400
 
     # Проверяем, существует ли целевой пользователь и его роль
-    target_user = User.query.get(new_user_id)
+    target_user = db.session.get(User, new_user_id)
     if not target_user:
         return jsonify({"error": "Пользователь с таким ID не найден"}), 404
 
@@ -260,20 +256,17 @@ def assign_user_to_products():
         return jsonify({"error": "Нельзя назначить товар пользователю без роли suser или admin"}), 400
 
     try:
-        # Получаем товары, которые можно обновить
         products = Shop.query.filter(Shop.id.in_(product_ids)).all()
         if len(products) != len(product_ids):
             found_ids = {p.id for p in products}
             missing = [pid for pid in product_ids if pid not in found_ids]
             return jsonify({"error": f"Товары не найдены: {missing}"}), 404
 
-        # Обновляем user_id
         for product in products:
             product.user_id = new_user_id
 
         db.session.commit()
-
-        product_logger.info(f"Пользователь {current_user_id} назначил user_id={new_user_id} для товаров: {product_ids}")
+        product_logger.info(f"Пользователь {g.current_user_id} назначил user_id={new_user_id} для товаров: {product_ids}")
         return jsonify({
             "success": True,
             "message": f"UID {new_user_id} успешно назначен {len(products)} товарам"
@@ -286,18 +279,13 @@ def assign_user_to_products():
 
 
 @api_bp.route('/products', methods=['POST'])
-@jwt_required()
 def add_product():
     """
     Добавить новый товар.
     Ожидает multipart/form-data с полями:
     name, description, price, quantity, article-number, category, sale (опционально), image
     """
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if not user:
-        product_logger.warning(f"Попытка создания товара несуществующим пользователем: user_id={current_user_id}")
-        return jsonify({"error": "Пользователь не найден"}), 404
+    user = g.current_user
 
     title = request.form.get('name', '').strip()
     description = request.form.get('description', '').strip()
@@ -319,7 +307,7 @@ def add_product():
 
     missing = [field for field, value in required_fields.items() if not value]
     if missing:
-        product_logger.info(f"Пропущены обязательные поля при добавлении товара от user_id={current_user_id}: {missing}")
+        product_logger.info(f"Пропущены обязательные поля при добавлении товара от user_id={user.id}: {missing}")
         return jsonify({"error": f"Не заполнены обязательные поля: {', '.join(missing)}"}), 400
 
     try:
@@ -344,14 +332,14 @@ def add_product():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        product_logger.error(f"Ошибка сохранения изображения для user_id={current_user_id}: {e}")
+        product_logger.error(f"Ошибка сохранения изображения для user_id={user.id}: {e}")
         return jsonify({"error": "Ошибка при загрузке изображения"}), 500
 
     sale_lower = sale.lower() if sale else ''
     is_sale = sale_lower in ('true', '1', 'on', 'yes')
 
     if Shop.query.filter_by(article_num=article_num).first():
-        product_logger.warning(f"Попытка добавить товар с уже существующим артикулом '{article_num}' от user_id={current_user_id}")
+        product_logger.warning(f"Попытка добавить товар с уже существующим артикулом '{article_num}' от user_id={user.id}")
         return jsonify({"error": "Товар с таким артикулом уже существует"}), 409
 
     try:
@@ -379,12 +367,11 @@ def add_product():
 
     except Exception as e:
         db.session.rollback()
-        product_logger.exception(f"Критическая ошибка при добавлении товара от user_id={current_user_id}: {e}")
+        product_logger.exception(f"Критическая ошибка при добавлении товара от user_id={user.id}: {e}")
         return jsonify({"error": "Ошибка при добавлении товара в базу данных"}), 500
 
 
 @api_bp.route('/products/<int:id>', methods=['PUT'])
-@jwt_required()
 def update_product(id):
     """
     Обновить существующий товар.
@@ -392,19 +379,18 @@ def update_product(id):
       - application/json (тело с полями)
       - multipart/form-data (форма с изображением)
     """
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if not user:
-        product_logger.warning(f"Попытка обновления товара несуществующим пользователем: user_id={current_user_id}, product_id={id}")
-        return jsonify({"error": "Пользователь не найден"}), 404
+    # Пользователь уже аутентифицирован и доступен через g (проверено в before_request)
+    user = g.current_user
 
-    product = Shop.query.get(id)
+    product = db.session.get(Shop, id)
     if not product:
-        product_logger.info(f"Попытка обновления несуществующего товара: product_id={id}, user_id={current_user_id}")
+        product_logger.info(f"Попытка обновления несуществующего товара: product_id={id}, user_id={user.id}")
         return jsonify({"error": "Товар не найден"}), 404
 
-    if user.role != 'admin' and int(product.user_id) != int(current_user_id):
-        product_logger.warning(f"Доступ запрещён: user_id={current_user_id} пытается обновить чужой товар product_id={id}")
+    # Проверка прав доступа
+    # Админ может обновлять любые товары. Продавец — только свои.
+    if user.role != 'admin' and int(product.user_id) != g.current_user_id:
+        product_logger.warning(f"Доступ запрещён: user_id={user.id} пытается обновить чужой товар product_id={id}")
         return jsonify({"error": "Товар не найден или недоступен"}), 404
 
     is_json = request.is_json
@@ -489,7 +475,7 @@ def update_product(id):
                 return jsonify({"error": "Ошибка при загрузке изображения"}), 500
 
         db.session.commit()
-        product_logger.info(f"Товар успешно обновлён: product_id={id}, user_id={current_user_id}")
+        product_logger.info(f"Товар успешно обновлён: product_id={id}, user_id={user.id}")
         return jsonify({
             "success": True,
             "message": "Товар успешно обновлён",
@@ -510,31 +496,25 @@ def update_product(id):
 
     except Exception as e:
         db.session.rollback()
-        product_logger.exception(f"Критическая ошибка при обновлении товара product_id={id} от user_id={current_user_id}: {e}")
+        product_logger.exception(f"Критическая ошибка при обновлении товара product_id={id} от user_id={user.id}: {e}")
         return jsonify({"error": "Ошибка при обновлении товара"}), 500
 
 
 @api_bp.route('/products/<int:id>', methods=['DELETE'])
-@jwt_required()
 def delete_product(id):
     """
     Удалить товар по ID.
     - Админ может удалить любой товар.
-    - Продавец — только свои.
+    - Продавец — только свои. 
     """
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    if not user:
-        product_logger.warning(f"Попытка удаления товара несуществующим пользователем: user_id={current_user_id}, product_id={id}")
-        return jsonify({"error": "Пользователь не найден"}), 404
-
-    product = Shop.query.get(id)
+    user = g.current_user
+    product = db.session.get(Shop, id)
     if not product:
-        product_logger.info(f"Попытка удаления несуществующего товара: product_id={id}, user_id={current_user_id}")
+        product_logger.info(f"Попытка удаления несуществующего товара: product_id={id}, user_id={user}")
         return jsonify({"error": "Товар не найден"}), 404
 
-    if user.role == 'suser' and int(product.user_id) != int(current_user_id):
-        product_logger.warning(f"Доступ запрещён: user_id={current_user_id} пытается удалить чужой товар product_id={id}")
+    if user.role == 'suser' and int(product.user_id) != int(user):
+        product_logger.warning(f"Доступ запрещён: user_id={user} пытается удалить чужой товар product_id={id}")
         return jsonify({"error": "Нет прав доступа. Вы можете удалять только свои товары."}), 403
 
     try:
@@ -553,7 +533,7 @@ def delete_product(id):
 
         db.session.delete(product)
         db.session.commit()
-        product_logger.info(f"Товар успешно удалён: product_id={id}, user_id={current_user_id}")
+        product_logger.info(f"Товар успешно удалён: product_id={id}, user_id={user}")
         return jsonify({
             "success": True,
             "message": "Товар успешно удалён"
@@ -561,5 +541,5 @@ def delete_product(id):
 
     except Exception as e:
         db.session.rollback()
-        product_logger.exception(f"Критическая ошибка при удалении товара product_id={id} от user_id={current_user_id}: {e}")
+        product_logger.exception(f"Критическая ошибка при удалении товара product_id={id} от user_id={user}: {e}")
         return jsonify({"error": "Ошибка при удалении товара"}), 500

@@ -1,5 +1,5 @@
-import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, g, make_response, redirect, url_for
+from flask_jwt_extended import unset_jwt_cookies
 from routes.product.routes_api import api_bp
 from routes.auth.routes_auth import auth_bp
 from routes.main.routes_index import main_bp
@@ -15,7 +15,30 @@ from routes.qa_engineer.qa import qa_bp
 from extensions import mail, jwt, db, migrate
 from config.config import Config
 from utils.logger import app_loggers
-from models import IPAttemptLog
+from models import IPAttemptLog, User
+from utils.user_sessions import get_safe_user_id
+
+
+# === PUBLIC ENDPOINTS ===
+PUBLIC_ENDPOINTS = {
+    # Публичный контент
+    'main.index',
+    'main.product_page',
+
+    # Публичные API
+    'api.get_all_products', 
+    'api.get_product_by_id', 
+
+    # Аутентификация и восстановление
+    'session.login',
+    'session.register',
+    'session.reset_password_',
+    'session.reset_password_with_token',
+    'session.confirm_email',
+
+    # Статика
+    'static',
+}
 
 
 def create_app():
@@ -80,6 +103,40 @@ def create_app():
             ip_log = IPAttemptLog.query.filter_by(ip_address=client_ip).first()
             if ip_log and ip_log.is_blocked:
                 return jsonify({"error": "Ваш IP-адрес заблокирован."}), 403
+
+    @app.before_request
+    def require_authentication():
+        """
+        Глобальная проверка аутентификации.
+        - Публичные endpoint'ы (в PUBLIC_ENDPOINTS) пропускаются без проверки.
+        - Все остальные требуют валидной JWT-сессии.
+        """
+        if request.endpoint in PUBLIC_ENDPOINTS:
+            return
+
+        user_id = get_safe_user_id()
+        if user_id is None:
+            # Определяем, является ли запрос API (все остальные API — приватные)
+            if request.endpoint and '.' in request.endpoint:
+                return jsonify({"error": "Unauthorized", "message": "Требуется аутентификация"}), 401
+            else:
+                # HTML-страница
+                response = make_response(redirect(url_for('session.login')))
+                unset_jwt_cookies(response)
+                return response
+
+        try:
+            user_id = int(user_id)
+            user = db.session.get(User, user_id)
+            if not user:
+                raise ValueError("User not found in DB")
+        except (TypeError, ValueError):
+            response = make_response(redirect(url_for('session.login')))
+            unset_jwt_cookies(response)
+            return response
+
+        g.current_user = user
+        g.current_user_id = user_id
 
     return app
 
