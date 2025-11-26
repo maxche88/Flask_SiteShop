@@ -220,6 +220,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     }
 
+                    const imageLink = row.querySelector('.product-image-link');
+                    if (imageLink) {
+                        imageLink.href = `/product/${product.id}`;
+                        imageLink.title = product.title || 'Открыть карточку товара';
+                    }
+
                     // Название
                     const nameLink = row.querySelector('.name-cell a');
                     if (nameLink) {
@@ -230,6 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             : 'Описание отсутствует';
                     }
 
+                    
                     // Цена
                     const priceCell = row.querySelector('.price-cell');
                     if (priceCell) {

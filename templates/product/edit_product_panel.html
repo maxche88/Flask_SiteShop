@@ -138,7 +138,7 @@
         <input
             type="number"
             id="uid-input"
-            placeholder="Введите ID пользователя"
+            placeholder="Введите UID"
             min="1"
             disabled
             class="uid-input"
@@ -155,16 +155,16 @@
                 <div class="header-actions">
                     <a href="/add-product" class="add-btn" title="Добавить новый товар">+</a>
                 </div>
-                <div>ID</div>
-                <div>art.</div>
-                <div>uid</div>
-                <div></div>
-                <div>Название</div>
-                <div>Цена</div>
-                <div>Кол-во</div>
-                <div>Категория</div>
-                <div>Дата создания</div>
-                <div>SALE</div>
+                <div class="id-cell">ID</div>
+                <div class="article-cell">art.</div>
+                <div class="seller-id-cell">uid</div>
+                <div class="image-cell"></div>
+                <div class="name-cell">Название</div>
+                <div class="price-cell">Цена</div>
+                <div class="quantity-cell">Кол-во</div>
+                <div class="category-cell">Категория</div>
+                <div class="created-at-cell">Дата</div>
+                <div class="sale-cell">SALE</div>
             </div>
 
             <div class="grid-body" id="products-grid-body"></div>
@@ -192,12 +192,17 @@
             <div class="cell id-cell"></div>
             <div class="cell article-cell"></div>
             <div class="cell seller-id-cell"></div>
+
             <div class="cell image-cell">
-                <img class="img_cont thumbnail" alt="">
+                <a href="#" class="product-image-link" title="Открыть товар">
+                    <img class="img_cont thumbnail" alt="">
+                </a>
             </div>
+
             <div class="cell name-cell">
                 <a href="#" class="product-name-link"></a>
             </div>
+
             <div class="cell price-cell"></div>
             <div class="cell quantity-cell"></div>
             <div class="cell category-cell"></div>

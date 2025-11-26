@@ -31,8 +31,13 @@
         <div class="product-info">
 
             <!-- Артикул -->
-            <div class="product-article">
-                Артикул: <span class="article-value">{{ product.article_num }}</span>
+            <div class="top_content">
+                <div class="product-article">
+                    Артикул: <span class="article-value">{{ product.article_num }}</span>
+                </div>
+                <button id="open-ask-modal-btn" class="icon-button" aria-label="Отправить сообщение">
+                    {{ chat(cls="icon-button") }}
+                </button>
             </div>
 
             <!-- Название товара -->
@@ -43,19 +48,35 @@
                 {{ product.description }}
             </div>
 
-            <!-- Блок скидки (если есть) -->
-            {% if product.sale %}
+            <!-- Блок скидки -->
+
+            <!-- Характеристики -->
+            <div class="product-specs">
+                <div class="product-category">
+                    <strong>Категория:</strong> <span class="category-value">{{ product.category }}</span>
+                </div>
+                <div class="product-availability">
+                    <strong>В наличии:</strong> <span class="availability-value">{{ product.quantity }} шт.</span>
+                </div>
+            </div>
+
+            <!-- Блок цены и скидки -->
+            <div class="conteiner_price">
+
+                {% if product.sale %}
                 <div class="product-sale-badge">
                     Скидка
                 </div>
-            {% endif %}
-            
-            <!-- Блок цены и корзины -->
-            <div class="product-actions">
+                {% endif %}
+
                 <div class="price_product">
                     <p class="price-value">{{ product.price }} ₽</p>
                 </div>
+            </div>
+            
 
+            <!-- Блок кнопок -->
+            <div class="product-actions">
                 <!-- Кнопки корзины ТОЛЬКО для авторизованных пользователей -->
                 {% if role %}
                 <div class="user-actions">
@@ -68,20 +89,6 @@
                     </a>
                 </div>
                 {% endif %}
-            </div>
-
-            <!-- Характеристики -->
-            <div class="product-specs">
-                <div class="product-category">
-                    <strong>Категория:</strong> <span class="category-value">{{ product.category }}</span>
-                </div>
-                <div class="product-availability">
-                    <strong>В наличии:</strong> <span class="availability-value">{{ product.quantity }} шт.</span>
-                </div>
-            </div>
-
-            <div class="product-contact">
-                <button id="open-ask-modal-btn" class="btn-ask">Задать вопрос о товаре</button>
             </div>
         </div>
 

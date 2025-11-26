@@ -415,7 +415,7 @@ html, body {
     white-space: nowrap;
     font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
     z-index: 9000;
-    border-radius: 9px; /* скругление для "капсулы" */
+    border-radius: 9px;
 }
 
 /* === Приветствие пользователя === */
@@ -512,8 +512,8 @@ html, body {
 }
 
 .search_btn:hover {
-    background-color: #007bff;
-    color: #000;
+    background: linear-gradient(145deg, #07b0ff, #1b5e20);
+    color: #ffffff;
 }
 
 .search_btn:active {
@@ -910,24 +910,67 @@ html, body {
 .user-actions {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 10px;
 }
 
 .btn_buy {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100px;
-    height: 30px;
-    cursor: pointer;
-    border-radius: 10px;
-    background-color: #f3f021;
-    transition: background-color 0.3s ease;
-    font-size: 1.1em;
+  /* Основные размеры и выравнивание */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  min-width: 120px;
+
+  /* Текст */
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  cursor: pointer;
+
+  /* Фон и градиент — создаёт объём */
+  background: linear-gradient(145deg, #2e7d32, #1b5e20);
+  border: none;
+  border-radius: 8px;
+
+  /* Тень — имитация объёма */
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+
+  /* Плавный переход при наведении */
+  transition: all 0.25s ease;
+
+  /* Убираем выделение при клике */
+  user-select: none;
 }
 
+/* Эффект при наведении */
 .btn_buy:hover {
-    background-color: #2be732;
+  background: linear-gradient(145deg, #388e3c, #2e7d32);
+  box-shadow:
+    0 6px 8px rgba(0, 0, 0, 0.2),
+    0 3px 5px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Эффект при нажатии */
+.btn_buy:active {
+  background: linear-gradient(145deg, #1b5e20, #0d3c13);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(0);
+}
+
+.btn_buy:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(46, 125, 50, 0.4),
+    0 4px 6px rgba(0, 0, 0, 0.15);
 }
 
 .article_num p {

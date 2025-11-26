@@ -40,11 +40,15 @@
     padding: 25px 20px;
 }
 
+.top_content {
+    display: flex;
+    justify-content: space-between;
+}
+
 /* Артикул */
 .product-article {
     font-size: 14px;
     color: #666;
-    margin-bottom: 16px;
 }
 
 .article-value {
@@ -68,6 +72,12 @@
     margin-bottom: 20px;
 }
 
+.conteiner_price {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
 /* Бейдж скидки */
 .product-sale-badge {
     display: inline-block;
@@ -77,54 +87,23 @@
     font-weight: bold;
     padding: 5px 10px;
     border-radius: 4px;
+    width: 80px;
+    text-align: center;
     text-transform: uppercase;
-    margin-bottom: 20px;
-}
-
-/* =============== Блок действий (цена + корзина) =============== */
-.product-actions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 24px;
 }
 
 /* Цена */
-.product-price {
+.price_product {
     font-size: 24px;
     font-weight: 700;
-    color: #2e7d32;
+    color: #307ff7;
 }
 
-/* Кнопка добавления в корзину */
-.add-to-cart-button {
+
+.product-actions {
+    padding-top: 10px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    background: #f1f8e9;
-    border-radius: 50%;
-    transition: background-color 0.2s, transform 0.2s;
-    text-decoration: none;
-}
-
-.add-to-cart-button:hover {
-    background-color: #c8e6c9;
-    transform: scale(1.08);
-}
-
-.cart-icon-image {
-    width: 25px;
-    height: 25px;
-    filter: brightness(0) saturate(100%) invert(48%) sepia(99%) saturate(2476%) hue-rotate(86deg) brightness(85%) contrast(95%);
-    transition: filter 0.2s;
-}
-
-.add-to-cart-button:hover .cart-icon-image {
-    filter: brightness(0) saturate(100%) invert(48%) sepia(99%) saturate(2476%) hue-rotate(86deg) brightness(100%) contrast(100%);
+    justify-content: flex-end;
 }
 
 /* =============== Характеристики =============== */
@@ -145,24 +124,34 @@
     color: #333;
 }
 
-/* =============== Кнопка задать вопрос о товаре =============== */
-.btn-ask {
-    width: 100%;
-    padding: 10px 20px;
-    background-color: #0056b3;
-    color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    transition: all 0.2s ease;
-    margin-top: auto;
+.user-actions {
+    display: flex;
 }
 
-.btn-ask:hover {
-    background: #007bff;
+
+/* =============== Кнопка задать вопрос о товаре =============== */
+
+.icon-button {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: auto;
+    outline: none;
+}
+
+.icon-button .icon {
+    color: #000000;
+    transition: color 0.15s ease;
+}
+
+.icon-button:hover .icon {
+    color: #63b2fc;
 }
 
 /* =============== Модальное окно для отправки сообщения =============== */
@@ -295,34 +284,5 @@
     /* На средних экранах всё ещё вертикально */
     .product-card {
         flex-direction: column;
-    }
-}
-
-/* Десктопы (992px и шире) */
-@media (min-width: 992px) {
-    .product-card {
-        flex-direction: row;
-    }
-
-    .product-image-wrapper {
-        flex: 0 0 50%;
-        padding: 40px 30px;
-    }
-
-    .product-info {
-        flex: 0 0 50%;
-        padding: 40px 30px;
-    }
-}
-
-/* Мобильные устройства */
-@media (max-width: 767px) {
-    .product-actions {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .add-to-cart-button {
-        align-self: flex-end;
     }
 }

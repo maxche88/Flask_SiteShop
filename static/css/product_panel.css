@@ -206,21 +206,22 @@
 .product-row {
     display: grid;
     grid-template-columns:
-        [select] 40px
-        [actions] 80px
-        [id] 40px
-        [article] 100px
-        [seller] 60px
-        [image] 60px
-        [name] 1fr 
-        [price] 90px
-        [qty] 70px
-        [category] minmax(100px, 160px)
-        [date] 140px
-        [sale] 90px;
+        40px   /* select */
+        80px   /* actions */
+        40px   /* id */
+        100px  /* article */
+        60px   /* uid */
+        60px   /* image */
+        1fr    /* name ← главное! */
+        90px   /* price */
+        70px   /* qty */
+        160px  /* category */
+        140px  /* date */
+        90px;  /* sale */
     gap: 0;
     padding: 12px 0;
     align-items: center;
+    width: 100%;
 }
 
 .grid-header {
@@ -395,4 +396,45 @@
 .add-btn:hover {
     background-color: #007bff;
     color: #fff;
+}
+
+/* === Адаптивная таблица — скрытие колонок на мобильных === */
+
+/* Планшеты и меньше — скрываем ID, артикул, UID */
+@media (max-width: 1024px) {
+    .id-cell,
+    .article-cell,
+    .seller-id-cell {
+        display: none !important;
+    }
+}
+
+/* Мобильные — оставляем только: чекбокс, действия, изображение, название, цена */
+/* === Скрываем ненужные колонки на мобильных === */
+@media (max-width: 1024px) {
+    .id-cell,
+    .article-cell,
+    .seller-id-cell,
+    .sale-cell {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .id-cell,
+    .article-cell,
+    .seller-id-cell,
+    .quantity-cell,
+    .category-cell,
+    .created-at-cell,
+    .sale-cell,
+    .badge_edit {
+        display: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .name-cell {
+        display: none;
+    }
 }
