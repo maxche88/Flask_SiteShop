@@ -513,13 +513,16 @@ def delete_product(id):
         product_logger.info(f"Попытка удаления несуществующего товара: product_id={id}, user_id={user}")
         return jsonify({"error": "Товар не найден"}), 404
 
-    if user.role == 'suser' and int(product.user_id) != int(user):
-        product_logger.warning(f"Доступ запрещён: user_id={user} пытается удалить чужой товар product_id={id}")
+    if user.role == 'suser' and int(product.user_id) != int(user.id):  # ← исправлено: user.id
+        product_logger.warning(f"Доступ запрещён: user_id={user.id} пытается удалить чужой товар product_id={id}")
         return jsonify({"error": "Нет прав доступа. Вы можете удалять только свои товары."}), 403
 
     try:
-        # Удаление файла изображения
-        if product.link_img and product.link_img != "/img/avatars/default_product.png":
+        db.session.delete(product)
+        db.session.commit()
+
+        # Теперь безопасно удаляем файл
+        if product.link_img:
             try:
                 relative_path = product.link_img.lstrip("/")
                 full_path = Path(current_app.static_folder) / relative_path
@@ -531,9 +534,7 @@ def delete_product(id):
             except Exception as e:
                 product_logger.warning(f"Не удалось удалить файл изображения {product.link_img} для product_id={id}: {e}")
 
-        db.session.delete(product)
-        db.session.commit()
-        product_logger.info(f"Товар успешно удалён: product_id={id}, user_id={user}")
+        product_logger.info(f"Товар успешно удалён: product_id={id}, user_id={user.id}")
         return jsonify({
             "success": True,
             "message": "Товар успешно удалён"
@@ -541,5 +542,5 @@ def delete_product(id):
 
     except Exception as e:
         db.session.rollback()
-        product_logger.exception(f"Критическая ошибка при удалении товара product_id={id} от user_id={user}: {e}")
+        product_logger.exception(f"Критическая ошибка при удалении товара product_id={id} от user_id={user.id}: {e}")
         return jsonify({"error": "Ошибка при удалении товара"}), 500

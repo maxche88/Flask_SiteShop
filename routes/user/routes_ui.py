@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, g
 from models import CartItem, Order, OrderItem
 from extensions import db
+from sqlalchemy.orm import joinedload
 
 
 user_ui_bp = Blueprint('user_ui', __name__, url_prefix='/user')
@@ -29,6 +30,8 @@ def user_order():
 @user_ui_bp.route('/cart')
 def cart_page():
     user = g.current_user
-
-    cart_items = CartItem.query.filter_by(user_id=user.id).all()
+    cart_items = CartItem.query\
+        .options(joinedload(CartItem.product))\
+        .filter_by(user_id=user.id)\
+        .all()
     return render_template('user/cart.html', cart_items=cart_items)

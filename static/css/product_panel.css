@@ -93,7 +93,8 @@
 .button-container {
     display: flex;
     align-items: center;
-    gap: 0; /* убираем зазор — они "склеятся" */
+    gap: 0;
+    /* убираем зазор — они "склеятся" */
     margin: 15px 0;
 }
 
@@ -105,7 +106,8 @@
     color: #fff;
     background-color: #0056b3;
     border: 1px solid #004494;
-    border-radius: 4px 0 0 4px; /* скругление ТОЛЬКО слева */
+    border-radius: 4px 0 0 4px;
+    /* скругление ТОЛЬКО слева */
     cursor: pointer;
     transition: background-color 0.2s;
 }
@@ -206,18 +208,18 @@
 .product-row {
     display: grid;
     grid-template-columns:
-        40px   /* select */
-        80px   /* actions */
-        40px   /* id */
-        100px  /* article */
-        60px   /* uid */
-        60px   /* image */
-        1fr    /* name ← главное! */
-        90px   /* price */
-        70px   /* qty */
-        160px  /* category */
-        140px  /* date */
-        90px;  /* sale */
+        40px /* select */
+        80px /* actions */
+        40px /* id */
+        100px /* article */
+        60px /* uid */
+        60px /* image */
+        1fr /* name */
+        90px /* price */
+        70px /* qty */
+        160px /* category */
+        140px /* date */
+        90px; /* sale */
     gap: 0;
     padding: 12px 0;
     align-items: center;
@@ -231,7 +233,7 @@
     border-bottom: 2px solid #ddd;
 }
 
-.grid-header > div {
+.grid-header>div {
     padding: 0 8px;
     text-align: center;
     font-size: 14px;
@@ -275,9 +277,8 @@
 }
 
 /* Общие ячейки */
-.product-row > .cell,
-.product-row > .actions-cell,
-.product-row > .image-cell {
+.product-row>.cell,
+.product-row>.image-cell {
     padding: 0 8px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -399,19 +400,22 @@
 }
 
 /* === Адаптивная таблица — скрытие колонок на мобильных === */
-
-/* Планшеты и меньше — скрываем ID, артикул, UID */
-@media (max-width: 1024px) {
-    .id-cell,
-    .article-cell,
-    .seller-id-cell {
-        display: none !important;
-    }
-}
-
-/* Мобильные — оставляем только: чекбокс, действия, изображение, название, цена */
+/* Оставляем только: чекбокс, действия, изображение, название, цена */
 /* === Скрываем ненужные колонки на мобильных === */
 @media (max-width: 1024px) {
+    .grid-header,
+    .product-row {
+        grid-template-columns: 
+        40px
+        60px 
+        60px
+        1fr
+        80px
+        70px 
+        135px
+        130px;
+    }
+
     .id-cell,
     .article-cell,
     .seller-id-cell,
@@ -420,7 +424,26 @@
     }
 }
 
+
 @media (max-width: 768px) {
+    .user_info {
+        font-size: 15px;
+    }
+
+    .info-panel {
+        display: none !important;
+    }
+    
+    .grid-header,
+    .product-row {
+        grid-template-columns: 
+        40px
+        60px 
+        60px
+        1fr
+        80px
+    }
+
     .id-cell,
     .article-cell,
     .seller-id-cell,
@@ -434,7 +457,26 @@
 }
 
 @media (max-width: 480px) {
-    .name-cell {
-        display: none;
+    .actions-cell button,
+    .actions-cell,
+    .actions-cell svg{
+    width: 18px;
+    height: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    }
+
+    .name-cell a {
+        font-size: 12px
+    }
+
+    .product-row {
+        grid-template-columns: 
+        40px
+        25px
+        60px
+        1fr
+        80px
     }
 }

@@ -29,20 +29,39 @@ document.addEventListener("DOMContentLoaded", function () {
         let totalItems = 0;
         let totalPrice = 0;
 
-        document.querySelectorAll('#cart-table-body .cart-row').forEach(row => {
-            const checkbox = row.querySelector('.item-checkbox');
-            if (checkbox && checkbox.checked) {
-                const quantityInput = row.querySelector('.qty-input');
-                const priceCell = row.querySelector('.cart-cell-price');
+        // Определяем, какая версия активна: десктоп или мобилка
+        const cartTable = document.getElementById('cart-table');
+        const isDesktop = cartTable && window.getComputedStyle(cartTable).display !== 'none';
 
-                const quantity = parseInt(quantityInput.value) || 0;
-                const priceText = priceCell.textContent.trim();
-                const price = parseInt(priceText.replace(/[^0-9]/g, '')) || 0;
-
-                totalItems += quantity;
-                totalPrice += price * quantity;
-            }
-        });
+        if (isDesktop) {
+            // Десктоп: работаем с таблицей
+            document.querySelectorAll('#cart-table-body .cart-row').forEach(row => {
+                const checkbox = row.querySelector('.item-checkbox');
+                if (checkbox && checkbox.checked) {
+                    const quantityInput = row.querySelector('.qty-input');
+                    const priceCell = row.querySelector('.cart-cell-price');
+                    const quantity = parseInt(quantityInput.value) || 0;
+                    const priceText = priceCell.textContent.trim();
+                    const price = parseInt(priceText.replace(/[^0-9]/g, '')) || 0;
+                    totalItems += quantity;
+                    totalPrice += price * quantity;
+                }
+            });
+        } else {
+            // Мобилка: работаем с карточками
+            document.querySelectorAll('.cart-card').forEach(card => {
+                const checkbox = card.querySelector('.item-checkbox');
+                if (checkbox && checkbox.checked) {
+                    const quantityInput = card.querySelector('.qty-input');
+                    const priceEl = card.querySelector('.cart-card-price');
+                    const quantity = parseInt(quantityInput.value) || 0;
+                    const priceText = priceEl.textContent.trim();
+                    const price = parseInt(priceText.replace(/[^0-9]/g, '')) || 0;
+                    totalItems += quantity;
+                    totalPrice += price * quantity;
+                }
+            });
+        }
 
         const totalItemsEl = document.getElementById('total-items');
         const totalPriceEl = document.getElementById('total-price');
@@ -143,17 +162,28 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(response => {
                 if (response.ok) {
-                    const row = this.closest('.cart-row');
-                    if (row) row.remove();
+                    // Универсальный поиск контейнера: и row, и card
+                    const container = this.closest('.cart-row, .cart-card');
+                    if (container) container.remove();
 
-                    if (document.querySelectorAll('#cart-table-body .cart-row').length === 0) {
-                        const cartItems = document.getElementById('cart-table');
-                        if (cartItems) {
-                            const msg = document.createElement('p');
-                            msg.className = 'cart_empty';
-                            msg.textContent = 'Корзина пуста';
-                            cartItems.replaceWith(msg);
-                        }
+                    // Проверяем, остались ли товары (в обеих версиях)
+                    const hasDesktopItems = document.querySelectorAll('#cart-table-body .cart-row').length > 0;
+                    const hasMobileItems = document.querySelectorAll('.cart-card').length > 0;
+                    const hasAnyItems = hasDesktopItems || hasMobileItems;
+
+                    if (!hasAnyItems) {
+                        // Удаляем UI — в зависимости от того, что есть
+                        const desktopTable = document.getElementById('cart-table');
+                        const mobileCards = document.querySelector('.cart-cards-mobile');
+
+                        if (desktopTable) desktopTable.remove();
+                        if (mobileCards) mobileCards.remove();
+
+                        const emptyMsg = document.createElement('p');
+                        emptyMsg.className = 'cart_empty';
+                        emptyMsg.textContent = 'Корзина пуста';
+                        document.querySelector('.content_order')?.prepend(emptyMsg);
+
                         document.querySelector('.btn_order')?.remove();
                         document.getElementById('cart-summary')?.remove();
                     }

@@ -6,6 +6,11 @@ a {
     text-decoration: none;
 }
 
+/* По умолчанию: карточки скрыты, таблица видна */
+.cart-cards-mobile {
+    display: none;
+}
+
 .conteiner_forms {
     width: 100%;
     max-width: 1200px;
@@ -65,9 +70,7 @@ a {
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
-/* =============================================================================
-   КНОПКИ-ИКОНКИ
-   ============================================================================= */
+/* КНОПКИ-ИКОНКИ */
 
 .icon-button {
     background: none;
@@ -92,9 +95,7 @@ a {
     color: #3c9bf5;
 }
 
-/* =============================================================================
-   КАСТОМНЫЙ ЧЕКБОКС
-   ============================================================================= */
+/* ЧЕКБОКС */
 
 .checkbox-container {
     position: relative;
@@ -152,9 +153,7 @@ a {
     display: block;
 }
 
-/* =============================================================================
-   ОСНОВНАЯ СЕТКА КОРЗИНЫ — ДЕСКТОП
-   ============================================================================= */
+/* ОСНОВНАЯ СЕТКА КОРЗИНЫ — ДЕСКТОП */
 
 .cart-items {
     width: 100%;
@@ -168,7 +167,7 @@ a {
 
 .cart-header {
     display: grid;
-    grid-template-columns: 40px 1fr 80px 100px 90px;
+    grid-template-columns: 40px 1fr 72px 80px 100px 90px;
     background: #0056b3;
     color: white;
     font-weight: 600;
@@ -186,10 +185,10 @@ a {
 
 .cart-row {
     display: grid;
-    grid-template-columns: 40px 1fr 80px 100px 90px;
+    grid-template-columns: 40px 1fr 72px 80px 100px 90px;
     gap: 16px;
     padding: 14px 16px;
-    align-items: center; /* ← КЛЮЧЕВОЕ: вертикальное центрирование ВСЕХ ячеек */
+    align-items: center;
     text-align: center;
     border-bottom: 1px solid #eee;
 }
@@ -211,9 +210,25 @@ a {
     padding: 0;
 }
 
-/* =============================================================================
-   ИТОГОВАЯ СТРОКА
-   ============================================================================= */
+/* Ячейка с изображением */
+.cart-cell-image {
+    width: 72px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Само изображение */
+.cart-product-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block;
+}
+
+/* ИТОГОВАЯ СТРОКА */
 
 .cart-summary {
     margin-top: 20px;
@@ -225,9 +240,7 @@ a {
     border-top: 1px solid #eee;
 }
 
-/* =============================================================================
-   КНОПКА "ОФОРМИТЬ ЗАКАЗ"
-   ============================================================================= */
+/* КНОПКА "ОФОРМИТЬ ЗАКАЗ" */
 
 .btn_order .bt.reg_bt {
     display: inline-block;
@@ -246,9 +259,7 @@ a {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* =============================================================================
-   МОДАЛЬНОЕ ОКНО ОПЛАТЫ
-   ============================================================================= */
+/* МОДАЛЬНОЕ ОКНО ОПЛАТЫ */
 
 .modal {
     display: none;
@@ -382,9 +393,7 @@ a {
     background-color: #004a99;
 }
 
-/* =============================================================================
-   МОДАЛЬНОЕ ОКНО: ЗАДАТЬ ВОПРОС О ТОВАРЕ
-   ============================================================================= */
+/* МОДАЛЬНОЕ ОКНО: ЗАДАТЬ ВОПРОС О ТОВАРЕ */
 
 .cart-ask-overlay {
     position: fixed;
@@ -494,98 +503,98 @@ a {
 }
 
 /* =============================================================================
-   АДАПТИВНАЯ ВЕРСИЯ — МОБИЛЬНЫЕ УСТРОЙСТВА (< 768px)
+   АДАПТИВ: СКРЫВАЕМ ТАБЛИЦУ НА МОБИЛЬНЫХ, ПОКАЗЫВАЕМ КАРТОЧКИ
    ============================================================================= */
 
+/* На мобильных: таблица скрыта, карточки видны */
 @media (max-width: 767px) {
-    .cart-header {
-        display: none;
+    .cart-items {
+        display: none !important;
     }
 
-    .cart-row {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 16px;
+    .cart-cards-mobile {
+        display: block;
+        width: 100%;
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 0 16px;
+        box-sizing: border-box;
+    }
+
+    .cart-card {
+        background: #fff;
         border: 1px solid #eee;
         border-radius: 12px;
-        background: #fff;
+        padding: 16px;
         margin-bottom: 16px;
-        border-bottom: none;
+        position: relative;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        transform: none !important;
     }
 
-    .cart-cell {
-        text-align: left;
-        padding: 0;
+    /* Чекбокс — в левом верхнем углу */
+    .cart-card-checkbox {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        z-index: 2;
     }
 
-    /* Подписи через ::before */
-    .cart-cell-title::before {
-        content: "Товар:";
+    /* Изображение — внутри карточки, без выхода за границы */
+    .cart-card-image {
+        width: 100%;
+        height: 140px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f9f9f9;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .cart-card-image img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+
+    .cart-card-content {
+        margin-bottom: 16px;
+    }
+
+    .cart-card-title {
+        font-size: 18px;
         font-weight: 600;
-        display: block;
-        margin-bottom: 4px;
-        color: #333;
+        margin: 0 0 8px;
+        color: #222;
     }
 
-    .cart-cell-price::before {
-        content: "Цена:";
-        font-weight: 600;
-        display: block;
-        margin-bottom: 4px;
-        color: #333;
+    .cart-card-price {
+        font-size: 18px;
+        font-weight: 700;
+        color: #0056b3;
+        margin-bottom: 12px;
     }
 
-    .cart-cell-qty::before {
-        content: "Количество:";
-        font-weight: 600;
-        display: block;
-        margin-bottom: 8px;
-        color: #333;
+    .cart-card-qty {
+        display: flex;
+        justify-content: space-between;
     }
 
-    .cart-cell-actions::before {
-        font-weight: 600;
-        display: block;
-        margin-bottom: 10px;
-        color: #333;
-    }
-
-    /* Для чекбокса на мобилке — вернём отступ */
-    .cart-cell-checkbox {
-        display: block;
-        padding-bottom: 20px;
-        margin-bottom: 8px;
-    }
-
-    .quantity-control {
+    .cart-card-qty .quantity-control {
         justify-content: flex-start;
     }
 
-    .cart-cell-actions {
+    .cart-card-qty .qty-input {
+        width: 60px;
+        font-size: 16px;
+        padding: 6px;
+    }
+
+    .cart-card-actions {
         display: flex;
-        flex-wrap: wrap;
         gap: 12px;
-        align-items: center;
+        justify-content: flex-start;
     }
-
-    .cart-row:hover {
-        background: transparent;
-    }
-
-    .cart-summary,
-    .btn_order {
-        padding-left: 16px;
-        padding-right: 16px;
-    }
-
-    .btn_order .bt.reg_bt {
-        width: 100%;
-        max-width: 300px;
-        margin: 0 auto;
-    }
-
 }

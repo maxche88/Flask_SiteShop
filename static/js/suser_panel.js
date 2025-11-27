@@ -1,7 +1,6 @@
 // Панель управления товарами — менеджер (suser)
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Элементы DOM
     const selectAllCheckbox = document.getElementById('select-all');
     const gridBody = document.getElementById('products-grid-body');
     const infoPanel = document.getElementById('info-panel');
@@ -102,7 +101,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        // Если JWT в куках — заголовок не нужен
                     },
                     credentials: 'same-origin',
                     body: JSON.stringify({
