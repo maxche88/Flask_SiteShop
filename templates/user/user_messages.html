@@ -16,21 +16,6 @@
 
 {% block content %}
 <div class="messages-page">
-
-    <!-- Информационная панель (опционально) -->
-    <div id="messages-info-panel" class="messages-info hidden"></div>
-
-    <!-- Информация о пользователе (для отладки, можно убрать) -->
-    <div class="messages-user-info" style="display:none;">
-        <p>user_id: {{ user_id }}</p>
-        <p>role: {{ role }}</p>
-    </div>
-
-    <!-- Кнопка создания диалога -->
-    <div class="btn-create-dialog-container">
-        <button id="open-create-dialog-modal" class="btn-create-dialog">Написать сообщение</button>
-    </div>
-
     <!-- Список диалогов -->
     <div class="dialogs-list-container">
         <table class="styled-table" id="dialogs-table">
@@ -38,8 +23,6 @@
                 <tr>
                     <th></th>
                     <th>Диалог</th>
-                    <th>Собеседник</th>
-                    <th>Последнее сообщение</th>
                     <th>Дата</th>
                 </tr>
             </thead>
@@ -47,6 +30,15 @@
                 <!-- Будет заполнено через JS -->
             </tbody>
         </table>
+    </div>
+
+    <div class="btn-info-sticky">
+        <!-- Информационная панель -->
+        <div id="messages-info-panel" class="messages-info hidden"></div>
+        <!-- Кнопка создания диалога -->
+        <div class="btn-create-dialog-container">
+            <button id="open-create-dialog-modal" class="btn-create-dialog">Написать сообщение</button>
+        </div>
     </div>
 
     <!-- Модальное окно создания диалога -->

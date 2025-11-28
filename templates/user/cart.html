@@ -138,13 +138,15 @@
         </div>
 
         <!-- Итог и кнопка оформления -->
-        <div id="cart-summary" class="cart-summary">
-            Всего товаров: <span id="total-items">0</span> |
-            К оплате: <span id="total-price">0</span> ₽
-        </div>
+        <div class="cart-sticky-summary">
+            <div id="cart-summary" class="cart-summary">
+                Всего товаров: <span id="total-items">0</span> |
+                К оплате: <span id="total-price">0</span> ₽
+            </div>
 
-        <div class="btn_order">
-            <a href="#" class="bt reg_bt" id="checkout-button">Оформить заказ</a>
+            <div class="btn_order">
+                <a href="#" class="bt reg_bt" id="checkout-button">Оформить заказ</a>
+            </div>
         </div>
 
         {% else %}

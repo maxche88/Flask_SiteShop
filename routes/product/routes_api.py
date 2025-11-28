@@ -304,7 +304,7 @@ def add_product():
         'Артикул': article_num,
         'Категория': category
     }
-
+    print(required_fields)
     missing = [field for field, value in required_fields.items() if not value]
     if missing:
         product_logger.info(f"Пропущены обязательные поля при добавлении товара от user_id={user.id}: {missing}")

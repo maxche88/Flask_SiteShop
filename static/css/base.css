@@ -334,14 +334,14 @@ html, body {
 .cart-badge {
     position: absolute;
     top: 0px;
-    right: 75px;
+    right: 70px;
     transform: translateX(-50%);
     color: #000;
     font-size: 12px;
     font-weight: bold;
     line-height: 18px;
     text-align: center;
-    background: #cccccc;
+    background: #f1ef49;
     height: 18px;
     min-width: 18px;
     padding: 0 6px;
@@ -395,7 +395,7 @@ html, body {
     color: inherit;
 }
 
-/* Бейдж */
+/* Бейдж кол-ва не прочитанных сообщений*/
 .mess-badge {
     position: absolute;
     left: 110px;
@@ -405,7 +405,7 @@ html, body {
     font-weight: bold;
     line-height: 18px;
     text-align: center;
-    background: #fbff00;
+    background: #fcf968;
     height: 18px;
     min-width: 18px;
     padding: 0 4px;
@@ -512,12 +512,14 @@ html, body {
 }
 
 .search_btn:hover {
-    background: linear-gradient(145deg, #07b0ff, #1b5e20);
+    background: linear-gradient(145deg, #2d6db6, #2b8dbb);
     color: #ffffff;
 }
 
 .search_btn:active {
     transform: translateY(0);
+    background: linear-gradient(145deg, #104685, #146388);
+    color: #ffffff;
 }
 
 /* === Кнопка "Фильтры" === */
@@ -851,13 +853,17 @@ html, body {
 }
 
 .description-value {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
     font-size: 0.9em;
     color: #464545;
     margin: 0;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.4em;
+    max-height: 4.2em;
 }
 
 /* === Бейдж "Акция" === */
@@ -894,7 +900,7 @@ html, body {
 
 .background_gradient {
     width: 100px;
-    background: linear-gradient(to right, rgba(103, 255, 2, 0.418), transparent);
+    background: linear-gradient(to right, rgba(91, 189, 255, 0.418), transparent);
     display: inline-block;
     backdrop-filter: blur(2px);
 }
@@ -930,7 +936,7 @@ html, body {
   cursor: pointer;
 
   /* Фон и градиент — создаёт объём */
-  background: linear-gradient(145deg, #2e7d32, #1b5e20);
+  background: linear-gradient(145deg, #0056b3, #0075f1);
   border: none;
   border-radius: 8px;
 
@@ -949,7 +955,7 @@ html, body {
 
 /* Эффект при наведении */
 .btn_buy:hover {
-  background: linear-gradient(145deg, #388e3c, #2e7d32);
+  background: linear-gradient(145deg, #1e88fa, #479dfa);
   box-shadow:
     0 6px 8px rgba(0, 0, 0, 0.2),
     0 3px 5px rgba(0, 0, 0, 0.15),
@@ -959,7 +965,7 @@ html, body {
 
 /* Эффект при нажатии */
 .btn_buy:active {
-  background: linear-gradient(145deg, #1b5e20, #0d3c13);
+  background: linear-gradient(145deg, #0056b3, #003d7e);
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.2),
     inset 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -977,10 +983,9 @@ html, body {
     font-size: 12px;
 }
 
-.img_c:hover {
-    filter: brightness(0) saturate(100%) invert(48%) sepia(99%) saturate(2476%) hue-rotate(86deg) brightness(70%) contrast(98%);
-}
-
+.user-actions:hover svg{
+    fill: #2196F3;
+} 
 
 @media (max-width: 768px) {
     .guest-contact-wrapper {

@@ -2,136 +2,180 @@ document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('productForm');
     if (!form) return;
 
+    // === Элементы превью ===
+    const togglePreviewCheckbox = document.getElementById("toggle-preview");
+    const previewWrapper = document.getElementById("product-card-preview-wrapper");
+
+    const previewArticle = document.getElementById("preview-article");
+    const previewTitle = document.getElementById("preview-title-link");
+    const previewDescription = document.getElementById("preview-description");
+    const previewPrice = document.getElementById("preview-price");
+    const badge = document.querySelector(".badge-preview");
+    const previewImage = document.getElementById("preview-image");
+
+    // === Поля формы ===
+    const articleInput = document.getElementById("article-number");
+    const nameInput = document.getElementById("product-name");
+    const descriptionInput = document.getElementById("product-description");
+    const priceInput = document.getElementById("product-price");
+    const saleCheckbox = document.getElementById("product-sale");
+
+    // === Функция обновления превью ===
+    function updatePreview() {
+        if (previewArticle) previewArticle.textContent = articleInput?.value || "—";
+        if (previewTitle) previewTitle.textContent = nameInput?.value || "Товар";
+        if (previewDescription) previewDescription.textContent = descriptionInput?.value || "Описание отсутствует";
+
+        let priceValue = priceInput?.value?.trim() || '';
+        let price = NaN;
+        if (priceValue !== '') {
+            priceValue = priceValue.replace(',', '.');
+            price = parseFloat(priceValue);
+        }
+        if (previewPrice) {
+            previewPrice.textContent = !isNaN(price) ? `${price.toLocaleString('ru-RU')} ₽` : "—";
+        }
+
+        if (badge) {
+            if (saleCheckbox?.checked) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+    }
+
+    // === Слушатели ввода ===
+    [articleInput, nameInput, descriptionInput, priceInput, saleCheckbox].forEach(input => {
+        if (input) {
+            input.addEventListener("input", updatePreview);
+        }
+    });
+
+    // === Управление превью ===
+    if (togglePreviewCheckbox && previewWrapper) {
+        togglePreviewCheckbox.checked = false;
+        previewWrapper.style.display = 'none';
+
+        togglePreviewCheckbox.addEventListener('change', function () {
+            previewWrapper.style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    // === Категория ===
     const categorySelect = document.getElementById('category-select');
     const selectHeader = categorySelect?.querySelector('.select-header');
     const selectOptions = categorySelect?.querySelector('.select-options');
     const categoryInput = document.getElementById('product-category');
-    const fileInput = document.getElementById('product-image');
-    const fileNameDisplay = document.getElementById('file-name');
-    const errorMessages = document.getElementById('errorMessages');
 
     let isCategoryOpen = false;
-
-    // === Логика кастомного селекта: открытие/закрытие ===
     if (selectHeader && selectOptions) {
-        selectHeader.addEventListener('click', function () {
-            if (isCategoryOpen) {
-                selectOptions.style.display = 'none';
-                categorySelect.classList.remove('open');
-            } else {
-                selectOptions.style.display = 'block';
-                categorySelect.classList.add('open');
-            }
+        selectHeader.addEventListener('click', () => {
             isCategoryOpen = !isCategoryOpen;
+            selectOptions.style.display = isCategoryOpen ? 'block' : 'none';
+            categorySelect?.classList.toggle('open', isCategoryOpen);
         });
 
-        // Закрытие при клике вне селекта
-        document.addEventListener('click', function (e) {
+        document.addEventListener('click', (e) => {
             if (categorySelect && !categorySelect.contains(e.target)) {
                 selectOptions.style.display = 'none';
-                categorySelect.classList.remove('open');
+                categorySelect?.classList.remove('open');
                 isCategoryOpen = false;
             }
         });
-    }
 
-    // === Выбор категории из списка ===
-    const categoryOptions = selectOptions?.querySelectorAll('li');
-    if (categoryOptions && categoryInput && selectHeader) {
-        categoryOptions.forEach(option => {
-            option.addEventListener('click', function () {
-                const value = this.getAttribute('data-value');
-                const text = this.textContent;
-
-                categoryInput.value = value;
-                selectHeader.textContent = text;
-
-                // Закрываем список
-                if (selectOptions) {
+        const options = selectOptions?.querySelectorAll('li');
+        if (options && categoryInput && selectHeader) {
+            options.forEach(li => {
+                li.addEventListener('click', () => {
+                    const value = li.dataset.value;
+                    selectHeader.textContent = value;
+                    categoryInput.value = value;
                     selectOptions.style.display = 'none';
                     categorySelect?.classList.remove('open');
                     isCategoryOpen = false;
-                }
+                    updatePreview();
+                });
             });
-        });
+        }
     }
 
-    // === Обновление имени файла ===
+    // === Изображение ===
+    const fileInput = document.getElementById('product-image');
+    const fileNameDisplay = document.getElementById('file-name');
+
     if (fileInput && fileNameDisplay) {
         fileInput.addEventListener('change', function () {
-            if (this.files.length > 0) {
-                fileNameDisplay.textContent = this.files[0].name;
+            const file = this.files[0];
+            if (file) {
+                fileNameDisplay.textContent = '✅ Новое фото товара загружено';
+                fileNameDisplay.className = 'file-name success';
+
+                if (previewImage && togglePreviewCheckbox?.checked) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        previewImage.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
             } else {
                 fileNameDisplay.textContent = 'Фото не выбрано';
+                fileNameDisplay.className = 'file-name';
+                if (previewImage) previewImage.src = '';
             }
         });
     }
 
-    // === Отправка формы ===
+    // === Отправка ===
+    const errorMessages = document.getElementById('errorMessages');
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
-
-        // Очистка предыдущих сообщений
         if (errorMessages) errorMessages.innerHTML = '';
 
-        // Валидация категории
         if (!categoryInput?.value.trim()) {
             showError('Выберите категорию');
             return;
         }
-
-        // Валидация файла
         if (!fileInput || fileInput.files.length === 0) {
-            showError('Выберите изображение для товара');
+            showError('Выберите изображение');
             return;
         }
 
-        // Сбор данных
         const formData = new FormData(form);
         formData.set('category', categoryInput.value.trim());
 
-        // Отправка
         try {
             const response = await fetch('/api/products', {
                 method: 'POST',
                 body: formData
             });
-
             const result = await response.json();
 
             if (response.ok) {
-                showSuccess('Товар успешно добавлен!');
+                showSuccess('Товар добавлен!');
                 form.reset();
                 if (fileNameDisplay) fileNameDisplay.textContent = 'Фото не выбрано';
                 if (categoryInput) categoryInput.value = '';
                 if (selectHeader) selectHeader.textContent = 'Выберите категорию';
-
-                // Автоочистка сообщения через 5 сек
-                setTimeout(() => {
-                    if (errorMessages) errorMessages.innerHTML = '';
-                }, 5000);
+                if (previewImage) previewImage.src = '';
+                if (badge) badge.classList.add('hidden');
+                updatePreview(); // сброс превью
             } else {
-                const msg = result.error || 'Неизвестная ошибка при добавлении товара';
-                showError(msg);
+                showError(result.error || 'Ошибка сервера');
             }
         } catch (err) {
-            console.error('Сетевая ошибка:', err);
-            showError('Ошибка сети. Проверьте подключение и попробуйте снова.');
+            showError('Ошибка сети');
         }
     });
 
     // === Вспомогательные функции ===
-    function showError(message) {
-        if (errorMessages) {
-            errorMessages.innerHTML = `<div class="error-message">❌ ${message}</div>`;
-        }
-        console.error('Ошибка формы:', message);
+    function showError(msg) {
+        if (errorMessages) errorMessages.innerHTML = `<div class="error-message">❌ ${msg}</div>`;
+    }
+    function showSuccess(msg) {
+        if (errorMessages) errorMessages.innerHTML = `<div class="success-message">✅ ${msg}</div>`;
     }
 
-    function showSuccess(message) {
-        if (errorMessages) {
-            errorMessages.innerHTML = `<div class="success-message">✅ ${message}</div>`;
-        }
-        console.log('Успех:', message);
-    }
+    // === Инициализация ===
+    updatePreview();
 });

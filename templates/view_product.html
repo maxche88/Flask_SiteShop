@@ -2,7 +2,6 @@
 
 {% block link %}
 <!-- Подключаем общий CSS, где описаны стили карточек -->
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/base.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/view_product.css') }}">
 {% endblock %}
 
@@ -76,15 +75,15 @@
             
 
             <!-- Блок кнопок -->
-            <div class="product-actions">
+            <div class="product-actions-view">
                 <!-- Кнопки корзины ТОЛЬКО для авторизованных пользователей -->
                 {% if role %}
-                <div class="user-actions">
+                <div class="user-actions-view">
                     <div class="btn_buy" data-product-id="{{ product.id }}">
                         <div class="btn_text"></div>
                         Купить
                     </div>
-                    <a href="#" class="cart-icon" data-product-id="{{ product.id }}" title="Добавить в корзину">
+                    <a href="#" class="cart-icon-view" data-product-id="{{ product.id }}" title="Добавить в корзину">
                         {{ cart_add_mini(size=24, cls="img_c") }}
                     </a>
                 </div>

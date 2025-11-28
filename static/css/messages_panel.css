@@ -119,14 +119,6 @@
     color: #333;
 }
 
-.status-option:hover {
-    background-color: #f0f8ff;
-}
-
-/* Статусы в списке диалогов */
-.status-col.open { color: #28a745; }
-.status-col.closed { color: #6c757d; }
-.status-col.archived { color: #ffc107; font-weight: 600; }
 
 .btn-delete-dialogs {
     padding: 8px 16px;
@@ -154,15 +146,15 @@
     width: 100%;
     border: 1px solid #e0e0e0;
     border-radius: 6px;
-    overflow: hidden;
 }
 
 /* Тело таблицы */
 .dialogs-body {
     display: flex;
     flex-direction: column;
-    max-height: 600px;
+    max-height: calc(100vh - 280px);
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Сетка: заголовок и строки */
@@ -171,16 +163,16 @@
     display: grid;
     width: 100%;
     grid-template-columns:
-        40px    /* Чекбокс */
-        0.6fr   /* ID */
-        0.8fr   /* Тема */
-        1fr     /* Имя */
-        1.8fr   /* email */
-        1.3fr   /* Контекст */
-        0.5fr   /* Статус */
-        0.7fr   /* Обновлено */
-        0.6fr   /* Сообщений */
-        0.7fr;  /* Последнее */
+        40px                          /* Чекбокс — фикс */
+        minmax(60px, 0.8fr)           /* ID */
+        minmax(100px, 1.2fr)          /* Тема — даём больше места и минимум */
+        minmax(100px, 1fr)            /* Имя */
+        minmax(140px, 1.8fr)          /* Email */
+        minmax(100px, 1.2fr)          /* Контекст */
+        minmax(80px, 0.6fr)           /* Статус */
+        minmax(110px, 1fr)            /* Обновлено (дата) — критично! */
+        minmax(60px, 0.5fr)           /* Сообщений */
+        minmax(90px, 0.8fr);          /* Последний отправитель */
     align-items: center;
     gap: 0;
 }
@@ -216,14 +208,14 @@
 }
 
 
-/* === Колонка с чекбоксами — отдельно! === */
+/* === Колонка с чекбоксами === */
 .dialogs-col.select-all-col,
 .dialogs-col.select-col {
     width: 40px;
     padding: 0 !important;
     justify-content: center;
     text-align: center;
-    overflow: visible; /* чтобы чекбокс не обрезался */
+    overflow: visible;
 }
 
 .dialogs-col.select-all-col input,
@@ -255,11 +247,10 @@
 }
 
 .status-col.closed {
-    color: #ff6060;
+    color: #000000;
 }
 
 /* === Модальное окно чата === */
-
 .chat-modal {
     position: fixed;
     z-index: 1001;
@@ -393,7 +384,7 @@
 .chat-input-area {
     display: flex;
     gap: 10px;
-    align-items: flex-start;
+    align-items: center;
 }
 
 .chat-input-area textarea {
@@ -403,7 +394,7 @@
     border-radius: 10px;
     font-size: 15px;
     resize: none;
-    height: 44px;
+    height: 160px;
     font-family: inherit;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -415,7 +406,7 @@
 }
 
 .chat-input-area .btn-send {
-    padding: 10px 16px;
+    padding: 16px;
     background-color: #0056b3;
     color: white;
     border: none;
@@ -435,45 +426,113 @@
     cursor: not-allowed;
 }
 
-
-/* === Адаптивность на мобильных === */
-@media (max-width: 768px) {
-    .dialogs-col {
-        white-space: normal;
-        word-break: break-word;
-        text-align: left;
-        justify-content: flex-start;
+@media (max-width: 1000px) {
+    /* Скрываем колонки, которые не критичны на мобильных */
+    .col-id,
+    .col-context,
+    .col-count,
+    .col-last-sender {
+        display: none;
     }
 
-    /* На мобильных — всё по левому краю */
-    .dialogs-col.id-col,
-    .dialogs-col.status-col,
-    .dialogs-col.count-col,
-    .dialogs-col.updated-col,
-    .dialogs-col.last-sender-col {
-        justify-content: flex-start;
-        text-align: left;
-    }
-
+    /* Обновляем сетку: убираем скрытые колонки из ширины */
     .dialogs-header,
     .dialog-item {
         grid-template-columns:
-            40px
-            minmax(40px, 0.5fr)
-            minmax(80px, 1fr)
-            minmax(80px, 1fr)
-            minmax(100px, 1.3fr)
-            minmax(100px, 1.2fr)
-            minmax(60px, 0.6fr)
-            minmax(90px, 1fr)
-            minmax(50px, 0.5fr)
-            minmax(80px, 0.9fr);
+            40px                          /* Чекбокс */
+            minmax(100px, 1.3fr)          /* Тема */
+            minmax(100px, 1fr)            /* Имя */
+            minmax(130px, 1.5fr)          /* Email */
+            minmax(80px, 0.7fr)           /* Статус */
+            minmax(110px, 1.2fr);         /* Обновлено */
     }
 
-    .messages-user-info,
-    .dialogs-list-container {
-        padding: 0;
-        margin: 0 -8px;
-        border-radius: 0;
+    /* Центрируем только оставшиеся колонки */
+    .dialogs-col.col-status,
+    .dialogs-col.col-updated {
+        justify-content: center;
+        text-align: center;
+    }
+
+    /* Колонки с текстом — по левому краю */
+    .dialogs-col.col-topic,
+    .dialogs-col.col-username,
+    .dialogs-col.col-email {
+        justify-content: flex-start;
+        text-align: left;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Скрываем колонки, которые не критичны на мобильных */
+    .col-id,
+    .col-context,
+    .col-count,
+    .col-last-sender,
+    .col-topic {
+        display: none;
+    }
+
+    /* Обновляем сетку: убираем скрытые колонки из ширины */
+    .dialogs-header,
+    .dialog-item {
+        grid-template-columns:
+            40px                          /* Чекбокс */
+            minmax(70px, 0.5fr)            /* Имя */
+            minmax(130px, 1.5fr)          /* Email */
+            minmax(80px, 0.7fr)           /* Статус */
+            minmax(110px, 1.2fr);         /* Обновлено */
+    }
+
+    /* Центрируем только оставшиеся колонки */
+    .dialogs-col.col-status,
+    .dialogs-col.col-updated {
+        justify-content: center;
+        text-align: center;
+    }
+
+    /* Колонки с текстом — по левому краю */
+    .dialogs-col.col-topic,
+    .dialogs-col.col-username,
+    .dialogs-col.col-email {
+        justify-content: flex-start;
+        text-align: left;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Скрываем колонки, которые не критичны на мобильных */
+    .col-id,
+    .col-context,
+    .col-count,
+    .col-last-sender,
+    .col-topic,
+    .col-updated {
+        display: none;
+    }
+
+    /* Обновляем сетку: убираем скрытые колонки из ширины */
+    .dialogs-header,
+    .dialog-item {
+        grid-template-columns:
+            40px                          /* Чекбокс */
+            minmax(70px, 0.5fr)            /* Имя */
+            minmax(130px, 1.5fr)          /* Email */
+            minmax(80px, 0.7fr)           /* Статус */
+    }
+
+    /* Центрируем только оставшиеся колонки */
+    .dialogs-col.col-status,
+    .dialogs-col.col-updated {
+        justify-content: center;
+        text-align: center;
+    }
+
+    /* Колонки с текстом — по левому краю */
+    .dialogs-col.col-topic,
+    .dialogs-col.col-username,
+    .dialogs-col.col-email {
+        justify-content: flex-start;
+        text-align: left;
     }
 }

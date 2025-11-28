@@ -18,10 +18,18 @@ a {
     margin-top: 20px;
 }
 
+
+.btn-info-sticky {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    padding: 16px 0;
+
+}
+
 /* Кнопка создания диалога */
 .btn-create-dialog-container {
     text-align: center;
-    margin-bottom: 20px;
 }
 
 .btn-create-dialog {
@@ -45,7 +53,7 @@ a {
 /* Стилизация таблицы диалогов */
 /* Подсветка непрочитанных диалогов */
 .dialog-row.has-unread {
-    background-color: #fcdada;
+    background-color: #ffbdbd;
 }
 
 /* Кнопка закрытия диалога */

@@ -28,6 +28,8 @@ PUBLIC_ENDPOINTS = {
     # Публичные API
     'api.get_all_products', 
     'api.get_product_by_id', 
+    'chat_api.get_message_topics',
+    'chat_api.create_guest_dialog_api',
 
     # Аутентификация и восстановление
     'session.login',

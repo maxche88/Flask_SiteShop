@@ -6,39 +6,59 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!modal || !openBtn || !form) return;
 
+    // Получаем данные из глобальных переменных (установлены в шаблоне)
+    const userRole = window.userRole || 'guest';
+    const productId = window.product_id || '';
+
+    // Устанавливаем product_id в скрытое поле формы (если есть)
+    const productIdInput = form.querySelector('[name="product_id"]');
+    if (productIdInput && productId) {
+        productIdInput.value = productId;
+    }
+
+    // Открытие модального окна
     openBtn.addEventListener('click', () => {
         modal.classList.remove('hidden');
     });
 
+    // Закрытие по кнопке
     closeBtn?.addEventListener('click', () => {
         modal.classList.add('hidden');
     });
 
+    // Закрытие по клику вне контента
     modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.add('hidden');
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
     });
 
+    // Отправка формы
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const isGuest = form.querySelector('[name="name"]') !== null;
-        const message = form.querySelector('[name="message"]')?.value.trim() || '';
-        const productId = form.querySelector('[name="product_id"]')?.value || '';
+        const messageInput = form.querySelector('[name="message"]');
+        const message = messageInput?.value.trim() || '';
 
         if (!message) {
             alert('Введите сообщение.');
             return;
         }
 
+        // Определяем, какие данные собирать
         let payload = {
             text: message,
             product_id: productId,
             context: 'product_question'
         };
 
-        if (isGuest) {
-            const name = form.querySelector('[name="name"]')?.value.trim() || '';
-            const email = form.querySelector('[name="email"]')?.value.trim() || '';
+        // Для гостей: собираем имя и email
+        if (userRole === 'guest') {
+            const nameInput = form.querySelector('[name="name"]');
+            const emailInput = form.querySelector('[name="email"]');
+
+            const name = nameInput?.value.trim() || '';
+            const email = emailInput?.value.trim() || '';
 
             if (!name) {
                 alert('Введите имя.');
@@ -53,24 +73,40 @@ document.addEventListener('DOMContentLoaded', function () {
             payload.guest_email = email;
         }
 
+        // Определяем URL эндпоинта
+        let url;
+        if (userRole === 'guest') {
+            url = '/api/chat/dialogs/guest';
+        } else if (userRole === 'user') {
+            url = '/api/chat/dialogs/user';
+        } else {
+            // suser, admin и другие — запрещено
+            alert('У вас нет прав для отправки вопросов о товаре.');
+            return;
+        }
+
         try {
-            const response = await fetch('/api/chat/dialogs', {
+            const response = await fetch(url, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify(payload)
             });
 
             const res = await response.json();
+
             if (response.ok) {
                 alert('Ваш вопрос отправлен!');
                 modal.classList.add('hidden');
                 form.reset();
             } else {
-                alert('Ошибка: ' + (res.errors?.[0] || res.message || 'Не удалось отправить'));
+                const errorMsg = res.errors?.join('\n') || res.message || 'Не удалось отправить вопрос';
+                alert('Ошибка: ' + errorMsg);
             }
         } catch (err) {
-            console.error('Ошибка:', err);
-            alert('Ошибка подключения');
+            console.error('Ошибка сети:', err);
+            alert('Ошибка подключения к серверу.');
         }
     });
 });

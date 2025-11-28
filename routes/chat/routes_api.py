@@ -25,7 +25,8 @@ def get_message_topics():
 @chat_bp.route('/unread-count', methods=['GET'])
 def get_unread_message_count():
     """
-    Возвращает количество непрочитанных сообщений для ТЕКУЩЕГО пользователя.
+    Возвращает количество непрочитанных сообщений для ТЕКУЩЕГО пользователя
+    ТОЛЬКО в диалогах со статусом 'open'.
     
     - Для 'user': непрочитанные сообщения от поддержки.
     - Для 'suser'/'admin': непрочитанные сообщения от пользователей.
@@ -36,12 +37,14 @@ def get_unread_message_count():
         if user.role == 'user':
             count = db.session.query(Message).join(Dialog).filter(
                 Dialog.user_id == user.id,
+                Dialog.status == 'open',
                 Message.sender_role.in_(['suser', 'admin']),
                 Message.is_read == False
             ).count()
 
         elif user.role in ('suser', 'admin'):
-            count = db.session.query(Message).filter(
+            count = db.session.query(Message).join(Dialog).filter(
+                Dialog.status == 'open',
                 Message.sender_role.in_(['user', 'guest']),
                 Message.is_read == False
             ).count()
@@ -56,32 +59,16 @@ def get_unread_message_count():
         return jsonify({'unread_count': 0}), 200
 
 
-@chat_bp.route('/dialogs', methods=['POST'])
-def create_dialog_api():
+@chat_bp.route('/dialogs/guest', methods=['POST'])
+def create_guest_dialog_api():
     """
-    Универсальный эндпоинт для создания диалога:
-    Гости: передают name, email
-    Авторизованные (user): данные берутся из JWT
-    suser/admin: запрещены
+    Создать диалог от гостя.
+    Доступен без авторизации.
+    Требует: guest_name, guest_email, text, topic_id (или context='product_question')
     """
     data = request.get_json()
     if not data:
         return jsonify({'success': False, 'errors': ['Ожидается JSON.']}), 400
-
-    user_id_str = get_safe_user_id()
-    current_user = None
-    is_guest = user_id_str is None
-
-    if not is_guest:
-        try:
-            user_id = int(user_id_str)
-            current_user = db.session.get(User, user_id)
-            if not current_user:
-                return jsonify({'success': False, 'errors': ['Пользователь не найден.']}), 404
-            if current_user.role in ('suser', 'admin'):
-                return jsonify({'success': False, 'errors': ['Администраторы не могут создавать диалоги через этот интерфейс.']}), 403
-        except (TypeError, ValueError):
-            return jsonify({'success': False, 'errors': ['Некорректный идентификатор пользователя.']}), 400
 
     text = data.get('text', '').strip()
     product_id = data.get('product_id')
@@ -107,23 +94,21 @@ def create_dialog_api():
         except (TypeError, ValueError):
             errors.append('Некорректный ID заказа.')
 
-    guest_name = None
-    guest_email = None
-
-    if is_guest:
-        guest_name = data.get('guest_name', '').strip()
-        raw_guest_email = data.get('guest_email', '').strip()
-        if not guest_name:
-            errors.append('Имя обязательно.')
-        if not raw_guest_email:
-            errors.append('Email обязателен.')
+    # Данные гостя
+    guest_name = data.get('guest_name', '').strip()
+    raw_guest_email = data.get('guest_email', '').strip()
+    if not guest_name:
+        errors.append('Имя обязательно.')
+    if not raw_guest_email:
+        errors.append('Email обязателен.')
+    else:
+        normalized_email = normalize_email(raw_guest_email)
+        if normalized_email is None:
+            errors.append('Некорректный email.')
         else:
-            normalized_email = normalize_email(raw_guest_email)
-            if normalized_email is None:
-                errors.append('Некорректный email.')
-            else:
-                guest_email = normalized_email
+            guest_email = normalized_email
 
+    # Определение темы
     topic_id = None
     if context == 'product_question':
         topic_id = 1
@@ -145,23 +130,14 @@ def create_dialog_api():
         return jsonify({'success': False, 'errors': errors}), 400
 
     try:
-        if current_user:
-            dialog = create_user_dialog(
-                user_id=current_user.id,
-                topic_id=topic_id,
-                text=text,
-                product_id=product_id,
-                order_id=order_id
-            )
-        else:
-            dialog = create_guest_dialog(
-                guest_name=guest_name,
-                guest_email=guest_email,
-                topic_id=topic_id,
-                text=text,
-                product_id=product_id,
-                order_id=order_id
-            )
+        dialog = create_guest_dialog(
+            guest_name=guest_name,
+            guest_email=guest_email,
+            topic_id=topic_id,
+            text=text,
+            product_id=product_id,
+            order_id=order_id
+        )
 
         return jsonify({
             'success': True,
@@ -171,12 +147,99 @@ def create_dialog_api():
 
     except ValueError as e:
         db.session.rollback()
-        chat_logger.error(f"Ошибка валидации при создании диалога: {e}")
+        chat_logger.error(f"Ошибка валидации при создании диалога гостем: {e}")
         return jsonify({'success': False, 'errors': [str(e)]}), 400
 
     except Exception as e:
         db.session.rollback()
-        chat_logger.exception("Неожиданная ошибка при создании диалога")
+        chat_logger.exception("Неожиданная ошибка при создании диалога гостем")
+        return jsonify({'success': False, 'errors': ['Внутренняя ошибка сервера.']}), 500
+
+
+@chat_bp.route('/dialogs/user', methods=['POST'])
+def create_user_dialog_api():
+    """
+    Создать диалог от авторизованного пользователя (user).
+    Требует JWT-аутентификации.
+    Запрещено для: suser, admin.
+    """
+    user = g.current_user
+
+    if user.role in ('suser', 'admin'):
+        return jsonify({'success': False, 'errors': ['Администраторы и суперпользователи не могут создавать диалоги через этот интерфейс.']}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'errors': ['Ожидается JSON.']}), 400
+
+    text = data.get('text', '').strip()
+    product_id = data.get('product_id')
+    order_id = data.get('order_id')
+    context = data.get('context')
+
+    errors = []
+
+    if not text:
+        errors.append('Текст сообщения обязателен.')
+    elif len(text) > 300:
+        errors.append('Сообщение не должно превышать 300 символов.')
+
+    if product_id is not None:
+        try:
+            product_id = int(product_id)
+        except (TypeError, ValueError):
+            errors.append('Некорректный ID товара.')
+
+    if order_id is not None:
+        try:
+            order_id = int(order_id)
+        except (TypeError, ValueError):
+            errors.append('Некорректный ID заказа.')
+
+    # Определение темы
+    topic_id = None
+    if context == 'product_question':
+        topic_id = 1
+        topic = MessageTopic.query.filter_by(id=topic_id, is_active=True).first()
+        if not topic:
+            errors.append('Тема обращения недоступна.')
+    else:
+        topic_id = data.get('topic_id')
+        if topic_id is None:
+            errors.append('Тема обращения обязательна.')
+        elif not isinstance(topic_id, int):
+            errors.append('Некорректный ID темы.')
+        else:
+            topic = MessageTopic.query.filter_by(id=topic_id, is_active=True).first()
+            if not topic:
+                errors.append('Тема недоступна.')
+
+    if errors:
+        return jsonify({'success': False, 'errors': errors}), 400
+
+    try:
+        dialog = create_user_dialog(
+            user_id=user.id,
+            topic_id=topic_id,
+            text=text,
+            product_id=product_id,
+            order_id=order_id
+        )
+
+        return jsonify({
+            'success': True,
+            'message': 'Ваше обращение отправлено.',
+            'dialog_id': dialog.id
+        }), 201
+
+    except ValueError as e:
+        db.session.rollback()
+        chat_logger.error(f"Ошибка валидации при создании диалога пользователем {user.id}: {e}")
+        return jsonify({'success': False, 'errors': [str(e)]}), 400
+
+    except Exception as e:
+        db.session.rollback()
+        chat_logger.exception(f"Неожиданная ошибка при создании диалога пользователем {user.id}")
         return jsonify({'success': False, 'errors': ['Внутренняя ошибка сервера.']}), 500
 
 
@@ -311,10 +374,13 @@ def send_user_reply(dialog_id):
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
 
 
+from datetime import datetime
+
 @chat_bp.route('/dialogs', methods=['GET'])
 def get_all_dialogs():
     """
     Универсальный роут для получения списка диалогов.
+    Сортировка: сначала непрочитанные, затем прочитанные, по дате обновления (новые выше).
     """
     user = g.current_user
 
@@ -322,16 +388,11 @@ def get_all_dialogs():
         dialogs = Dialog.query.filter(
             Dialog.user_id == user.id,
             Dialog.status == 'open'
-        ).order_by(Dialog.updated_at.desc()).all()
-
+        ).all()
     elif user.role == 'suser':
-        dialogs = Dialog.query.filter(
-            Dialog.topic_id == 1
-        ).order_by(Dialog.updated_at.desc()).all()
-
+        dialogs = Dialog.query.filter(Dialog.topic_id == 1).all()
     elif user.role == 'admin':
-        dialogs = Dialog.query.order_by(Dialog.updated_at.desc()).all()
-
+        dialogs = Dialog.query.all()
     else:
         return jsonify({'error': 'Доступ запрещён'}), 403
 
@@ -340,9 +401,10 @@ def get_all_dialogs():
     else:
         incoming_sender_roles = ['user', 'guest']
 
-    result = []
+    # Сначала подготовим данные с объектами datetime для сортировки
+    dialog_data = []
     for dialog in dialogs:
-        messages = Message.query.filter_by(dialog_id=dialog.id).order_by(Message.created_at.desc()).all()
+        messages = Message.query.filter_by(dialog_id=dialog.id).all()
         message_count = len(messages)
         
         last_message = messages[0] if messages else None
@@ -358,6 +420,27 @@ def get_all_dialogs():
             if msg.sender_role in incoming_sender_roles and not msg.is_read
         )
 
+        # Сохраняем RAW данные, включая datetime объект
+        dialog_data.append({
+            'dialog': dialog,
+            'messages': messages,
+            'message_count': message_count,
+            'last_message': last_message,
+            'last_sender_role': last_sender_role,
+            'last_message_preview': last_message_preview,
+            'unread_count': unread_count
+        })
+
+    # === СОРТИРУЕМ ПО RAW ДАННЫМ ===
+    dialog_data.sort(key=lambda item: (
+        0 if item['unread_count'] > 0 else 1,  # непрочитанные вверх
+        - (item['dialog'].updated_at.timestamp() if item['dialog'].updated_at else 0)  # новые выше
+    ))
+
+    # === Теперь формируем JSON-ответ ===
+    result = []
+    for item in dialog_data:
+        dialog = item['dialog']
         result.append({
             'id': dialog.id,
             'user_id': dialog.user_id,
@@ -369,10 +452,10 @@ def get_all_dialogs():
             'product_id': dialog.product_id,
             'status': dialog.status,
             'updated_at': dialog.updated_at.isoformat() if dialog.updated_at else None,
-            'message_count': message_count,
-            'last_sender_role': last_sender_role,
-            'last_message_preview': last_message_preview,
-            'unread_count': unread_count
+            'message_count': item['message_count'],
+            'last_sender_role': item['last_sender_role'],
+            'last_message_preview': item['last_message_preview'],
+            'unread_count': item['unread_count']
         })
 
     return jsonify(result), 200

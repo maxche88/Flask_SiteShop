@@ -100,7 +100,7 @@
 }
 
 
-.product-actions {
+.product-actions-view {
     padding-top: 10px;
     display: flex;
     justify-content: flex-end;
@@ -124,13 +124,19 @@
     color: #333;
 }
 
-.user-actions {
+.user-actions-view {
     display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    gap: 15px;
+}
+
+.cart-icon-view:hover svg {
+    fill: #2196F3;
 }
 
 
 /* =============== Кнопка задать вопрос о товаре =============== */
-
 .icon-button {
     background: none;
     border: none;

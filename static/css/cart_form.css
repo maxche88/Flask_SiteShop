@@ -1,7 +1,3 @@
-/* =============================================================================
-   ОБЩИЕ СТИЛИ И СБРОСЫ
-   ============================================================================= */
-
 a {
     text-decoration: none;
 }
@@ -12,7 +8,7 @@ a {
 }
 
 .conteiner_forms {
-    width: 100%;
+    width: 80%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 16px;
@@ -28,6 +24,7 @@ a {
     color: black;
     font-size: 24px;
     margin-bottom: 20px;
+    padding-bottom: 0;
 }
 
 .cart_empty {
@@ -42,10 +39,7 @@ a {
     text-align: center;
 }
 
-/* =============================================================================
-   КОНТРОЛ КОЛИЧЕСТВА
-   ============================================================================= */
-
+/* КОНТРОЛ КОЛИЧЕСТВА */
 .quantity-control {
     display: flex;
     align-items: center;
@@ -154,7 +148,6 @@ a {
 }
 
 /* ОСНОВНАЯ СЕТКА КОРЗИНЫ — ДЕСКТОП */
-
 .cart-items {
     width: 100%;
     max-width: 800px;
@@ -229,19 +222,28 @@ a {
 }
 
 /* ИТОГОВАЯ СТРОКА */
+.cart-sticky-summary {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: white;
+    padding: 16px 0;
+    margin-top: 20px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 10px 10px 0 0;
+}
 
 .cart-summary {
-    margin-top: 20px;
-    padding: 12px 0;
     font-size: 18px;
     font-weight: 600;
     color: #333;
     text-align: center;
-    border-top: 1px solid #eee;
 }
 
 /* КНОПКА "ОФОРМИТЬ ЗАКАЗ" */
-
 .btn_order .bt.reg_bt {
     display: inline-block;
     background-color: #0056b3;
@@ -260,7 +262,6 @@ a {
 }
 
 /* МОДАЛЬНОЕ ОКНО ОПЛАТЫ */
-
 .modal {
     display: none;
     position: fixed;
@@ -394,7 +395,6 @@ a {
 }
 
 /* МОДАЛЬНОЕ ОКНО: ЗАДАТЬ ВОПРОС О ТОВАРЕ */
-
 .cart-ask-overlay {
     position: fixed;
     top: 0;
@@ -502,9 +502,7 @@ a {
     background: #1647ba;
 }
 
-/* =============================================================================
-   АДАПТИВ: СКРЫВАЕМ ТАБЛИЦУ НА МОБИЛЬНЫХ, ПОКАЗЫВАЕМ КАРТОЧКИ
-   ============================================================================= */
+/* АДАПТИВ: СКРЫВАЕМ ТАБЛИЦУ НА МОБИЛЬНЫХ, ПОКАЗЫВАЕМ КАРТОЧКИ */
 
 /* На мобильных: таблица скрыта, карточки видны */
 @media (max-width: 767px) {
@@ -597,4 +595,9 @@ a {
         gap: 12px;
         justify-content: flex-start;
     }
+
+    .cart-summary {
+    font-size: 16px;
+    }
+
 }
