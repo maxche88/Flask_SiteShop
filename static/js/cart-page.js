@@ -4,12 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (expiryInput) {
         expiryInput.addEventListener('input', function (e) {
             let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 4) {
-                value = value.substring(0, 4);
-            }
-            if (value.length >= 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2);
-            }
+            if (value.length > 4) value = value.substring(0, 4);
+            if (value.length >= 2) value = value.substring(0, 2) + '/' + value.substring(2);
             e.target.value = value;
         });
 
@@ -24,44 +20,23 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // === Функция пересчёта итогов ===
+    // === Функция пересчёта итогов (только карточки) ===
     function updateCartSummary() {
         let totalItems = 0;
         let totalPrice = 0;
 
-        // Определяем, какая версия активна: десктоп или мобилка
-        const cartTable = document.getElementById('cart-table');
-        const isDesktop = cartTable && window.getComputedStyle(cartTable).display !== 'none';
-
-        if (isDesktop) {
-            // Десктоп: работаем с таблицей
-            document.querySelectorAll('#cart-table-body .cart-row').forEach(row => {
-                const checkbox = row.querySelector('.item-checkbox');
-                if (checkbox && checkbox.checked) {
-                    const quantityInput = row.querySelector('.qty-input');
-                    const priceCell = row.querySelector('.cart-cell-price');
-                    const quantity = parseInt(quantityInput.value) || 0;
-                    const priceText = priceCell.textContent.trim();
-                    const price = parseInt(priceText.replace(/[^0-9]/g, '')) || 0;
-                    totalItems += quantity;
-                    totalPrice += price * quantity;
-                }
-            });
-        } else {
-            // Мобилка: работаем с карточками
-            document.querySelectorAll('.cart-card').forEach(card => {
-                const checkbox = card.querySelector('.item-checkbox');
-                if (checkbox && checkbox.checked) {
-                    const quantityInput = card.querySelector('.qty-input');
-                    const priceEl = card.querySelector('.cart-card-price');
-                    const quantity = parseInt(quantityInput.value) || 0;
-                    const priceText = priceEl.textContent.trim();
-                    const price = parseInt(priceText.replace(/[^0-9]/g, '')) || 0;
-                    totalItems += quantity;
-                    totalPrice += price * quantity;
-                }
-            });
-        }
+        document.querySelectorAll('.cart-card').forEach(card => {
+            const checkbox = card.querySelector('.item-checkbox');
+            if (checkbox && checkbox.checked) {
+                const qtyInput = card.querySelector('.qty-input');
+                const priceEl = card.querySelector('.cart-card-price');
+                const quantity = parseInt(qtyInput.value) || 0;
+                const priceText = priceEl.textContent.trim();
+                const price = parseInt(priceText.replace(/[^0-9]/g, '')) || 0;
+                totalItems += quantity;
+                totalPrice += price * quantity;
+            }
+        });
 
         const totalItemsEl = document.getElementById('total-items');
         const totalPriceEl = document.getElementById('total-price');
@@ -72,8 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // === Вспомогательные функции для оплаты ===
     function formatCardNumber(value) {
         const digits = value.replace(/\D/g, '');
-        const formatted = digits.match(/.{1,4}/g)?.join(' ') || '';
-        return formatted;
+        return digits.match(/.{1,4}/g)?.join(' ') || '';
     }
 
     function validateExpiry(expiry) {
@@ -90,7 +64,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (year < currentYear) return false;
         if (year === currentYear && month < currentMonth) return false;
-
         return true;
     }
 
@@ -162,22 +135,13 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .then(response => {
                 if (response.ok) {
-                    // Универсальный поиск контейнера: и row, и card
-                    const container = this.closest('.cart-row, .cart-card');
-                    if (container) container.remove();
+                    const card = this.closest('.cart-card');
+                    if (card) card.remove();
 
-                    // Проверяем, остались ли товары (в обеих версиях)
-                    const hasDesktopItems = document.querySelectorAll('#cart-table-body .cart-row').length > 0;
-                    const hasMobileItems = document.querySelectorAll('.cart-card').length > 0;
-                    const hasAnyItems = hasDesktopItems || hasMobileItems;
-
+                    const hasAnyItems = document.querySelectorAll('.cart-card').length > 0;
                     if (!hasAnyItems) {
-                        // Удаляем UI — в зависимости от того, что есть
-                        const desktopTable = document.getElementById('cart-table');
-                        const mobileCards = document.querySelector('.cart-cards-mobile');
-
-                        if (desktopTable) desktopTable.remove();
-                        if (mobileCards) mobileCards.remove();
+                        const cartItems = document.getElementById('cart-items');
+                        if (cartItems) cartItems.remove();
 
                         const emptyMsg = document.createElement('p');
                         emptyMsg.className = 'cart_empty';
@@ -244,11 +208,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const selectedItems = [];
             document.querySelectorAll('.item-checkbox:checked').forEach(cb => {
-                const row = cb.closest('.cart-row');
+                const card = cb.closest('.cart-card');
+                if (!card) return;
+
                 const itemId = cb.value;
-                const qtyInput = row.querySelector('.qty-input');
-                const quantity = parseInt(qtyInput.value) || 1;
-                selectedItems.push({ item_id: parseInt(itemId), quantity: quantity });
+                const qtyInput = card.querySelector('.qty-input');
+                const quantity = parseInt(qtyInput?.value) || 1;
+
+                const itemIdNum = parseInt(itemId);
+                if (isNaN(itemIdNum) || itemIdNum <= 0) return;
+
+                selectedItems.push({ item_id: itemIdNum, quantity: quantity });
             });
 
             if (cardNumber.length !== 16 || !/^\d{16}$/.test(cardNumber)) {
@@ -300,7 +270,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // === Модальное окно: задать вопрос о товаре из корзины ===
+    // === Модальное окно: задать вопрос о товаре ===
     const askModal = document.querySelector('.cart-ask-overlay');
     const askForm = document.querySelector('.cart-ask-form');
     const askTitleSpan = document.querySelector('.cart-ask-product-title');
@@ -311,9 +281,9 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll('.cart-send_mess-icon').forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
-                const row = this.closest('.cart-row');
+                const card = this.closest('.cart-card');
                 const productId = this.getAttribute('data-product-id');
-                const productTitle = row.querySelector('.cart-cell-title')?.textContent?.trim() || 'Неизвестный товар';
+                const productTitle = card.querySelector('.cart-card-title')?.textContent?.trim() || 'Неизвестный товар';
                 askTitleSpan.textContent = productTitle;
                 askProductIdInput.value = productId;
                 askModal.classList.remove('hidden');
@@ -355,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
             };
 
             try {
-                const response = await fetch('/api/chat/dialogs', {
+                const response = await fetch('/api/chat/dialogs/user', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

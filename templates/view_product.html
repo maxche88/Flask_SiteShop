@@ -129,8 +129,8 @@
 
 {% block js %}
 <script>
-    window.userRole = "{{ role }}";
-    window.product_id = "{{ product.id }}";
+    window.userRole = "{{ role or 'guest' }}";
+    window.product_id = "{{ product.id if product else '' }}";
 </script>
 
 <script src="{{ url_for('static', filename='js/view_product.js') }}"></script>

@@ -20,77 +20,8 @@
         <h2 class="title_order">Ваша корзина</h2>
 
         {% if cart_items %}
-        <!-- Основной контейнер товаров -->
-        <div class="cart-items" id="cart-table">
-            <div class="cart-header">
-
-                <div class="cart-cell cart-cell-checkbox">
-                    <label class="checkbox-container">
-                        <input type="checkbox" id="select-all">
-                        <span class="checkmark"></span>
-                    </label>
-                </div>
-                <div class="cart-cell cart-cell-title">Товар</div>
-                <div class="cart-cell cart-cell-image"></div>
-                <div class="cart-cell cart-cell-price">Цена</div>
-                <div class="cart-cell cart-cell-qty">Кол-во</div>
-                <div class="cart-cell cart-cell-actions"></div>
-            </div>
-
-            <!-- Товары -->
-            <div class="cart-body" id="cart-table-body">
-                {% for item in cart_items %}
-                <div class="cart-row" data-item-id="{{ item.id }}">
-                    <!-- Чекбокс -->
-                    <div class="cart-cell cart-cell-checkbox">
-                        <label class="checkbox-container">
-                            <input type="checkbox" class="item-checkbox" value="{{ item.id }}">
-                            <span class="checkmark"></span>
-                        </label>
-                    </div>
-
-                    <!-- Название -->
-                    <div class="cart-cell cart-cell-title">
-                        {{ item.product.title }}
-                    </div>
-
-                    <!-- Изображение -->
-                    <div class="cart-cell cart-cell-image">
-                        <img src="{{ url_for('static', filename=item.product.link_img) }}"
-                            alt="{{ item.product.title }}" class="cart-product-image">
-                    </div>
-
-                    <!-- Цена -->
-                    <div class="cart-cell cart-cell-price">
-                        {{ item.product.price }} ₽
-                    </div>
-
-                    <!-- Количество -->
-                    <div class="cart-cell cart-cell-qty">
-                        <div class="quantity-control">
-                            <input type="number" class="qty-input" value="{{ item.quantity }}" min="1"
-                                max="{{ item.product.quantity }}" data-item-id="{{ item.id }}"
-                                data-product-id="{{ item.product_id }}" data-stock="{{ item.product.quantity }}">
-                        </div>
-                    </div>
-
-                    <!-- Действия -->
-                    <div class="cart-cell cart-cell-actions">
-                        <button class="cart-delete-icon icon-button" data-id="{{ item.id }}" aria-label="Удалить товар">
-                            {{ delete_product(cls="icon-button") }}
-                        </button>
-                        <button class="cart-send_mess-icon icon-button" data-id="{{ item.id }}"
-                            data-product-id="{{ item.product.id }}" aria-label="Отправить сообщение">
-                            {{ chat(cls="icon-button") }}
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- КАРТОЧКИ (мобильные) -->
-        <div class="cart-cards-mobile" id="cart-cards">
+        <!-- Контейнер товаров -->
+        <div class="cart-items" id="cart-items">
             {% for item in cart_items %}
             <div class="cart-card" data-item-id="{{ item.id }}">
                 <!-- Чекбокс -->
@@ -101,18 +32,19 @@
                     </label>
                 </div>
 
-                <!-- Изображение -->
-                <div class="cart-card-image">
-                    <img src="{{ url_for('static', filename=item.product.link_img) }}" alt="{{ item.product.title }}">
+                <!-- название + изображение -->
+                <div class="cart-card-top">
+                    <h3 class="cart-card-title">{{ item.product.title }}</h3>
+                    <div class="cart-card-image">
+                        <img src="{{ url_for('static', filename=item.product.link_img) }}" alt="{{ item.product.title }}">
+                    </div>
                 </div>
 
-                <!-- Контент -->
-                <div class="cart-card-content">
-                    <h3 class="cart-card-title">{{ item.product.title }}</h3>
+                <!-- цена, кол-во, кнопки -->
+                <div class="cart-card-bottom">
                     <div class="cart-card-price">{{ item.product.price }} ₽</div>
 
-                    <!-- Количество и кнопки -->
-                    <div class="cart-card-qty">
+                    <div class="cart-card-qty-row">
                         <div class="quantity-control">
                             <input type="number" class="qty-input" value="{{ item.quantity }}" min="1"
                                 max="{{ item.product.quantity }}" data-item-id="{{ item.id }}"
@@ -121,8 +53,7 @@
                         </div>
 
                         <div class="cart-card-actions">
-                            <button class="cart-delete-icon icon-button" data-id="{{ item.id }}"
-                                aria-label="Удалить товар">
+                            <button class="cart-delete-icon icon-button" data-id="{{ item.id }}" aria-label="Удалить товар">
                                 {{ delete_product(cls="icon-button") }}
                             </button>
                             <button class="cart-send_mess-icon icon-button" data-id="{{ item.id }}"
@@ -130,7 +61,6 @@
                                 {{ chat(cls="icon-button") }}
                             </button>
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -153,18 +83,17 @@
         <p class="cart_empty">Корзина пуста</p>
         {% endif %}
 
+        <!-- Модальное окно оплаты -->
         <div id="payment-modal" class="modal" style="display: none;">
             <div class="modal-content">
                 <span class="close">&times;</span>
 
-                <!-- Итоговая сумма -->
                 <div class="payment-summary">
                     <h3 class="summary-title">К оплате</h3>
                     <p class="summary-amount" id="modal-total-price">0 ₽</p>
                     <p class="summary-hint">С учётом выбранных товаров</p>
                 </div>
 
-                <!-- Форма карты -->
                 <form id="payment-form">
                     <div class="form-group">
                         <label for="card-number">Номер карты</label>
@@ -190,7 +119,7 @@
             </div>
         </div>
 
-        <!-- Модальное окно: задать вопрос о товаре из корзины -->
+        <!-- Модальное окно: задать вопрос -->
         <div class="cart-ask-overlay hidden">
             <div class="cart-ask-modal">
                 <div class="cart-ask-header">
@@ -203,12 +132,9 @@
                 <form class="cart-ask-form">
                     <input type="hidden" class="cart-ask-product-id" name="product_id">
                     <input type="hidden" name="context" value="cart_product_question">
-
                     <div class="cart-ask-form-group">
-                        <textarea name="message" class="cart-ask-textarea" placeholder="Напишите ваш вопрос о товаре…"
-                            required></textarea>
+                        <textarea name="message" class="cart-ask-textarea" placeholder="Напишите ваш вопрос о товаре…" required></textarea>
                     </div>
-
                     <button type="submit" class="cart-ask-submit-btn">Отправить вопрос</button>
                 </form>
             </div>

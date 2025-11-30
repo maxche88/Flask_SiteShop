@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const userRole = window.userRole || 'guest';
     const productId = window.product_id || '';
 
+    // alert('Текущая роль пользователя: ' + userRole);
+
     // Устанавливаем product_id в скрытое поле формы (если есть)
     const productIdInput = form.querySelector('[name="product_id"]');
     if (productIdInput && productId) {
