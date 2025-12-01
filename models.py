@@ -1,6 +1,7 @@
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import func
+import json
 
 
 class User(db.Model):
@@ -310,7 +311,7 @@ class Attachment(db.Model):
     
 
 # ==============================================================================
-# Таблица TEST_UI.
+# Таблицы QA.
 # ==============================================================================
 class BugReport(db.Model):
     """
@@ -330,7 +331,7 @@ class BugReport(db.Model):
     expected_result = db.Column(db.Text, nullable=False)
     attachments = db.Column(db.Text, nullable=True)
     # Служебные поля
-    category = db.Column(db.String(100), nullable=True)  # опционально: "UI", "API", "Mobile", "Checkout"
+    category = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now(), nullable=False)
     updated_at = db.Column(db.DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -340,3 +341,39 @@ class BugReport(db.Model):
 
     def __repr__(self):
         return f'<BugReport {self.id}: {self.title}>'
+
+
+class Checklist(db.Model):
+    """
+    Хранит чек-листы, созданные пользователями с ролью 'tester' или 'admin'.
+    Пункты хранятся как JSON-массив в поле `items_json`.
+    """
+    __tablename__ = 'checklists'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    
+    # Формат: [{"text": "Открыть корзину", "is_done": false}, ...]
+    items_json = db.Column(db.Text, nullable=False, default='[]')
+    
+    author_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    author = db.relationship('User', backref=db.backref('checklists', lazy=True))
+
+    created_at = db.Column(db.DateTime(timezone=True), default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
+
+    @property
+    def items(self):
+        try:
+            return json.loads(self.items_json)
+        except (ValueError, TypeError):
+            return []
+
+    @items.setter
+    def items(self, value):
+        if not isinstance(value, list):
+            raise ValueError("Items must be a list")
+        self.items_json = json.dumps(value, ensure_ascii=False)
+
+    def __repr__(self):
+        return f'<Checklist {self.id}: {self.title}>'

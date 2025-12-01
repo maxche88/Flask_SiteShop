@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === ФАЙЛОВЫЕ ЛОГИ (БЕЗ ИЗМЕНЕНИЙ КРОМЕ alert → console) ===
+    // === ФАЙЛОВЫЕ ЛОГИ ===
     const dropdownContainer = document.querySelector('.log-files-dropdown');
     const btnToggleLogFiles = document.getElementById('toggleLogFiles');
     const logFilesList = document.getElementById('logFilesList');
@@ -82,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error('Ошибка загрузки списка логов:', err);
-                // Для файловых логов отдельного info-блока нет → оставим в консоли
             });
     }
 

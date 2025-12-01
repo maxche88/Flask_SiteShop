@@ -1,0 +1,138 @@
+<!-- QA-инженер: Чек-листы -->
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/checklist.css') }}">
+{% endblock %}
+
+{% block title %}
+Чек-листы
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        {{ custom_icon(size=35, cls="back") }}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="title_check_info">
+    <h4>Чек-листы</h4>
+</div>
+
+<div class="button_container">
+    <button type="button" id="openCreateChecklistModalBtn" class="btn-control">Добавить</button>
+    <button type="button" id="openDeleteChecklistBtn" class="btn-control">Удалить</button>
+</div>
+
+<!-- Сетка чек-листов -->
+<div class="table-container full-width-table">
+    <div class="checklists-grid-table" id="checklistsTableContainer">
+        <!-- Заголовок -->
+        <div class="grid-header">
+            <div class="checkbox-cell-header">
+                <input type="checkbox" id="selectAllChecklists" title="Выбрать все">
+            </div>
+            <div>ID</div>
+            <div>Название</div>
+            <div>Автор (ID)</div>
+            <div>Пунктов</div>
+            <div>Выполнено</div>
+            <div>Создано</div>
+        </div>
+        <!-- Строки будут добавляться сюда -->
+    </div>
+</div>
+
+<!-- Модальное окно: просмотр чек-листа -->
+<div class="modal-backdrop" id="viewChecklistModalBackdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title-wrapper">
+                <h2 class="modal-title">Чек-лист #<span id="viewChecklistId"></span></h2>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="icon-btn" id="closeViewChecklistModalBtn" title="Закрыть">
+                    {{ remove(size=40, cls="") }}
+                </button>
+            </div>
+        </div>
+        <div class="view-checklist-content" id="viewChecklistContent">
+            <!-- Контент подгружается через JS -->
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" id="btnEditChecklistInModal">Редактировать</button>
+            <button type="button" class="btn btn-primary" id="btnMarkAllDone">Отметить всё как выполнено</button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: создание / редактирование чек-листа -->
+<div class="modal-backdrop" id="checklistModalBackdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title-wrapper">
+                <h2 class="modal-title" id="checklistModalTitle">Новый чек-лист</h2>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="modal-action-btn" id="clearChecklistFormBtn" title="Очистить форму">
+                    {{ delete_product(size=24, cls="") }}
+                </button>
+            </div>
+        </div>
+
+        <form id="checklistForm">
+            <div class="form-group">
+                <label class="form-label" for="checklistTitle">
+                    Название чек-листа <span class="required-asterisk">*</span>
+                </label>
+                <input type="text" id="checklistTitle" class="form-input" required maxlength="120">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Пункты чек-листа</label>
+                <div id="checklistItemsContainer" class="checklist-items-container">
+                    <!-- Динамически добавляются через JS -->
+                </div>
+                <button type="button" id="addChecklistItemBtn" class="btn-add-item" style="margin-top: 8px;">+ Добавить пункт</button>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelChecklistBtn">Отмена</button>
+                <button type="submit" class="btn btn-primary" id="saveChecklistBtn">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Шаблон строки чек-листа в списке -->
+<template id="checklist-row-template">
+    <div class="checklist-row">
+        <div class="checkbox-cell">
+            <input type="checkbox" class="checklist-checkbox" title="Выбрать">
+        </div>
+        <div class="cell id-cell"></div>
+        <div class="cell title-cell"></div>
+        <div class="cell author-id-cell"></div>
+        <div class="cell total-items-cell"></div>
+        <div class="cell completed-items-cell"></div>
+        <div class="cell created-at-cell"></div>
+    </div>
+</template>
+
+<!-- Шаблон пункта чек-листа в форме -->
+<template id="checklist-item-template">
+    <div class="checklist-item-row">
+        <input type="checkbox" class="item-done-checkbox" disabled>
+        <input type="text" class="form-input item-text-input" placeholder="Описание пункта..." required minlength="3" maxlength="200">
+        <button type="button" class="remove-item-btn" title="Удалить пункт">{{ remove(size=18, cls="") }}</button>
+    </div>
+
+</template>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/checklists.js') }}"></script>
+{% endblock %}

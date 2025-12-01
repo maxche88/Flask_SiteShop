@@ -22,7 +22,14 @@
     <div class="dropdown-menu" id="account-menu">
         <a href="{{ url_for('panel_a.admin_acaunt') }}">Личный кабинет</a>
         <a href="{{ url_for('panel_a.admin_panel') }}">Admin panel</a>
-        <a href="{{ url_for('qa-engineer.qa_dashboard') }}">Testing</a>
+        <!-- Вложенное меню "Тестирование" -->
+        <li class="menu-item-has-submenu">
+            <a href="#" class="submenu-trigger">Тестирование</a>
+            <div class="submenu">
+                <a href="{{ url_for('qa-engineer.checklists_page') }}">Чек-листы</a>
+                <a href="{{ url_for('qa-engineer.qa_dashboard') }}">Баг-репорты</a>
+            </div>
+        </li>
         <a href="{{ url_for('product_edit.product') }}">Управление товарами</a>
         <a href="{{ url_for('chat_ui.messages_panel') }}" class="menu-item-with-badge">
             Cообщения
@@ -79,7 +86,14 @@
     <!-- Контейнер иконки и тестировщика -->
     <div class="dropdown-menu" id="account-menu">
         <a href="{{ url_for('user_ui.user_accaunt') }}">Личный кабинет</a>
-        <a href="{{ url_for('qa-engineer.qa_dashboard') }}">Testing</a>
+        <!-- Вложенное меню "Тестирование" -->
+        <li class="menu-item-has-submenu">
+            <a href="#" class="submenu-trigger">Тестирование</a>
+            <div class="submenu">
+                <a href="{{ url_for('qa-engineer.checklists_page') }}">Чек-листы</a>
+                <a href="{{ url_for('qa-engineer.qa_dashboard') }}">Баг-репорты</a>
+            </div>
+        </li>
         <a href="{{ url_for('session.logout') }}">Выйти</a>
     </div>
 

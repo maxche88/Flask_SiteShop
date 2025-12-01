@@ -1,0 +1,362 @@
+/* === Сброс === */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* === Заголовок === */
+.title_check_info {
+  height: 15px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* === Кнопки управления === */
+.button_container {
+  display: flex;
+  gap: 10px;
+}
+
+/* Кнопки "btn-control" */
+.btn-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 32px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #0d6efd;
+  border: 1px solid #0b5ed7;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  outline: none;
+}
+
+.btn-control:hover {
+  background-color: #0b5ed7;
+  border-color: #0a58ca;
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-control:focus {
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25),
+    0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+/* === Таблица чек-листов === */
+.table-container {
+    width: 100%;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.checklists-grid-table {
+    display: grid;
+    grid-template-columns: 40px 60px minmax(180px, 1fr) 100px 80px 80px 140px;
+    width: 100%;
+}
+
+/* Заголовок и строки */
+.grid-header,
+.checklist-row {
+    display: contents;
+}
+
+.checklist-row {
+    cursor: pointer;
+}
+
+
+.grid-header > div,
+.checklist-row > .cell,
+.checklist-row > .checkbox-cell {
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #eee;
+}
+
+.grid-header > div {
+    background-color: #f1f3f5;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* Текст по левому краю */
+.checklist-row .title-cell,
+.checklist-row .author-id-cell,
+.grid-header .title-cell,
+.grid-header .author-id-cell {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+/* Чекбоксы */
+.checkbox-cell-header,
+.checkbox-cell {
+    justify-content: center;
+}
+.checkbox-cell-header input,
+.checkbox-cell input {
+    margin: 0;
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+/* Интерактивность */
+.checklist-row:hover > .cell,
+.checklist-row:hover > .checkbox-cell {
+    background-color: #b7dbff;
+}
+
+/* === Сообщения (исправлено!) === */
+#checklistsError {
+    margin-top: 16px;
+    padding: 12px;
+    font-size: 14px;
+    text-align: center;
+    border-radius: 6px;
+    display: none;
+}
+#checklistsError.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+#checklistsError.info {
+    background-color: #e9ecef;
+    color: #212529;
+    border: 1px solid #ced4da;
+}
+
+/* === Модальные окна === */
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-backdrop.is-open {
+    display: flex;
+}
+
+.modal-card {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-title-wrapper h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.modal-action-btn,
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.7;
+}
+
+.modal-action-btn:hover,
+.icon-btn:hover {
+    opacity: 1;
+    border-radius: 4px;
+}
+
+/* === Форма чек-листа === */
+#checklistForm {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 180px);
+}
+.form-group {
+    margin-bottom: 20px;
+}
+.form-label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+    color: #333;
+}
+.required-asterisk {
+    color: #e74c3c;
+}
+.form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* === Пункты чек-листа === */
+.checklist-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+.checklist-item-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.checklist-item-row .item-text-input {
+    flex: 1;
+}
+.remove-item-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 4px;
+}
+.remove-item-btn:hover {
+    opacity: 1;
+    background: #f0f0f0;
+    border-radius: 4px;
+}
+.btn-add-item {
+    padding: 6px 12px;
+    background-color: #e9ecef;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.btn-add-item:hover {
+    background-color: #dee2e6;
+}
+
+/* === Кнопки формы === */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+.btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.btn-outline {
+    background-color: #f8f9fa;
+    color: #333;
+}
+.btn-outline:hover {
+    background-color: #e9ecef;
+}
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #0069d9;
+}
+
+/* === Просмотр чек-листа === */
+.view-checklist-content {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 260px);
+    line-height: 1.5;
+}
+.checklist-item-view {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+}
+.checklist-item-view.completed {
+    background-color: #e6f4ea;
+}
+.checklist-item-text {
+    flex: 1;
+    word-break: break-word;
+}
+.checklist-item-checkbox {
+    margin-top: 3px;
+    transform: scale(1.2);
+}
+.modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* === Адаптивность === */
+@media (max-width: 1024px) {
+    .checklists-grid-table {
+        grid-template-columns: 40px 60px minmax(140px, 1fr) 90px 70px 70px 120px;
+    }
+}
+@media (max-width: 768px) {
+    .checklists-grid-table {
+        grid-template-columns: 40px 60px minmax(120px, 1fr) 80px 70px 100px;
+    }
+    .checklist-row .author-id-cell {
+        display: none;
+    }
+}
+@media (max-width: 480px) {
+    .checklists-grid-table {
+        grid-template-columns: 40px 60px minmax(140px, 1fr) 70px 80px;
+    }
+    .checklist-row .author-id-cell,
+    .checklist-row .created-at-cell {
+        display: none;
+    }
+}
