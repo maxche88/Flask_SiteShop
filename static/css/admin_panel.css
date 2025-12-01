@@ -1,245 +1,16 @@
-/* === Сброс базовых настроек === */
+/* === Сброс === */
 *, *::before, *::after {
     box-sizing: border-box;
 }
 
-
-/* === Кнопка TEST_UI === */
-.test-ui-link {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
-  font-size: 10px;
-  text-align: center;
-  text-decoration: none;
-  color: #000;
-  background: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 2px;
-  cursor: pointer;
-  user-select: none;
+/* === Страница === */
+.admin-page {
+    max-width: 100%;
+    padding: 0 16px;
+    margin: 0 auto;
 }
 
-.test-ui-link:hover {
-  background: #e0e0e0;
-}
-
-.scrollable-content {
-    overflow-y: auto;
-    max-height: calc(100vh - 280px); /* подстройте при необходимости */
-    margin-top: 10px;
-}
-
-/* === Контейнеры и общая структура === */
-.conteiner_forms {
-    display: flex;
-    flex-direction: column;
-}
-
-/* === Блок сообщений (ошибки, JSON) === */
-.admin-message-box {
-    margin: 10px 0;
-    padding: 12px;
-    border-radius: 6px;
-    background-color: #2d2d2d;
-    color: #f8f8f2;
-    font-family: 'Courier New', monospace;
-    font-size: 13px;
-    line-height: 1.4;
-    white-space: pre-wrap;
-    overflow-x: auto;
-    border: 1px solid #555;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.admin-message-box.error {
-    border-color: #ff5555;
-    background-color: #3a2a2a;
-}
-
-.admin-message-box.success {
-    border-color: #55ff55;
-    background-color: #2a3a2a;
-}
-
-.admin-message-box.info {
-    border-color: #5555ff;
-    background-color: #2a2a3a;
-}
-
-
-/* === Элементы управления (кнопки, поиск) === */
-.container_control {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin: 10px 0 15px;
-}
-
-/* Общие стили для всех элементов управления */
-.btn-admin,
-.search-box input,
-.search-box button {
-    font-size: 14px;
-    font-family: inherit;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 6px 10px;
-    height: 32px;
-    background-color: #f8f9fa;
-    transition: background-color 0.2s;
-}
-
-/* Курсор: только для кнопок */
-.btn-admin,
-.search-box button {
-    cursor: pointer;
-}
-
-/* Кнопка в поиске */
-.search-box button {
-    border-radius: 0 4px 4px 0;
-    border-left: none;
-    padding: 6px 12px;
-}
-
-/* Поле ввода */
-.search-box input {
-    border-radius: 4px 0 0 4px;
-    flex: 1;
-    cursor: text;
-}
-
-/* Состояния наведения */
-.btn-admin:hover,
-.search-box button:hover {
-    background-color: #e9ecef;
-}
-
-/* Состояние при нажатии (активное) */
-.btn-admin:active,
-.search-box button:active {
-    background-color: #d0d4d8;
-    transform: translateY(1px);
-}
-
-/* === Блок поиска === */
-.search-box {
-    display: flex;
-    width: 300px;
-}
-
-/* === Выпадающее меню для выбора роли (кнопка "Изменить роль") === */
-.role-select-dropdown {
-    position: absolute;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    z-index: 1000;
-    min-width: 120px;
-    display: none;
-    font-size: 14px;
-}
-
-.role-select-item {
-    padding: 8px 12px;
-    cursor: pointer;
-}
-
-.role-select-item:hover {
-    background-color: #f0f8ff;
-}
-
-/* === Таблицы === */
-.admin-table {
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
-    margin: 20px 0;
-}
-
-.admin-table th,
-.admin-table td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.admin-table th {
-    background-color: #f0f0f0;
-}
-
-/* Стили строк таблицы */
-.old-unconfirmed {
-    background-color: #fff5f5;
-}
-
-.confirmed {
-    background-color: #f0fff0;
-}
-
-.not-confirmed {
-    background-color: #fff5f5; /* все неподтверждённые — светло-красные */
-}
-
-/* Ширина колонок: Пользователи */
-#usersTable th:nth-child(1),
-#usersTable td:nth-child(1) { width: 3%; }   /* Чекбокс */
-#usersTable th:nth-child(2),
-#usersTable td:nth-child(2) { width: 5%; }   /* UID */
-#usersTable th:nth-child(3),
-#usersTable td:nth-child(3) { width: 15%; }  /* Имя */
-#usersTable th:nth-child(4),
-#usersTable td:nth-child(4) { width: 20%; }  /* Email */
-#usersTable th:nth-child(5),
-#usersTable td:nth-child(5) { width: 5%; }   /* Подтверждён */
-#usersTable th:nth-child(6),
-#usersTable td:nth-child(6) { width: 12%; }  /* Дата */
-#usersTable th:nth-child(7),
-#usersTable td:nth-child(7) { width: 3%; }   /* IP-записи */
-#usersTable th:nth-child(8),
-#usersTable td:nth-child(8) { width: 4%; }   /* Роль */
-#usersTable th:nth-child(9),
-#usersTable td:nth-child(9) { width: 8%; }   /* Устройство*/
-#usersTable th:nth-child(10),
-#usersTable td:nth-child(10) { width: 5%; }   /* Сессия */
-
-/* === Ячейка email с кнопкой копирования === */
-.email-cell {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
-}
-
-.email-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.copy-email-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    opacity: 0.7;
-    padding: 2px;
-    border-radius: 3px;
-}
-
-.copy-email-btn:hover {
-    opacity: 1;
-    background-color: #f0f0f0;
-}
-
-/* === Вкладки (табы) === */
+/* === Вкладки === */
 .admin-tabs {
     display: flex;
     margin: 20px 0 10px;
@@ -269,7 +40,6 @@
     color: #007bff;
 }
 
-/* === Контент вкладок === */
 .admin-tab-content {
     display: none;
 }
@@ -278,19 +48,285 @@
     display: block;
 }
 
-/* Ширина колонок: ip_log */
-#tab-logs th:nth-child(1),
-#tab-logs td:nth-child(1) { width: 3%; }   /* Чекбокс */
-#tab-logs th:nth-child(2),
-#tab-logs td:nth-child(2) { width: 5%; }   /* UID */
-#tab-logs th:nth-child(3),
-#tab-logs td:nth-child(3) { width: 15%; }  /* IP-адрес */
-#tab-logs th:nth-child(4),
-#tab-logs td:nth-child(4) { width: 4%; }  /* Попытки */
-#tab-logs th:nth-child(5),
-#tab-logs td:nth-child(5) { width: 5%; }   /* Последняя */
-#tab-logs th:nth-child(6),
-#tab-logs td:nth-child(6) { width: 12%; }  /* Заблокирован */
+/* === Информационная панель === */
+.admin-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 50px;
+    margin-bottom: 16px;
+}
+
+.admin-info-text {
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.admin-info-message {
+    padding: 10px 15px;
+    font-size: 14px;
+    text-align: center;
+    max-width: 60%;
+}
+
+.admin-info-message.hidden {
+    display: none !important;
+}
+
+.admin-info-message.info { background-color: #e9ecef; color: #495057; border: 1px solid #ced4da; }
+.admin-info-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.admin-info-message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.admin-info-message.warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+
+/* === Элементы управления === */
+.admin-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.container_control {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    display: flex;
+    width: 300px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px 0 0 4px;
+    font-size: 14px;
+}
+
+.search-box button {
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border: 1px solid #ccc;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+}
+
+.search-box button:hover {
+    background: #0e86ff;
+    color: #ffffff;
+}
+
+.search-box button:active {
+    background: #094581;
+    color: #ffffff;
+}
+
+.btn-admin,
+.btn-delete,
+.btn-action {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-admin {
+    background-color: #f8f9fa;
+    color: #333;
+}
+.btn-admin:hover {
+    background-color: #e9ecef;
+}
+
+.btn-delete:hover:not(:disabled) {
+    background-color: #e9ecef;
+}
+
+.btn-delete:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    color: #212529;
+}
+
+.btn-action {
+    background-color: #0056b3;
+    color: white;
+}
+.btn-action:hover:not(:disabled) {
+    background-color: #004a99;
+}
+.btn-action:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* === Таблица (GRID) === */
+.admin-table-container {
+    width: 100%;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+}
+
+.admin-body {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 280px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.admin-header,
+.admin-row {
+    display: grid;
+    width: 100%;
+    align-items: center;
+    gap: 0;
+}
+
+/* ===== ДЕСКТОПНЫЕ СТОЛБЦЫ ===== */
+#tab-users .admin-header,
+#tab-users .admin-row {
+    /* 10 колонок: чекбокс, ID, имя, email, verified, дата, IP, роль, устройство, сессия */
+    grid-template-columns: 40px 60px 120px minmax(180px, 1fr) 80px 130px 120px 80px 180px 90px;
+}
+
+#tab-logs .admin-header,
+#tab-logs .admin-row {
+    /* 5 колонок: чекбокс, ID, IP, попытки, заблокирован */
+    grid-template-columns: 40px 60px minmax(160px, 1fr) 100px 120px;
+}
+
+/* Колонки по умолчанию — центр */
+.admin-col {
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    justify-content: center;
+}
+
+/* Текстовые колонки — слева */
+.admin-col.col-username,
+.admin-col.col-email,
+.admin-col.col-ip,
+.admin-col.col-device {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+/* Заголовок */
+.admin-header {
+    background-color: #f1f3f5;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 2px solid #ddd;
+}
+
+/* Чекбоксы */
+.admin-col.select-all-col,
+.admin-col.select-col {
+    width: 40px;
+    padding: 0 !important;
+    justify-content: center;
+    text-align: center;
+    overflow: visible;
+}
+
+.admin-col.select-all-col input,
+.admin-col.select-col input {
+    margin: 0;
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+/* Строки */
+.admin-row {
+    cursor: pointer;
+    transition: background-color 0.15s;
+    border-bottom: 1px solid #eee;
+}
+
+.admin-row:hover {
+    background-color: #b7dbff;
+}
+
+/* Состояния */
+.admin-row.not-confirmed,
+.admin-row.ip-blocked {
+    background-color: #fff5f5;
+}
+
+.admin-row.confirmed,
+.admin-row.ip-not-blocked {
+    background-color: #f0fff0;
+}
+
+/* === Ячейка email === */
+.email-cell {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0; /* КРИТИЧЕСКИ ВАЖНО для flex/grid контекста */
+}
+
+.email-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0; /* Позволяет сжиматься ниже содержимого */
+}
+
+.copy-email-btn {
+    flex-shrink: 0; /* Запрещает сжатие кнопки */
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.7;
+    padding: 2px 4px;
+    border-radius: 3px;
+    margin-left: 6px;
+}
+
+.copy-email-btn:hover {
+    opacity: 1;
+    background-color: #f0f0f0;
+}
+
+/* === Выпадающее меню роли === */
+.role-select-dropdown {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 120px;
+    display: none;
+    font-size: 14px;
+}
+
+.role-select-item {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.role-select-item:hover {
+    background-color: #f0f8ff;
+}
 
 
 /* === ВКЛАДКА ЛОГИ === */
@@ -369,7 +405,7 @@
     background-color: rgba(255, 165, 0, 0.15); /* Жёлтый/оранжевый полупрозрачный */
 }
 
-/* Необязательно: красивые полосы прокрутки */
+/* Полосы прокрутки */
 .logs-display-area::-webkit-scrollbar {
     width: 8px;
 }
@@ -388,4 +424,113 @@
 
 .ip-not-blocked {
     background-color: #f0fff0; /* светло-зелёный */
+}
+
+
+/* === Адаптивность === */
+
+@media (max-width: 1024px) {
+    #tab-users .admin-header,
+    #tab-users .admin-row {
+        grid-template-columns:
+            40px    /* чекбокс */
+            60px    /* ID */
+            100px   /* имя */
+            minmax(140px, 1fr)  /* email */
+            100px   /* IP */
+            60px    /* роль */
+            90px;   /* сессия */
+    }
+
+    #tab-logs .admin-header,
+    #tab-logs .admin-row {
+        grid-template-columns:
+            40px    /* чекбокс */
+            60px    /* ID */
+            minmax(60px, 1fr)   /* IP-адрес */
+            60px    /* попытки */
+            120px;   /* заблокирован */
+    }
+
+    /* Скрываем только: verified, дата, устройство */
+    #tab-users .col-verified,
+    #tab-users .col-date,
+    #tab-users .col-device,
+    #tab-logs .col-verified,
+    #tab-logs .col-date,
+    #tab-logs .col-device {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    #tab-users .admin-header,
+    #tab-users .admin-row {
+        grid-template-columns:
+            40px    /* чекбокс */
+            60px    /* ID */
+            minmax(90px, 1fr)  /* email */
+            30px   /* IP */
+            70px;   /* сессия */
+    }
+
+    #tab-logs .admin-header,
+    #tab-logs .admin-row {
+        grid-template-columns:
+            40px    /* чекбокс */
+            60px    /* UID */
+            minmax(120px, 1fr)  /* IP-адрес */
+            90px   /* заблокирован */
+            120px;
+    }
+
+    /* Скрываем: verified, дата, имя, устройство */
+    #tab-users .col-verified,
+    #tab-users .col-date,
+    #tab-users .col-username,
+    #tab-users .col-role,
+    #tab-users .col-device,
+    #tab-logs .col-verified,
+    #tab-logs .col-date,
+    #tab-logs .col-username,
+    #tab-logs .col-device {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    /* === Пользователи: чекбокс, ID, email */
+    #tab-users .admin-header,
+    #tab-users .admin-row {
+        grid-template-columns:
+            40px                 /* чекбокс */
+            60px                 /* ID */
+            minmax(140px, 1fr);  /* email */
+    }
+
+    /* Скрываем ВСЁ, кроме ID и email */
+    #tab-users .col-username,
+    #tab-users .col-verified,
+    #tab-users .col-date,
+    #tab-users .col-ip,
+    #tab-users .col-role,
+    #tab-users .col-device,
+    #tab-users .col-session {
+        display: none;
+    }
+
+    /* === Блокировка IP: чекбокс + IP */
+    #tab-logs .admin-header,
+    #tab-logs .admin-row {
+        grid-template-columns:
+            40px                 /* чекбокс */
+            60px    /* UID */
+            minmax(140px, 1fr)  /* IP-адрес */
+            120px;   /* заблокирован */
+    }
+
+    /* Скрываем ID, попытки, статус */
+    #tab-logs .col-attempts {
+        display: none;
+    }
 }

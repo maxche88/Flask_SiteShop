@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="conteiner_forms">
+<div class="admin-page">
     <!-- Вкладки -->
     <div class="admin-tabs">
         <div class="admin-tab active" data-tab="users">Пользователи</div>
@@ -23,79 +23,75 @@
         <div class="admin-tab" data-tab="file-logs">Логи</div>
     </div>
 
-    <!-- Содержимое вкладки: Пользователи -->
+    <!-- Вкладка: Пользователи -->
     <div class="admin-tab-content active" id="tab-users">
-        <div class="info_panel">
-            <div class="container_control">
-    
-                <div class="search-box">
-                    <input type="text" id="userSearch" placeholder="Поиск по ID, имени или email...">
-                    <button id="btnSearch">Найти</button>
+        <div class="admin-info-bar">
+            <div class="admin-info-text">Режим: управление уч. записями</div>
+            <div id="admin-info-panel" class="admin-info-message hidden"></div>
+        </div>
+
+        <div class="admin-controls">
+            <div class="search-box">
+                <input type="text" id="userSearch" placeholder="Поиск по UID, имени или email...">
+                <button id="btnSearch">Найти</button>
+            </div>
+            <button class="btn-admin" id="btnDeleteOld">Удалить неподтверждённые (>24 ч)</button>
+            <button class="btn-delete" id="btnDeleteSelected" disabled>Удалить выбранные</button>
+            <button class="btn-action" id="btnEditRoleSelected" disabled>Изменить роль</button>
+            <button class="btn-admin" id="btnExitUserProfole" disabled>Отозвать токен</button>
+            <button class="btn-admin" id="btnDeleteToken" disabled>Удалить токены</button>
+        </div>
+
+        <div class="admin-table-container">
+            <div class="admin-header">
+                <div class="admin-col select-all-col">
+                    <input type="checkbox" id="select-all-users">
                 </div>
-
-                <button class="btn-admin" id="btnDeleteOld">Удалить все неподтверждённые (>24 ч)</button>
-                <button class="btn-admin" id="btnDeleteSelected" disabled>Удалить выбранные</button>
-                <button class="btn-admin" id="btnEditRoleSelected" disabled>Изменить роль</button>
-                <button class="btn-admin" id="btnExitUserProfole" disabled>Отозвать токен</button>
-                <button class="btn-admin" id="btnDeleteToken" disabled>Удалить токены</button>
+                <div class="admin-col col-id">UID</div>
+                <div class="admin-col col-username">Имя</div>
+                <div class="admin-col col-email">Email</div>
+                <div class="admin-col col-verified">Verified</div>
+                <div class="admin-col col-date">Дата</div>
+                <div class="admin-col col-ip">IP</div>
+                <div class="admin-col col-role">Роль</div>
+                <div class="admin-col col-device">Устройство</div>
+                <div class="admin-col col-session">Сессия</div>
             </div>
-
-            <div class="scrollable-content">
-                <table class="admin-table" id="usersTable">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="selectAll"></th>
-                            <th>UID</th>
-                            <th>Имя</th>
-                            <th>Email</th>
-                            <th>Verified</th>
-                            <th>Дата</th>
-                            <th>IP</th>
-                            <th>Роль</th>
-                            <th>Устройство</th>
-                            <th>Сессия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Загрузится через JS -->
-                    </tbody>
-                </table>
-            </div>
+            <div class="admin-body" id="users-list"></div>
         </div>
     </div>
 
-    <!-- Блокировка IP -->
+    <!-- Вкладка: Блокировка IP -->
     <div class="admin-tab-content" id="tab-logs">
-        <div class="info_panel">
-            <div class="container_control">
-                <div class="search-box">
-                    <input type="text" id="logSearch" placeholder="Поиск по ID, IP или 'да'/'нет'">
-                    <button id="btnSearchLogs">Найти</button>
-                </div>
-                <button class="btn-admin" id="btnBlockSelected">Блокировать</button>
-                <button class="btn-admin" id="btnUnblockSelected">Разблокировать</button>
-            </div>
+        <div class="admin-info-bar">
+            <div class="admin-info-text">Режим: управление IP-блокировками</div>
+            <div id="admin-info-panel-logs" class="admin-info-message hidden"></div>
+        </div>
 
-            <div class="scrollable-content">
-                <table class="admin-table" id="logsTable">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="selectAllLogs"></th>
-                            <th>UID</th>
-                            <th>IP-адрес</th>
-                            <th>Попытки</th>
-                            <th>Заблокирован</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Загрузится через JS -->
-                    </tbody>
-                </table>
+        <div class="admin-controls">
+            <div class="search-box">
+                <input type="text" id="logSearch" placeholder="Поиск по UID, IP">
+                <button id="btnSearchLogs">Найти</button>
             </div>
+            <button class="btn-admin" id="btnBlockSelected" disabled>Блокировать</button>
+            <button class="btn-delete" id="btnUnblockSelected" disabled>Разблокировать</button>
+        </div>
+
+        <div class="admin-table-container">
+            <div class="admin-header">
+                <div class="admin-col select-all-col">
+                    <input type="checkbox" id="select-all-logs">
+                </div>
+                <div class="admin-col col-id">UID</div>
+                <div class="admin-col col-ip">IP-адрес</div>
+                <div class="admin-col col-attempts">Попытки</div>
+                <div class="admin-col col-blocked">Заблокирован</div>
+            </div>
+            <div class="admin-body" id="logs-list"></div>
         </div>
     </div>
 
-    <!-- Содержимое вкладки: Файлы логов -->
+    <!-- Логи -->
     <div class="admin-tab-content" id="tab-file-logs">
         <div class="info_panel">
             <div class="container_control">
@@ -103,27 +99,49 @@
                     <input type="text" id="fileLogSearch" placeholder="Поиск по содержимому лога...">
                     <button id="btnSearchFileLogs">Найти</button>
                 </div>
-
-                <!-- Dropdown с файлами -->
                 <div class="log-files-dropdown">
                     <button class="btn-admin" id="toggleLogFiles">Список логов</button>
-                    <div class="log-files-menu" id="logFilesList"></div>            
+                    <div class="log-files-menu" id="logFilesList"></div>
                 </div>
-
-                <!-- Кнопка очистки открытых логов -->
                 <button class="btn-admin" id="btnClearOpenedLogs" disabled>Очистить логи</button>
-                <!-- Кнопка обновлении окна с логами -->
                 <button class="btn-admin" id="btnUpdateLogs" disabled>Обновить</button>
             </div>
-
             <div class="scrollable-content">
-                <div class="logs-display-area" id="logsDisplayArea">
-                    <!-- Сюда будут подгружаться логи по клику на файл -->
-                </div>
+                <div class="logs-display-area" id="logsDisplayArea"></div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Шаблоны -->
+<template id="user-row-template">
+    <div class="admin-row user-row" data-user-id="">
+        <div class="admin-col select-col">
+            <input type="checkbox" class="admin-checkbox">
+        </div>
+        <div class="admin-col id-col col-id"></div>
+        <div class="admin-col username col-username"></div>
+        <div class="admin-col email-col col-email"></div>
+        <div class="admin-col verified-col col-verified"></div>
+        <div class="admin-col date-col col-date"></div>
+        <div class="admin-col ip-col col-ip"></div>
+        <div class="admin-col role-col col-role"></div>
+        <div class="admin-col device-col col-device"></div>
+        <div class="admin-col session-col col-session"></div>
+    </div>
+</template>
+
+<template id="log-row-template">
+    <div class="admin-row ip-row" data-ip-address="">
+        <div class="admin-col select-col">
+            <input type="checkbox" class="admin-checkbox">
+        </div>
+        <div class="admin-col id-col col-id"></div>
+        <div class="admin-col ip-col col-ip"></div>
+        <div class="admin-col attempts-col col-attempts"></div>
+        <div class="admin-col blocked-col col-blocked"></div>
+    </div>
+</template>
 {% endblock %}
 
 {% block js %}

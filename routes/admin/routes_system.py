@@ -63,7 +63,6 @@ def _serialize_users(users):
 
     return result
 
-# === Роуты ===
 
 @admin_system_bp.route('/users/search', methods=['GET'])
 def search_users():
@@ -284,8 +283,8 @@ def delete_user_tokens():
     return jsonify({'success': True, 'deleted_count': deleted_count})
 
 
-# Получить все логи
-@admin_system_bp.route('/logs')
+# Получить все записи из таблицы IPAttemptLog
+@admin_system_bp.route('/ip_logs')
 def get_logs():
     user = g.current_user
     if user.role != 'admin':
@@ -301,7 +300,7 @@ def get_logs():
 
 
 # Поиск
-@admin_system_bp.route('/logs/search')
+@admin_system_bp.route('/ip_logs/search')
 def search_logs():
     user = g.current_user
     if user.role != 'admin':
@@ -331,7 +330,7 @@ def search_logs():
 
 
 # Блокировка записей
-@admin_system_bp.route('/logs/block', methods=['PATCH'])
+@admin_system_bp.route('/ip_logs/block', methods=['PATCH'])
 def block_logs():
     user = g.current_user
     if user.role != 'admin':
@@ -361,7 +360,7 @@ def block_logs():
         return jsonify({'error': 'Ошибка при обновлении базы данных'}), 500
 
 
-@admin_system_bp.route('/logs/unblock', methods=['PATCH'])
+@admin_system_bp.route('/ip_logs/unblock', methods=['PATCH'])
 def unblock_logs():
     user = g.current_user
     if user.role != 'admin':
@@ -375,7 +374,6 @@ def unblock_logs():
 
 
 # ФАЙЛОВЫЕ ЛОГИ
-
 @admin_system_bp.route('/logs/files')
 def list_log_files():
     """Возвращает список .log файлов из папки LOG_DIR"""

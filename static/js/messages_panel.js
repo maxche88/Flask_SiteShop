@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
             statusDropdown.classList.add('hidden');
 
             try {
-                const response = await fetch('/api/chat/dialogs/bulk-update-status', {
+                const response = await fetch('/api/chat/dialogs/dialog-status_update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         try {
-            const response = await fetch('/api/chat/dialogs/bulk-delete', {
+            const response = await fetch('/api/chat/dialogs/dialog-delete', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',

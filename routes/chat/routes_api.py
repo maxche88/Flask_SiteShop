@@ -555,7 +555,7 @@ def close_dialog(dialog_id):
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
 
 
-@chat_bp.route('/dialogs/bulk-update-status', methods=['POST'])
+@chat_bp.route('/dialogs/dialog-status_update', methods=['POST'])
 def bulk_update_dialog_status():
     """
     Массовое обновление статуса для списка диалогов.
@@ -606,7 +606,7 @@ def bulk_update_dialog_status():
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
 
 
-@chat_bp.route('/dialogs/bulk-delete', methods=['DELETE'])
+@chat_bp.route('/dialogs/dialog-delete', methods=['DELETE'])
 def bulk_delete_dialogs():
     """
     Массовое удаление диалогов.
