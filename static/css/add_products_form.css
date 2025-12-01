@@ -1,81 +1,64 @@
-/* === Общие стили формы === */
+/* Включает: базовые стили формы + превью карточки */
 
+/* Общая оболочка */
+.conteiner_forms {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
+/* Основной контейнер формы */
 .content_add_product {
-    background-color: rgb(73, 73, 73);
+    background-color: #ffffff;
     border-radius: 10px;
-    width: 500px;
+    width: 100%;
+    max-width: 500px;
     padding: 20px;
+    margin: 0 auto;
+    color: #333333;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
-.form_add {
-    display: flex;
-    gap: 10px;
+.conteiner_title {
+    padding-top: 30px;
+    text-align: center;
 }
 
+.conteiner_title .title {
+    font-size: 24px;
+    margin: 0;
+    color: #222222;
+}
+
+/* Группы полей */
 .form_add_product {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 0;
+    gap: 16px;
+    margin-top: 20px;
 }
 
+.form-group {
+    margin-bottom: 0;
+}
 
-/* Переключатель отображения превью (toggle switch) */
-.toggle-switch {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    user-select: none;
+.top-form-group {
+    margin-bottom: 20px;
+}
+
+/* Заголовки полей */
+.form-group > p,
+.form-group > label:not(.checkbox-label):not(.toggle-switch) {
+    margin: 0 0 6px 0;
     font-size: 14px;
-    color: #ffffff;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 26px;
-    background-color: #0056b3;
-    border-radius: 26px;
-    transition: 0.3s;
-}
-
-.slider::before {
-    position: absolute;
-    content: "";
-    height: 20px;
-    width: 20px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    border-radius: 50%;
-    transition: 0.3s;
-}
-
-/* Включённое состояние */
-.toggle-switch input:checked + .slider {
-    background-color: #007bff;
-}
-
-.toggle-switch input:checked + .slider::before {
-    transform: translateX(24px);
-}
-
-/* Подпись рядом с переключателем */
-.toggle-label {
+    color: #444444;
     font-weight: normal;
 }
 
-
-/* === Общие стили для всех полей ввода === */
-
+/* Общие стили для всех полей ввода */
 .product_form,
 .select-header,
 .product-description,
@@ -105,8 +88,30 @@
     background-color: #f9f9f9;
 }
 
-/* === Стили аккордеона === */
+/* Стили textarea */
+.product-description {
+    height: auto;
+    min-height: 44px;
+    resize: vertical;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
 
+/* Группа "Цена и количество" */
+.form_add {
+    display: flex;
+    gap: 10px;
+}
+
+.form_add > div {
+    flex: 1;
+}
+
+/* Стили аккордеона категории */
 .custom-select {
     position: relative;
     width: 100%;
@@ -172,22 +177,7 @@
     background-color: #f0f0f0;
 }
 
-/* === Стили textarea === */
-
-.product-description {
-    height: auto;
-    min-height: 44px;
-    resize: vertical;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    outline: none;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* === Кнопка загрузки файла === */
-
+/* Кнопка загрузки файла */
 .file-upload-label {
     position: relative;
     display: block;
@@ -235,10 +225,15 @@
     font-size: 14px;
     color: #929292;
     text-align: center;
+    min-height: 18px;
 }
 
-/*Чек бокс SALE*/
+.file-name.success {
+    color: #2e7d32;
+    font-weight: 600;
+}
 
+/* Чекбокс SALE */
 .checkbox-label {
     display: flex;
     align-items: center;
@@ -246,7 +241,7 @@
     cursor: pointer;
     position: relative;
     padding-left: 25px;
-    color: #ffffff;
+    color: #333333;
 }
 
 .checkbox-input {
@@ -257,7 +252,6 @@
     width: 0;
 }
 
-/* Стиль кастомного чекбокса */
 .checkbox-custom {
     position: absolute;
     left: 0;
@@ -268,66 +262,111 @@
     transition: all 0.2s ease-in-out;
 }
 
-/* При наведении */
 .checkbox-label:hover .checkbox-custom {
     background-color: #ccc;
 }
 
-/* Когда чекбокс отмечен */
 .checkbox-input:checked ~ .checkbox-custom {
     background-color: #007bff;
 }
 
-/* Показываем галочку */
 .checkbox-input:checked ~ .checkbox-custom::after {
-    content: '\2713'; /* Символ ✓ */
+    content: '\2713';
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* Центруем символ */
+    transform: translate(-50%, -50%);
     font-size: 14px;
     color: #fff;
 }
 
-/* === Сообщения об ошибках === */
+/* Переключатель превью */
+.toggle-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14px;
+    color: #333333;
+}
 
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+    background-color: #0056b3;
+    border-radius: 26px;
+    transition: 0.3s;
+}
+
+.slider::before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.toggle-switch input:checked + .slider {
+    background-color: #007bff;
+}
+
+.toggle-switch input:checked + .slider::before {
+    transform: translateX(24px);
+}
+
+.toggle-label {
+    font-weight: normal;
+    color: #333333;
+}
+
+/* Кнопка отправки */
+.bt.reg_bt {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 10px;
+}
+
+.bt.reg_bt:hover {
+    background-color: #0056b3;
+}
+
+/* Сообщения об ошибках */
 .error {
     margin-top: 15px;
     text-align: center;
     font-weight: bold;
+    color: #d32f2f;
 }
 
-.error-message, .success-message {
-    display: block;
-    width: 100%;
-    text-align: center;
-    margin: 0 auto 15px auto;
-    padding: 10px;
-    border-radius: 5px;
+/* ПРЕВЬЮ КАРТОЧКИ ТОВАРА */
+.product-card-preview {
+    font-family: Arial, sans-serif;
+    margin: 0 auto 20px;
+    text-align: left; /* ← текст прижат к левой границе */
 }
 
-.success-message {
-    color: #11a834;
-}
-
-.error-message {
-    color: #d80b20;
-}
-
-/* === Отступы между полями === */
-
-.form-group {
-    margin-bottom: 10px;
-    color: #f3f3f3;
-}
-
-/* === Карточка товара на странице редактирования === */
-
-.conteiner_title {
-    padding-top: 30px;
-}
-
-.product-card {
+.product-card-preview .product-card {
     border: 1px solid #ddd;
     border-radius: 8px;
     overflow: hidden;
@@ -345,14 +384,14 @@
     position: relative;
 }
 
-.img_container {
+.product-card-preview .img_container {
     width: 100%;
     height: 220px;
     overflow: hidden;
     background-color: #fff;
 }
 
-.img_container img {
+.product-card-preview .img_container img {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -360,7 +399,7 @@
     display: block;
 }
 
-.info_product {
+.product-card-preview .info_product {
     display: flex;
     padding: 15px;
     flex-direction: column;
@@ -369,36 +408,53 @@
     overflow: hidden;
 }
 
-.content_title {
+.product-card-preview .content_title {
     height: 75px;
 }
 
-.title_product a {
+.product-card-preview .title_product a {
     font-weight: bold;
     text-decoration: none;
     color: #333;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.description {
+.product-card-preview .description {
     font-size: 0.9em;
     color: #464545;
     margin-top: 5px;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4em;
+    max-height: 3.1em;
 }
 
-.price_product p {
-    margin: 10px 0 5px;
-    font-size: 1.1em;
-    font-weight: bold;
-    color: #e91e63;
+.product-card-preview .description p {
+    margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.quantity {
-    font-size: 0.9em;
-    color: #777;
+/* Артикул — прижат */
+.product-card-preview .article_num p {
+    font-size: 12px;
+    color: #666;
+    margin: 0;
 }
 
-/* Треугольный бейдж "Акция" */
-.badge {
+/* Бейдж "Акция" */
+.badge-preview {
     user-select: none;
     cursor: default;
     position: absolute;
@@ -417,38 +473,86 @@
     transform: translate(50px, -50px) rotate(45deg);
     overflow: hidden;
     white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    padding: 70px 0 0 27px; /* верх, право, низ, лево */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    padding: 70px 0 0 5px;
     box-sizing: border-box;
 }
 
-
-
-/* Блок покупки - Не активный*/
-.user-actions.disabled {
-    pointer-events: none; /* отключает все клики и hover-эффекты */
-    cursor: default; /* курсор остаётся стрелкой, не меняется на "руку" */
+.badge-preview.hidden {
+    display: none !important;
 }
 
-.block_buy {
+/* Блок покупки (цена + кнопки) */
+.product-card-preview .block_buy {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-/* Артикул */
-.article_num p {
-    font-size: 12px;
+.product-card-preview .img_container .img_cont {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+    background-color: #f5f5f5;
 }
 
-/* === Сетка — только для главной страницы === */
-.products-section {
-    font-family: Arial, sans-serif;
+.product-card-preview .price_product .background_gradient {
+    width: 100px;
+    background: linear-gradient(to right, rgba(91, 189, 255, 0.418), transparent);
+    display: inline-block;
+    backdrop-filter: blur(2px);
+    padding-left: 5px;
 }
 
-.products-section .product-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    padding: 20px;
+.product-card-preview .price_product p {
+    margin: 10px 0 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #202020;
+    padding-left: 5px;
+    position: relative;
+    z-index: 1;
+}
+
+.product-card-preview .user-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.product-card-preview .user-actions.disabled {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.product-card-preview .cart-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+}
+
+.product-card-preview .btn_buy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    min-width: 120px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    text-decoration: none;
+    cursor: pointer;
+    background: linear-gradient(145deg, #0056b3, #0075f1);
+    border: none;
+    border-radius: 8px;
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.15),
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.25s ease;
+    user-select: none;
 }

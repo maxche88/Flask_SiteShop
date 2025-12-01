@@ -2,7 +2,6 @@
 
 {% block link %}
 <!-- Подключаем общий CSS, где описаны стили карточек -->
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/base.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/view_product.css') }}">
 {% endblock %}
 
@@ -31,8 +30,13 @@
         <div class="product-info">
 
             <!-- Артикул -->
-            <div class="product-article">
-                Артикул: <span class="article-value">{{ product.article_num }}</span>
+            <div class="top_content">
+                <div class="product-article">
+                    Артикул: <span class="article-value">{{ product.article_num }}</span>
+                </div>
+                <button id="open-ask-modal-btn" class="icon-button" aria-label="Отправить сообщение">
+                    {{ chat(cls="icon-button") }}
+                </button>
             </div>
 
             <!-- Название товара -->
@@ -43,32 +47,7 @@
                 {{ product.description }}
             </div>
 
-            <!-- Блок скидки (если есть) -->
-            {% if product.sale %}
-                <div class="product-sale-badge">
-                    Скидка
-                </div>
-            {% endif %}
-            
-            <!-- Блок цены и корзины -->
-            <div class="product-actions">
-                <div class="price_product">
-                    <p class="price-value">{{ product.price }} ₽</p>
-                </div>
-
-                <!-- Кнопки корзины ТОЛЬКО для авторизованных пользователей -->
-                {% if role %}
-                <div class="user-actions">
-                    <div class="btn_buy" data-product-id="{{ product.id }}">
-                        <div class="btn_text"></div>
-                        Купить
-                    </div>
-                    <a href="#" class="cart-icon" data-product-id="{{ product.id }}" title="Добавить в корзину">
-                        {{ cart_add_mini(size=24, cls="img_c") }}
-                    </a>
-                </div>
-                {% endif %}
-            </div>
+            <!-- Блок скидки -->
 
             <!-- Характеристики -->
             <div class="product-specs">
@@ -80,8 +59,35 @@
                 </div>
             </div>
 
-            <div class="product-contact">
-                <button id="open-ask-modal-btn" class="btn-ask">Задать вопрос о товаре</button>
+            <!-- Блок цены и скидки -->
+            <div class="conteiner_price">
+
+                {% if product.sale %}
+                <div class="product-sale-badge">
+                    Скидка
+                </div>
+                {% endif %}
+
+                <div class="price_product">
+                    <p class="price-value">{{ product.price }} ₽</p>
+                </div>
+            </div>
+            
+
+            <!-- Блок кнопок -->
+            <div class="product-actions-view">
+                <!-- Кнопки корзины ТОЛЬКО для авторизованных пользователей -->
+                {% if role %}
+                <div class="user-actions-view">
+                    <div class="btn_buy" data-product-id="{{ product.id }}">
+                        <div class="btn_text"></div>
+                        Купить
+                    </div>
+                    <a href="#" class="cart-icon-view" data-product-id="{{ product.id }}" title="Добавить в корзину">
+                        {{ cart_add_mini(size=24, cls="img_c") }}
+                    </a>
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -123,8 +129,8 @@
 
 {% block js %}
 <script>
-    window.userRole = "{{ role }}";
-    window.product_id = "{{ product.id }}";
+    window.userRole = "{{ role or 'guest' }}";
+    window.product_id = "{{ product.id if product else '' }}";
 </script>
 
 <script src="{{ url_for('static', filename='js/view_product.js') }}"></script>

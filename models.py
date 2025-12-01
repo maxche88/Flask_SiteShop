@@ -112,11 +112,11 @@ class CartItem(db.Model):
         db.ForeignKey('users.id', ondelete='CASCADE'),
         nullable=False
     )
-    product_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('shop.id', ondelete='CASCADE'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     added_at = db.Column(db.DateTime(timezone=True), nullable=False)
     user = db.relationship('User', backref=db.backref('cart_items', lazy=True, passive_deletes=True))
-    product = db.relationship('Shop', backref=db.backref('cart_items', lazy=True))
+    product = db.relationship('Shop', backref=db.backref('cart_items', lazy=True, passive_deletes=True))  # автоматически подгружает связанные данные из другой таблицы по внешнему ключу
 
     def __repr__(self):
         return f"<CartItem user_id={self.user_id}, product_id={self.product_id}, quantity={self.quantity}>"
@@ -162,7 +162,7 @@ class OrderItem(db.Model):
     product_id = db.Column(
         db.Integer,
         db.ForeignKey('shop.id', ondelete='SET NULL'),
-        nullable=False
+        nullable=True
     )
     quantity = db.Column(db.Integer, nullable=False)
     price_at_purchase = db.Column(db.Integer, nullable=False)  # цена на момент покупки
@@ -207,7 +207,7 @@ class Dialog(db.Model):
     # Контекст обращения
     topic_id = db.Column(db.Integer, db.ForeignKey('message_topics.id'), nullable=False)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('shop.id'), nullable=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('shop.id', ondelete='SET NULL'), nullable=True)
 
     # Инициатор: либо авторизованный пользователь, либо гость
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)

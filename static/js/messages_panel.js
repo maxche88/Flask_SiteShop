@@ -11,9 +11,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const infoPanel = document.getElementById('messages-info-panel');
 
     let currentDialogId = null;
+    let currentDialogStatus = null;
     let isGuestDialog = false;
 
-    // === Чекбоксы для выбора диалогов ===
+    // === Чекбоксы и прочая логика ===
     document.getElementById('select-all-dialogs').addEventListener('change', function () {
         const isChecked = this.checked;
         document.querySelectorAll('.dialog-checkbox').forEach(checkbox => {
@@ -69,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
             statusDropdown.classList.add('hidden');
 
             try {
-                const response = await fetch('/api/chat/dialogs/bulk-update-status', {
+                const response = await fetch('/api/chat/dialogs/dialog-status_update', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
@@ -122,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         try {
-            const response = await fetch('/api/chat/dialogs/bulk-delete', {
+            const response = await fetch('/api/chat/dialogs/dialog-delete', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
@@ -198,7 +199,6 @@ document.addEventListener('DOMContentLoaded', function () {
         dialogsList.innerHTML = '';
 
         if (!dialogs || dialogs.length === 0) {
-            dialogsList.innerHTML = '';
             showMessage('Нет доступных диалогов', 'info');
             return;
         }
@@ -208,7 +208,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const item = row.querySelector('.dialog-item');
 
             item.dataset.dialogId = dialog.id;
-            item.dataset.userId = dialog.user_id; // Сохраняем user_id
+            item.dataset.dialogStatus = dialog.status;
+            item.dataset.userId = dialog.user_id;
 
             item.querySelector('.id-col').textContent = dialog.id;
             item.querySelector('.topic-col').textContent = dialog.topic_name || '—';
@@ -253,9 +254,35 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // === Обновление состояния кнопки отправки ===
+    function updateSendButtonState() {
+        if (!sendChatMessageBtn) return;
+
+        const isClosed = currentDialogStatus === 'closed';
+        sendChatMessageBtn.disabled = isClosed;
+
+        // Обновляем текст кнопки с учётом гостя И статуса
+        if (isClosed) {
+            sendChatMessageBtn.textContent = 'Закрыт';
+        } else {
+            sendChatMessageBtn.textContent = isGuestDialog ? 'Отправить на email' : 'Отправить';
+        }
+    }
+
     // Открытие модального окна
     async function openChatModal(dialogId) {
         currentDialogId = dialogId;
+
+        const dialogRow = document.querySelector(`.dialog-item[data-dialog-id="${dialogId}"]`);
+        if (!dialogRow) {
+            console.error('Диалог не найден в DOM:', dialogId);
+            return;
+        }
+
+        currentDialogStatus = dialogRow.dataset.dialogStatus;
+        isGuestDialog = dialogRow.dataset.userId === 'null';
+
+        // Обновляем UI модального окна
         modalDialogId.textContent = dialogId;
         chatMessagesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#777;">Загрузка...</div>';
         chatModal.classList.remove('hidden');
@@ -263,10 +290,6 @@ document.addEventListener('DOMContentLoaded', function () {
         chatMessageInput.focus();
 
         try {
-            // Определяем, гость ли (user_id === null)
-            const dialogRow = document.querySelector(`.dialog-item[data-dialog-id="${dialogId}"]`);
-            isGuestDialog = dialogRow ? (dialogRow.dataset.userId === 'null') : false;
-
             const response = await fetch(`/api/chat/dialogs/${dialogId}/messages`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' },
@@ -278,14 +301,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const messages = await response.json();
             renderMessages(messages);
 
-            // Обновляем текст кнопки
-            if (sendChatMessageBtn) {
-                sendChatMessageBtn.textContent = isGuestDialog ? 'Отправить на email' : 'Отправить';
-            }
+            updateSendButtonState();
 
         } catch (error) {
             console.error(`Ошибка загрузки сообщений диалога ${dialogId}:`, error);
             chatMessagesContainer.innerHTML = '<div style="color:red; padding:10px;">Не удалось загрузить сообщения.</div>';
+            updateSendButtonState();
         }
     }
 
@@ -320,8 +341,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return div.innerHTML;
     }
 
-    // Отправка нового сообщения
+    // Отправка нового сообщения — с защитой от закрытых диалогов
     async function sendNewMessage() {
+        if (currentDialogStatus === 'closed') {
+            showMessage('Нельзя отправлять сообщения в закрытый диалог.', 'warning');
+            return;
+        }
+
         const text = chatMessageInput.value.trim();
         if (!text) {
             showMessage('Сообщение не может быть пустым.', 'warning');
@@ -359,6 +385,7 @@ document.addEventListener('DOMContentLoaded', function () {
             chatMessageInput.value = '';
             chatMessageInput.focus();
 
+            // Перезагружаем сообщения
             const res = await fetch(`/api/chat/dialogs/${currentDialogId}/messages`);
             const messages = await res.json();
             renderMessages(messages);
@@ -368,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
             showMessage(`Ошибка: ${error.message || 'неизвестная'}`, 'error');
         } finally {
             sendBtn.textContent = originalText;
-            sendBtn.disabled = false;
+            setTimeout(updateSendButtonState, 0);
         }
     }
 
@@ -381,6 +408,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 dialogRow.classList.remove('has-unread');
             }
             currentDialogId = null;
+            currentDialogStatus = null;
             isGuestDialog = false;
         }
     }

@@ -1,17 +1,44 @@
-document.addEventListener('DOMContentLoaded', () => {    
+document.addEventListener('DOMContentLoaded', () => {
+    // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+    function showInfo(message, type = 'info', target = 'users') {
+        const id = target === 'logs' ? 'admin-info-panel-logs' : 'admin-info-panel';
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = message;
+        el.className = `admin-info-message ${type}`;
+        el.classList.remove('hidden');
+        // Скрываем info/warning/success через 5 сек
+        if (type !== 'error') {
+            setTimeout(() => {
+                if (el && !el.classList.contains('hidden')) {
+                    el.classList.add('hidden');
+                }
+            }, 5000);
+        }
+    }
+
+    function hideInfo(target = 'users') {
+        const id = target === 'logs' ? 'admin-info-panel-logs' : 'admin-info-panel';
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    }
+
+    function clearTable(container) {
+        container.innerHTML = '';
+    }
+
     // === ВКЛАДКИ ===
     const tabs = document.querySelectorAll('.admin-tab');
     const tabContents = document.querySelectorAll('.admin-tab-content');
-
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
-
             tab.classList.add('active');
             const target = tab.dataset.tab;
             document.getElementById(`tab-${target}`).classList.add('active');
-
+            hideInfo('users');
+            hideInfo('logs');
             if (target === 'logs' && !window.logsLoaded) {
                 loadLogs();
                 window.logsLoaded = true;
@@ -19,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // === ЭЛЕМЕНТЫ ДЛЯ ВКЛАДКИ "ФАЙЛЫ ЛОГОВ" ===
+    // === ФАЙЛОВЫЕ ЛОГИ (БЕЗ ИЗМЕНЕНИЙ КРОМЕ alert → console) ===
     const dropdownContainer = document.querySelector('.log-files-dropdown');
     const btnToggleLogFiles = document.getElementById('toggleLogFiles');
     const logFilesList = document.getElementById('logFilesList');
@@ -28,13 +55,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnUpdateLogs = document.getElementById('btnUpdateLogs');
     const fileLogSearchInput = document.getElementById('fileLogSearch');
     const btnSearchFileLogs = document.getElementById('btnSearchFileLogs');
-    
     let currentLogFile = null;
     let fileLogsLoaded = false;
 
     function loadLogFileList() {
         if (!logFilesList) return;
-
         fetch('/admin/api/logs/files')
             .then(res => {
                 if (!res.ok) throw new Error('Не удалось загрузить список файлов');
@@ -57,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error('Ошибка загрузки списка логов:', err);
-                logFilesList.innerHTML = '<div style="color:red; padding:8px;">Ошибка загрузки файлов</div>';
+                // Для файловых логов отдельного info-блока нет → оставим в консоли
             });
     }
 
@@ -73,24 +98,20 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error(`Ошибка загрузки лога ${filename}:`, err);
-                alert(`Не удалось загрузить файл: ${filename}`);
             });
     }
 
     function renderOpenedLogs() {
         if (!logsDisplayArea) return;
-
         if (!currentLogFile) {
             logsDisplayArea.innerHTML = '<em>Нет открытых логов</em>';
             if (btnClearOpenedLogs) btnClearOpenedLogs.disabled = true;
             if (btnUpdateLogs) btnUpdateLogs.disabled = true;
             return;
         }
-
         const { filename, content } = currentLogFile;
         const lines = content.split('\n').filter(line => line.trim() !== '');
         let html = `<div class="log-file-section"><h5>📁 ${filename}</h5>`;
-
         lines.forEach(line => {
             let className = 'log-entry';
             const lowerLine = line.toLowerCase();
@@ -101,19 +122,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             html += `<div class="${className}">${escapeHtml(line)}</div>`;
         });
-
         html += '</div>';
         logsDisplayArea.innerHTML = html;
-
-        // Активируем обе кнопки, если файл открыт
         if (btnClearOpenedLogs) btnClearOpenedLogs.disabled = false;
         if (btnUpdateLogs) btnUpdateLogs.disabled = false;
     }
+
     function escapeHtml(text) {
         return text
             .replace(/&/g, '&amp;')
-            .replace(/</g, '<')
-            .replace(/>/g, '>')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
     }
@@ -123,19 +142,15 @@ document.addEventListener('DOMContentLoaded', () => {
             logsDisplayArea.innerHTML = '<em>Нет открытого файла для поиска</em>';
             return;
         }
-
         if (!query.trim()) {
             renderOpenedLogs();
             return;
         }
-
         const { filename, content } = currentLogFile;
         const term = query.trim();
         const lines = content.split('\n').filter(line => line.trim() !== '');
         const matchedLines = lines.filter(line => line.toLowerCase().includes(term.toLowerCase()));
-
         let html = `<div class="log-file-section"><h5>📁 ${filename} (${matchedLines.length} совпадений)</h5>`;
-
         if (matchedLines.length === 0) {
             html += '<div class="log-entry"><em>Ничего не найдено</em></div>';
         } else {
@@ -154,7 +169,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += `<div class="${className}">${escapeHtmlForInner(highlighted)}</div>`;
             });
         }
-
         html += '</div>';
         logsDisplayArea.innerHTML = html;
     }
@@ -162,8 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function escapeHtmlForInner(str) {
         return str
             .replace(/&/g, '&amp;')
-            .replace(/</g, '<')
-            .replace(/>/g, '>')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
     }
@@ -172,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
-    // Обработчик кнопки dropdown
     if (btnToggleLogFiles) {
         btnToggleLogFiles.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -184,14 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Закрытие dropdown по клику вне
     document.addEventListener('click', (e) => {
         if (dropdownContainer && !dropdownContainer.contains(e.target)) {
             logFilesList.classList.remove('show');
         }
     });
 
-    // Поиск по логам
     if (btnSearchFileLogs) {
         btnSearchFileLogs.addEventListener('click', () => {
             searchInOpenedLogs(fileLogSearchInput?.value || '');
@@ -206,59 +217,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Очистка логов в файле
     if (btnClearOpenedLogs) {
         btnClearOpenedLogs.addEventListener('click', () => {
-            if (!currentLogFile) {
-                alert('Нет открытого файла для очистки');
-                return;
-            }
-
+            if (!currentLogFile) return;
             const filename = currentLogFile.filename;
             if (!confirm(`Очистить содержимое файла "${filename}" на сервере? Это действие нельзя отменить.`)) {
                 return;
             }
-
             fetch(`/admin/api/logs/files/${encodeURIComponent(filename)}/clear`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             })
             .then(async res => {
                 const data = await res.json();
                 if (res.ok) {
-                    alert(`Файл "${filename}" успешно очищен`);
-                    // Обновляем отображение: делаем файл пустым
                     currentLogFile.content = '';
                     renderOpenedLogs();
-                } else {
-                    alert(`Ошибка: ${data.error || 'Не удалось очистить файл'}`);
                 }
             })
             .catch(err => {
                 console.error('Ошибка при очистке лога:', err);
-                alert('Сетевая ошибка при очистке файла');
             });
         });
     }
 
-    // Обновление текущего лог-файла без подтверждений и уведомлений
     if (btnUpdateLogs) {
         btnUpdateLogs.addEventListener('click', () => {
             if (currentLogFile?.filename) {
                 openLogFile(currentLogFile.filename);
             }
         });
-    
-    
     }
 
-    
-
-    // === ЭЛЕМЕНТЫ УПРАВЛЕНИЯ ДЛЯ ВКЛАДКИ "ПОЛЬЗОВАТЕЛИ" ===
-    const tableBody = document.querySelector('#usersTable tbody');
-    const selectAll = document.getElementById('selectAll');
+    // === УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ===
+    const usersListContainer = document.getElementById('users-list');
+    const selectAllUsers = document.getElementById('select-all-users');
     const btnDeleteSelected = document.getElementById('btnDeleteSelected');
     const btnDeleteOld = document.getElementById('btnDeleteOld');
     const btnEditRoleSelected = document.getElementById('btnEditRoleSelected');
@@ -274,22 +267,16 @@ document.addEventListener('DOMContentLoaded', () => {
         btnExitUserProfole: "Отозвать токены выбранных пользователей (завершить сессии)",
         btnDeleteToken: "Очистить из базы только ПРОСРОЧЕННЫЕ токены. Активные и отозванные токены сохраняются для безопасности."
     };
-
     Object.entries(tooltips).forEach(([id, text]) => {
         const btn = document.getElementById(id);
-        if (btn) {
-            btn.title = text;
-        }
+        if (btn) btn.title = text;
     });
 
     let roleDropdown = null;
-
     function createRoleDropdown() {
         if (roleDropdown) return;
-
         roleDropdown = document.createElement('div');
         roleDropdown.className = 'role-select-dropdown';
-
         ['admin', 'suser', 'user', 'tester'].forEach(role => {
             const item = document.createElement('div');
             item.className = 'role-select-item';
@@ -297,13 +284,11 @@ document.addEventListener('DOMContentLoaded', () => {
             item.addEventListener('click', () => selectRole(role));
             roleDropdown.appendChild(item);
         });
-
         document.body.appendChild(roleDropdown);
     }
 
     function showRoleDropdown() {
         if (!roleDropdown) createRoleDropdown();
-
         const buttonRect = btnEditRoleSelected.getBoundingClientRect();
         roleDropdown.style.top = `${buttonRect.bottom + window.scrollY}px`;
         roleDropdown.style.left = `${buttonRect.left + window.scrollX}px`;
@@ -311,30 +296,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function hideRoleDropdown() {
-        if (roleDropdown) {
-            roleDropdown.style.display = 'none';
-        }
+        if (roleDropdown) roleDropdown.style.display = 'none';
     }
 
     function selectRole(newRole) {
         hideRoleDropdown();
-
-        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+        const checkedBoxes = usersListContainer.querySelectorAll('.admin-checkbox:checked');
         if (checkedBoxes.length === 0) {
-            alert('Не выбрано ни одного пользователя');
+            showInfo('Не выбрано ни одного пользователя', 'warning', 'users');
             return;
         }
-
         if (checkedBoxes.length > 1) {
-            alert('За один раз можно изменить роль только одному пользователю.');
+            showInfo('За один раз можно изменить роль только одному пользователю.', 'warning', 'users');
             return;
         }
-
-        const userId = checkedBoxes[0].dataset.id;
-
-        if (!confirm(`Изменить роль пользователя ID ${userId} на "${newRole}"?`)) {
-            return;
-        }
+        const userId = checkedBoxes[0].closest('.user-row').dataset.userId;
+        if (!confirm(`Изменить роль пользователя ID ${userId} на "${newRole}"?`)) return;
 
         fetch(`/admin/api/users/${userId}/role`, {
             method: 'PATCH',
@@ -342,21 +319,17 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({ role: newRole })
         })
         .then(async res => {
-            try {
-                const data = await res.json();
-                if (res.ok) {
-                    alert(`Роль успешно изменена на "${newRole}"`);
-                    loadUsers();
-                } else {
-                    alert(`Ошибка: ${data.error || 'Неизвестная ошибка'}`);
-                }
-            } catch (e) {
-                alert('Ошибка: не удалось обработать ответ сервера');
+            const data = await res.json();
+            if (res.ok) {
+                showInfo(`Роль успешно изменена на "${newRole}"`, 'success', 'users');
+                loadUsers();
+            } else {
+                showInfo(`Ошибка: ${data.error || 'Неизвестная ошибка'}`, 'error', 'users');
             }
         })
         .catch(err => {
             console.error('Сетевая ошибка:', err);
-            alert('Ошибка сети при изменении роли');
+            showInfo('Ошибка сети при изменении роли', 'error', 'users');
         });
     }
 
@@ -366,14 +339,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('click', (e) => {
-        if (roleDropdown && 
-            !btnEditRoleSelected.contains(e.target) && 
+        if (roleDropdown &&
+            !btnEditRoleSelected.contains(e.target) &&
             !roleDropdown.contains(e.target)) {
             hideRoleDropdown();
         }
     });
 
     function loadUsers() {
+        showInfo('Загрузка...', 'info', 'users');
+        clearTable(usersListContainer);
         fetch('/admin/api/users')
             .then(res => res.json())
             .then(users => {
@@ -381,81 +356,54 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .catch(err => {
                 console.error('Ошибка загрузки пользователей:', err);
-                if (tableBody) {
-                    tableBody.innerHTML = '<tr><td colspan="10">Ошибка загрузки</td></tr>';
-                }
+                clearTable(usersListContainer);
+                showInfo('Не удалось загрузить пользователей', 'error', 'users');
             });
     }
 
     function renderUsers(users) {
-        if (!tableBody) return;
-
-        tableBody.innerHTML = '';
-        if (users.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="10">Нет данных</td></tr>';
+        clearTable(usersListContainer);
+        if (!Array.isArray(users) || users.length === 0) {
+            showInfo('Нет данных', 'info', 'users');
             updateButtons();
             return;
         }
-
+        showInfo(''); // скрыть предыдущее сообщение
+        const template = document.getElementById('user-row-template');
         users.forEach(user => {
-            const row = document.createElement('tr');
-            row.className = user.confirm_email ? 'confirmed' : 'not-confirmed';
-
-            const confirmedText = user.confirm_email ? '✅ Да' : '❌ Нет';
-            const dateText = user.created_at
+            const row = template.content.cloneNode(true).querySelector('.admin-row');
+            row.dataset.userId = user.id;
+            row.querySelector('.id-col').textContent = user.id;
+            row.querySelector('.username').textContent = user.username;
+            const emailCell = row.querySelector('.email-col');
+            emailCell.innerHTML = `
+                <div class="email-cell">
+                    <span class="email-text">${user.email}</span>
+                    <button class="copy-email-btn" data-email="${user.email}" title="Копировать email">📋</button>
+                </div>
+            `;
+            row.querySelector('.verified-col').textContent = user.confirm_email ? '✅ Да' : '❌ Нет';
+            row.querySelector('.date-col').textContent = user.created_at
                 ? new Date(user.created_at).toLocaleString('ru-RU')
                 : '—';
-
-            const roleText = user.role || '—';
-            const userAgentText = user.user_agent || '—';
-
-            const sessionText = user.session_minutes_left !== null
+            row.querySelector('.ip-col').textContent = user.ip_logs_count || 0;
+            row.querySelector('.role-col').textContent = user.role || '—';
+            row.querySelector('.device-col').textContent = user.user_agent || '—';
+            row.querySelector('.session-col').textContent = user.session_minutes_left !== null
                 ? `${user.session_minutes_left} мин`
                 : '—';
-
-            row.innerHTML = `
-                <td>
-                    <input type="checkbox" class="user-checkbox" data-id="${user.id}">
-                </td>
-                <td>${user.id}</td>
-                <td>${user.username}</td>
-                <td>
-                    <div class="email-cell">
-                        <span class="email-text">${user.email}</span>
-                        <button class="copy-email-btn" data-email="${user.email}" title="Копировать email">📋</button>
-                    </div>
-                </td>
-                <td>${confirmedText}</td>
-                <td>${dateText}</td>
-                <td>${user.ip_logs_count || 0}</td>
-                <td>${roleText}</td>
-                <td>${userAgentText}</td>
-                <td>${sessionText}</td>
-            `;
-            tableBody.appendChild(row);
+            usersListContainer.appendChild(row);
         });
         updateButtons();
     }
 
     function updateButtons() {
-        const checked = document.querySelectorAll('.user-checkbox:checked');
-        const checkedCount = checked.length;
-
-        if (btnDeleteSelected) {
-            btnDeleteSelected.disabled = checkedCount === 0;
-        }
-
-        if (btnEditRoleSelected) {
-            btnEditRoleSelected.disabled = checkedCount !== 1;
-        }
-
-        if (btnExitUserProfole) {
-            btnExitUserProfole.disabled = checkedCount === 0;
-        }
-
-        if (btnDeleteToken) {
-            btnDeleteToken.disabled = false;
-        }
+        const checked = usersListContainer.querySelectorAll('.admin-checkbox:checked');
+        const count = checked.length;
+        btnDeleteSelected.disabled = count === 0;
+        btnEditRoleSelected.disabled = count !== 1;
+        btnExitUserProfole.disabled = count === 0;
+        btnDeleteToken.disabled = false;
     }
 
     function searchUsers(query) {
@@ -463,70 +411,52 @@ document.addEventListener('DOMContentLoaded', () => {
             loadUsers();
             return;
         }
-
+        showInfo('Поиск...', 'info', 'users');
+        clearTable(usersListContainer);
         fetch(`/admin/api/users/search?q=${encodeURIComponent(query)}`)
             .then(res => res.json())
-            .then(users => {
-                renderUsers(users);
-            })
+            .then(users => renderUsers(users))
             .catch(err => {
                 console.error('Ошибка поиска:', err);
-                if (tableBody) {
-                    tableBody.innerHTML = '<tr><td colspan="10">Ошибка поиска</td></tr>';
-                }
+                clearTable(usersListContainer);
+                showInfo('Ошибка при поиске пользователей', 'error', 'users');
             });
     }
 
-    btnSearch?.addEventListener('click', () => {
-        searchUsers(searchInput?.value || '');
-    });
-
+    btnSearch?.addEventListener('click', () => searchUsers(searchInput?.value || ''));
     searchInput?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            searchUsers(searchInput.value);
-        }
+        if (e.key === 'Enter') searchUsers(searchInput.value);
     });
 
-    document.addEventListener('click', function(e) {
+    usersListContainer.addEventListener('click', (e) => {
         const button = e.target.closest('.copy-email-btn');
         if (!button) return;
-
         const email = button.getAttribute('data-email');
-        if (!email) {
-            console.warn('Кнопка копирования не содержит data-email');
-            return;
-        }
-
+        if (!email) return;
         const originalText = button.textContent;
-
         navigator.clipboard.writeText(email)
             .then(() => {
                 button.textContent = '✓';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                }, 1000);
+                setTimeout(() => button.textContent = originalText, 1000);
             })
             .catch(err => {
                 console.error('Ошибка копирования email:', err);
-                alert('Не удалось скопировать email. Возможно, сайт не использует HTTPS или браузер блокирует clipboard.');
+                showInfo('Не удалось скопировать email', 'error', 'users');
             });
     });
-    
-    selectAll?.addEventListener('change', () => {
-        document.querySelectorAll('.user-checkbox:not(:disabled)').forEach(cb => {
-            cb.checked = selectAll.checked;
+
+    selectAllUsers?.addEventListener('change', () => {
+        usersListContainer.querySelectorAll('.admin-checkbox').forEach(cb => {
+            cb.checked = selectAllUsers.checked;
         });
         updateButtons();
     });
 
-    if (tableBody) {
-        tableBody.addEventListener('change', updateButtons);
-    }
+    usersListContainer.addEventListener('change', updateButtons);
 
     btnDeleteSelected?.addEventListener('click', () => {
-        const ids = Array.from(document.querySelectorAll('.user-checkbox:checked'))
-            .map(cb => cb.dataset.id);
-
+        const ids = Array.from(usersListContainer.querySelectorAll('.admin-checkbox:checked'))
+            .map(cb => cb.closest('.user-row').dataset.userId);
         if (ids.length === 0) return;
         if (!confirm(`Удалить ${ids.length} пользователей и их IP-записи?`)) return;
 
@@ -538,51 +468,44 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert(`Удалено: ${data.deleted_count} пользователей`);
+                showInfo(`Удалено: ${data.deleted_count} пользователей`, 'success', 'users');
                 loadUsers();
             } else {
-                alert('Ошибка при удалении');
+                showInfo('Ошибка при удалении', 'error', 'users');
             }
         })
         .catch(err => {
             console.error('Ошибка удаления:', err);
-            alert('Произошла ошибка при удалении');
+            showInfo('Произошла ошибка при удалении', 'error', 'users');
         });
     });
 
     btnDeleteOld?.addEventListener('click', () => {
         if (!confirm('Удалить ВСЕ неподтверждённые аккаунты старше 24 часов?')) return;
-
-        fetch('/admin/api/users/delete-old-unconfirmed', {
-            method: 'DELETE'
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                alert(`Удалено: ${data.deleted_count} пользователей`);
-                loadUsers();
-            } else {
-                alert('Ошибка при удалении старых аккаунтов');
-            }
-        })
-        .catch(err => {
-            console.error('Ошибка удаления старых:', err);
-            alert('Произошла ошибка');
-        });
+        fetch('/admin/api/users/delete-old-unconfirmed', { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    showInfo(`Удалено: ${data.deleted_count} пользователей`, 'success', 'users');
+                    loadUsers();
+                } else {
+                    showInfo('Ошибка при удалении старых аккаунтов', 'error', 'users');
+                }
+            })
+            .catch(err => {
+                console.error('Ошибка удаления старых:', err);
+                showInfo('Произошла ошибка', 'error', 'users');
+            });
     });
 
     btnExitUserProfole?.addEventListener('click', () => {
-        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
-        const user_ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
-
+        const user_ids = Array.from(usersListContainer.querySelectorAll('.admin-checkbox:checked'))
+            .map(cb => cb.closest('.user-row').dataset.userId);
         if (user_ids.length === 0) {
-            alert('Выберите хотя бы одного пользователя');
+            showInfo('Выберите хотя бы одного пользователя', 'warning', 'users');
             return;
         }
-
-        if (!confirm(`Завершить сессии для ${user_ids.length} пользователей? Это отключит их от всех устройств.`)) {
-            return;
-        }
+        if (!confirm(`Завершить сессии для ${user_ids.length} пользователей? Это отключит их от всех устройств.`)) return;
 
         fetch('/admin/api/users/revoke-sessions', {
             method: 'POST',
@@ -590,33 +513,27 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({ user_ids })
         })
         .then(async res => {
-            try {
-                const data = await res.json();
-                if (res.ok) {
-                    alert(`Сессии успешно завершены для ${user_ids.length} пользователей`);
-                    loadUsers();
-                } else {
-                    alert(`Ошибка: ${data.error || 'Не удалось завершить сессии'}`);
-                }
-            } catch (e) {
-                alert('Ошибка: не удалось обработать ответ сервера');
+            const data = await res.json();
+            if (res.ok) {
+                showInfo(`Сессии успешно завершены для ${user_ids.length} пользователей`, 'success', 'users');
+                loadUsers();
+            } else {
+                showInfo(`Ошибка: ${data.error || 'Не удалось завершить сессии'}`, 'error', 'users');
             }
         })
         .catch(err => {
             console.error('Сетевая ошибка при завершении сессий:', err);
-            alert('Ошибка сети при завершении сессий');
+            showInfo('Ошибка сети при завершении сессий', 'error', 'users');
         });
     });
 
     btnDeleteToken?.addEventListener('click', () => {
-        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
-        const user_ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
+        const user_ids = Array.from(usersListContainer.querySelectorAll('.admin-checkbox:checked'))
+            .map(cb => cb.closest('.user-row').dataset.userId);
 
-        let confirmMsg, fetchBody;
-
+        let confirmMsg;
         if (user_ids.length > 0) {
             confirmMsg = `Удалить только ПРОСРОЧЕННЫЕ токены для ${user_ids.length} пользователей? Активные и отозванные токены сохранятся.`;
-            fetchBody = { user_ids };
         } else {
             confirmMsg = 'Удалить ВСЕ ПРОСРОЧЕННЫЕ токены из базы? Это безопасно: активные сессии не затронуты, отозванные токены останутся для защиты.';
         }
@@ -626,84 +543,66 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/admin/api/users/delete-tokens', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fetchBody)
+            body: JSON.stringify(user_ids.length > 0 ? { user_ids } : {})
         })
         .then(async res => {
-            try {
-                const data = await res.json();
-                if (res.ok) {
-                    const successMsg = user_ids.length > 0
-                        ? `Удалено просроченных токенов для ${user_ids.length} пользователей`
-                        : `Удалено ${data.deleted_count} просроченных токенов`;
-                    alert(successMsg);
-                    // loadUsers(); — не обязателен, т.к. сессии не меняются
-                } else {
-                    alert(`Ошибка: ${data.error || 'Не удалось очистить токены'}`);
-                }
-            } catch (e) {
-                alert('Ошибка: не удалось обработать ответ сервера');
+            const data = await res.json();
+            if (res.ok) {
+                const msg = user_ids.length > 0
+                    ? `Удалено просроченных токенов для ${user_ids.length} пользователей`
+                    : `Удалено ${data.deleted_count} просроченных токенов`;
+                showInfo(msg, 'success', 'users');
+            } else {
+                showInfo(`Ошибка: ${data.error || 'Не удалось очистить токены'}`, 'error', 'users');
             }
         })
         .catch(err => {
             console.error('Сетевая ошибка при очистке токенов:', err);
-            alert('Ошибка сети при очистке токенов');
+            showInfo('Ошибка сети при очистке токенов', 'error', 'users');
         });
     });
 
-    // === ЭЛЕМЕНТЫ ДЛЯ ВКЛАДКИ "ЛОГИ" ===
-    const logsTableBody = document.querySelector('#logsTable tbody');
-    const selectAllLogs = document.getElementById('selectAllLogs');
+    // === БЛОКИРОВКА IP ===
+    const logsListContainer = document.getElementById('logs-list');
+    const selectAllLogs = document.getElementById('select-all-logs');
     const btnBlockSelected = document.getElementById('btnBlockSelected');
     const btnUnblockSelected = document.getElementById('btnUnblockSelected');
     const logSearchInput = document.getElementById('logSearch');
     const btnSearchLogs = document.getElementById('btnSearchLogs');
 
     function loadLogs() {
-        if (!logsTableBody) return;
-        logsTableBody.innerHTML = '<tr><td colspan="5">Загрузка...</td></tr>';
-
-        fetch('/admin/api/logs')
+        showInfo('Загрузка...', 'info', 'logs');
+        clearTable(logsListContainer);
+        fetch('/admin/api/ip_logs')
             .then(res => {
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 return res.json();
             })
-            .then(logs => {
-                renderLogs(logs);
-            })
+            .then(logs => renderLogs(logs))
             .catch(err => {
                 console.error('Ошибка загрузки логов:', err);
-                logsTableBody.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>';
+                clearTable(logsListContainer);
+                showInfo('Не удалось загрузить IP-логи', 'error', 'logs');
             });
     }
 
     function renderLogs(logs) {
-        if (!logsTableBody) return;
-        logsTableBody.innerHTML = '';
-
+        clearTable(logsListContainer);
         if (!Array.isArray(logs) || logs.length === 0) {
-            logsTableBody.innerHTML = '<tr><td colspan="5">Нет записей</td></tr>';
+            showInfo('Нет записей', 'info', 'logs');
             updateLogButtons();
             return;
         }
-
+        showInfo(''); // скрыть предыдущее
+        const template = document.getElementById('log-row-template');
         logs.forEach(log => {
-            const userIdDisplay = log.user_id !== null ? log.user_id : '—';
-            const blockedText = log.is_blocked ? '✅ Да' : '❌ Нет';
-
-            const row = document.createElement('tr');
-            row.className = log.is_blocked ? 'ip-blocked' : 'ip-not-blocked';
-            row.innerHTML = `
-                <td>
-                    <input type="checkbox" class="log-checkbox" 
-                        data-ip="${log.ip_address}"
-                        data-blocked="${log.is_blocked}">
-                </td>
-                <td>${userIdDisplay}</td>
-                <td>${log.ip_address}</td>
-                <td>${log.recovery_attempts_count}</td>
-                <td>${blockedText}</td>
-            `;
-            logsTableBody.appendChild(row);
+            const row = template.content.cloneNode(true).querySelector('.admin-row');
+            row.dataset.ipAddress = log.ip_address;
+            row.querySelector('.id-col').textContent = log.user_id ?? '—';
+            row.querySelector('.ip-col').textContent = log.ip_address;
+            row.querySelector('.attempts-col').textContent = log.recovery_attempts_count;
+            row.querySelector('.blocked-col').textContent = log.is_blocked ? '✅ Да' : '❌ Нет';
+            logsListContainer.appendChild(row);
         });
         updateLogButtons();
     }
@@ -713,136 +612,105 @@ document.addEventListener('DOMContentLoaded', () => {
             loadLogs();
             return;
         }
-
+        showInfo('Поиск...', 'info', 'logs');
+        clearTable(logsListContainer);
         let isBlockedParam = null;
         const lowerQuery = query.trim().toLowerCase();
-        if (lowerQuery === 'да') {
-            isBlockedParam = true;
-        } else if (lowerQuery === 'нет') {
-            isBlockedParam = false;
-        }
+        if (lowerQuery === 'да') isBlockedParam = true;
+        else if (lowerQuery === 'нет') isBlockedParam = false;
 
-        const url = new URL('/admin/api/logs/search', window.location.origin);
+        const url = new URL('/admin/api/ip_logs/search', window.location.origin);
         url.searchParams.append('q', query);
-        if (isBlockedParam !== null) {
-            url.searchParams.append('is_blocked', isBlockedParam);
-        }
+        if (isBlockedParam !== null) url.searchParams.append('is_blocked', isBlockedParam);
 
         fetch(url)
             .then(res => {
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 return res.json();
             })
-            .then(logs => {
-                renderLogs(logs);
-            })
+            .then(logs => renderLogs(logs))
             .catch(err => {
                 console.error('Ошибка поиска логов:', err);
-                logsTableBody.innerHTML = '<tr><td colspan="5">Ошибка поиска</td></tr>';
+                clearTable(logsListContainer);
+                showInfo('Ошибка при поиске IP-записей', 'error', 'logs');
             });
     }
 
     function updateLogButtons() {
-        const checked = document.querySelectorAll('.log-checkbox:checked');
+        const checked = logsListContainer.querySelectorAll('.admin-checkbox:checked');
         const hasSelected = checked.length > 0;
-        
-        if (btnBlockSelected) {
-            btnBlockSelected.disabled = !hasSelected;
+        btnBlockSelected.disabled = !hasSelected;
+        btnUnblockSelected.disabled = !hasSelected;
+    }
+
+    selectAllLogs?.addEventListener('change', () => {
+        logsListContainer.querySelectorAll('.admin-checkbox').forEach(cb => {
+            cb.checked = selectAllLogs.checked;
+        });
+        updateLogButtons();
+    });
+
+    logsListContainer.addEventListener('change', updateLogButtons);
+
+    btnSearchLogs?.addEventListener('click', () => searchLogs(logSearchInput?.value || ''));
+    logSearchInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchLogs(logSearchInput.value);
+    });
+
+    btnBlockSelected?.addEventListener('click', () => {
+        const ips = Array.from(logsListContainer.querySelectorAll('.admin-checkbox:checked'))
+            .map(cb => cb.closest('.ip-row').dataset.ipAddress);
+        if (ips.length === 0) {
+            showInfo('Выберите записи для блокировки', 'warning', 'logs');
+            return;
         }
-        if (btnUnblockSelected) {
-            btnUnblockSelected.disabled = !hasSelected;
+        const uniqueIps = [...new Set(ips)];
+        if (!confirm(`Заблокировать вход с ${uniqueIps.length} IP-адрес(а/ов)?`)) return;
+
+        fetch('/admin/api/ip_logs/block', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip_addresses: uniqueIps })
+        })
+        .then(async res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+            showInfo(`Заблокировано: ${data.blocked_count} записей`, 'success', 'logs');
+            loadLogs();
+        })
+        .catch(err => {
+            console.error('Ошибка блокировки:', err);
+            showInfo('Ошибка сети или сервера при блокировке', 'error', 'logs');
+        });
+    });
+
+    btnUnblockSelected?.addEventListener('click', () => {
+        const ips = Array.from(logsListContainer.querySelectorAll('.admin-checkbox:checked'))
+            .map(cb => cb.closest('.ip-row').dataset.ipAddress);
+        if (ips.length === 0) {
+            showInfo('Выберите записи для разблокировки', 'warning', 'logs');
+            return;
         }
-    }
+        const uniqueIps = [...new Set(ips)];
+        if (!confirm(`Разблокировать вход с ${uniqueIps.length} IP-адрес(а/ов)?`)) return;
 
-    if (selectAllLogs) {
-        selectAllLogs.addEventListener('change', () => {
-            document.querySelectorAll('.log-checkbox:not(:disabled)').forEach(cb => {
-                cb.checked = selectAllLogs.checked;
-            });
-            updateLogButtons();
+        fetch('/admin/api/ip_logs/unblock', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ip_addresses: uniqueIps })
+        })
+        .then(async res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const data = await res.json();
+            showInfo(`Разблокировано: ${data.unblocked_count || uniqueIps.length} IP-адресов`, 'success', 'logs');
+            loadLogs();
+        })
+        .catch(err => {
+            console.error('Ошибка разблокировки:', err);
+            showInfo('Ошибка сети или сервера при разблокировке', 'error', 'logs');
         });
-    }
+    });
 
-    if (logsTableBody) {
-        logsTableBody.addEventListener('change', updateLogButtons);
-    }
-
-    if (btnSearchLogs) {
-        btnSearchLogs.addEventListener('click', () => {
-            searchLogs(logSearchInput?.value || '');
-        });
-    }
-    if (logSearchInput) {
-        logSearchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                searchLogs(logSearchInput.value);
-            }
-        });
-    }
-
-    if (btnBlockSelected) {
-        btnBlockSelected.addEventListener('click', () => {
-            const ips = Array.from(document.querySelectorAll('.log-checkbox:checked'))
-                .map(cb => cb.dataset.ip);
-
-            if (ips.length === 0) {
-                alert('Выберите записи для блокировки');
-                return;
-            }
-
-            const uniqueIps = [...new Set(ips)];
-
-            if (!confirm(`Заблокировать вход с ${uniqueIps.length} IP-адрес(а/ов)?`)) return;
-
-            fetch('/admin/api/logs/block', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ip_addresses: uniqueIps })
-            })
-            .then(async res => {
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                const data = await res.json();
-                alert(`Заблокировано: ${data.blocked_count} записей`);
-                loadLogs();
-            })
-            .catch(err => {
-                console.error('Ошибка блокировки:', err);
-                alert('Ошибка сети или сервера при блокировке');
-            });
-        });
-    }
-
-    if (btnUnblockSelected) {
-        btnUnblockSelected.addEventListener('click', () => {
-            const ips = Array.from(document.querySelectorAll('.log-checkbox:checked'))
-                .map(cb => cb.dataset.ip);
-
-            if (ips.length === 0) {
-                alert('Выберите записи для разблокировки');
-                return;
-            }
-
-            const uniqueIps = [...new Set(ips)];
-
-            if (!confirm(`Разблокировать вход с ${uniqueIps.length} IP-адрес(а/ов)?`)) return;
-
-            fetch('/admin/api/logs/unblock', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ip_addresses: uniqueIps })
-            })
-            .then(async res => {
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                const data = await res.json();
-                alert(`Разблокировано: ${data.unblocked_count || uniqueIps.length} IP-адресов`);
-                loadLogs();
-            })
-            .catch(err => {
-                console.error('Ошибка разблокировки:', err);
-                alert('Ошибка сети или сервера при разблокировке');
-            });
-        });
-    }
-
+    // Загрузка данных при старте
     loadUsers();
 });

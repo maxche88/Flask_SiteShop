@@ -15,59 +15,44 @@
 {% endblock %}
 
 {% block content %}
-    <div class="conteiner_forms">
-        <div class="content_order">
-            <h2 class="title_order">Ваша корзина</h2>
+<div class="conteiner_forms">
+    <div class="content_order">
+        <h2 class="title_order">Ваша корзина</h2>
 
-            {% if cart_items %}
-            <!-- Основной контейнер товаров -->
-            <div class="cart-items" id="cart-table">
-                <div class="cart-header">
-                    <div class="cart-cell cart-cell-checkbox">
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="select-all">
-                            <span class="checkmark"></span>
-                        </label>
-                    </div>
-                    <div class="cart-cell cart-cell-title">Товар</div>
-                    <div class="cart-cell cart-cell-price">Цена</div>
-                    <div class="cart-cell cart-cell-qty">Кол-во</div>
-                    <div class="cart-cell cart-cell-actions"></div>
+        {% if cart_items %}
+        <!-- Контейнер товаров -->
+        <div class="cart-items" id="cart-items">
+            {% for item in cart_items %}
+            <div class="cart-card" data-item-id="{{ item.id }}">
+                <!-- Чекбокс -->
+                <div class="cart-card-checkbox">
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" value="{{ item.id }}">
+                        <span class="checkmark"></span>
+                    </label>
                 </div>
 
-                <!-- Товары -->
-                <div class="cart-body" id="cart-table-body">
-                    {% for item in cart_items %}
-                    <div class="cart-row" data-item-id="{{ item.id }}">
-                        <!-- Чекбокс -->
-                        <div class="cart-cell cart-cell-checkbox">
-                            <label class="checkbox-container">
-                                <input type="checkbox" class="item-checkbox" value="{{ item.id }}">
-                                <span class="checkmark"></span>
-                            </label>
+                <!-- название + изображение -->
+                <div class="cart-card-top">
+                    <h3 class="cart-card-title">{{ item.product.title }}</h3>
+                    <div class="cart-card-image">
+                        <img src="{{ url_for('static', filename=item.product.link_img) }}" alt="{{ item.product.title }}">
+                    </div>
+                </div>
+
+                <!-- цена, кол-во, кнопки -->
+                <div class="cart-card-bottom">
+                    <div class="cart-card-price">{{ item.product.price }} ₽</div>
+
+                    <div class="cart-card-qty-row">
+                        <div class="quantity-control">
+                            <input type="number" class="qty-input" value="{{ item.quantity }}" min="1"
+                                max="{{ item.product.quantity }}" data-item-id="{{ item.id }}"
+                                data-product-id="{{ item.product_id }}" data-stock="{{ item.product.quantity }}">
+                            <p>шт.</p>
                         </div>
 
-                        <!-- Название -->
-                        <div class="cart-cell cart-cell-title">
-                            {{ item.product.title }}
-                        </div>
-
-                        <!-- Цена -->
-                        <div class="cart-cell cart-cell-price">
-                            {{ item.product.price }} ₽
-                        </div>
-
-                        <!-- Количество -->
-                        <div class="cart-cell cart-cell-qty">
-                            <div class="quantity-control">
-                                <input type="number" class="qty-input" value="{{ item.quantity }}" min="1"
-                                    max="{{ item.product.quantity }}" data-item-id="{{ item.id }}"
-                                    data-product-id="{{ item.product_id }}" data-stock="{{ item.product.quantity }}">
-                            </div>
-                        </div>
-
-                        <!-- Действия -->
-                        <div class="cart-cell cart-cell-actions">
+                        <div class="cart-card-actions">
                             <button class="cart-delete-icon icon-button" data-id="{{ item.id }}" aria-label="Удалить товар">
                                 {{ delete_product(cls="icon-button") }}
                             </button>
@@ -77,11 +62,13 @@
                             </button>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
             </div>
+            {% endfor %}
+        </div>
 
-            <!-- Итог и кнопка оформления -->
+        <!-- Итог и кнопка оформления -->
+        <div class="cart-sticky-summary">
             <div id="cart-summary" class="cart-summary">
                 Всего товаров: <span id="total-items">0</span> |
                 К оплате: <span id="total-price">0</span> ₽
@@ -90,76 +77,73 @@
             <div class="btn_order">
                 <a href="#" class="bt reg_bt" id="checkout-button">Оформить заказ</a>
             </div>
-
-            {% else %}
-            <p class="cart_empty">Корзина пуста</p>
-            {% endif %}
-
-            <div id="payment-modal" class="modal" style="display: none;">
-                <div class="modal-content">
-                    <span class="close">&times;</span>
-
-                    <!-- Итоговая сумма -->
-                    <div class="payment-summary">
-                        <h3 class="summary-title">К оплате</h3>
-                        <p class="summary-amount" id="modal-total-price">0 ₽</p>
-                        <p class="summary-hint">С учётом выбранных товаров</p>
-                    </div>
-
-                    <!-- Форма карты -->
-                    <form id="payment-form">
-                        <div class="form-group">
-                            <label for="card-number">Номер карты</label>
-                            <input type="text" id="card-number" inputmode="numeric" autocomplete="cc-number"
-                                placeholder="1234 5678 9012 3456">
-                        </div>
-                        <div class="form-group">
-                            <label for="cardholder-name">Имя и фамилия</label>
-                            <input type="text" id="cardholder-name" autocomplete="cc-name" placeholder="IVAN IVANOV">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group half">
-                                <label for="expiry">Срок действия</label>
-                                <input type="text" id="expiry" inputmode="numeric" autocomplete="cc-exp"
-                                    placeholder="ММ/ГГ">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="payment-btn" id="submit-payment-btn">
-                            Оплатить <span id="btn-amount">0 ₽</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Модальное окно: задать вопрос о товаре из корзины -->
-            <div class="cart-ask-overlay hidden">
-                <div class="cart-ask-modal">
-                    <div class="cart-ask-header">
-                        <h3 class="cart-ask-title">
-                            Задать вопрос о товаре: <span class="cart-ask-product-title">...</span>
-                        </h3>
-                        <button class="cart-ask-close" aria-label="Закрыть">&times;</button>
-                    </div>
-
-                    <form class="cart-ask-form">
-                        <input type="hidden" class="cart-ask-product-id" name="product_id">
-                        <input type="hidden" name="context" value="cart_product_question">
-
-                        <div class="cart-ask-form-group">
-                            <textarea name="message" class="cart-ask-textarea" placeholder="Напишите ваш вопрос о товаре…"
-                                required></textarea>
-                        </div>
-
-                        <button type="submit" class="cart-ask-submit-btn">Отправить вопрос</button>
-                    </form>
-                </div>
-            </div>
-
         </div>
-    </div>
 
-    <div id="cart-info" data-cart-empty="{{ 'true' if not cart_items else 'false' }}"></div>
+        {% else %}
+        <p class="cart_empty">Корзина пуста</p>
+        {% endif %}
+
+        <!-- Модальное окно оплаты -->
+        <div id="payment-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+
+                <div class="payment-summary">
+                    <h3 class="summary-title">К оплате</h3>
+                    <p class="summary-amount" id="modal-total-price">0 ₽</p>
+                    <p class="summary-hint">С учётом выбранных товаров</p>
+                </div>
+
+                <form id="payment-form">
+                    <div class="form-group">
+                        <label for="card-number">Номер карты</label>
+                        <input type="text" id="card-number" inputmode="numeric" autocomplete="cc-number"
+                            placeholder="1234 5678 9012 3456">
+                    </div>
+                    <div class="form-group">
+                        <label for="cardholder-name">Имя и фамилия</label>
+                        <input type="text" id="cardholder-name" autocomplete="cc-name" placeholder="IVAN IVANOV">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="expiry">Срок действия</label>
+                            <input type="text" id="expiry" inputmode="numeric" autocomplete="cc-exp"
+                                placeholder="ММ/ГГ">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="payment-btn" id="submit-payment-btn">
+                        Оплатить <span id="btn-amount">0 ₽</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Модальное окно: задать вопрос -->
+        <div class="cart-ask-overlay hidden">
+            <div class="cart-ask-modal">
+                <div class="cart-ask-header">
+                    <h3 class="cart-ask-title">
+                        Задать вопрос о товаре: <span class="cart-ask-product-title">...</span>
+                    </h3>
+                    <button class="cart-ask-close" aria-label="Закрыть">&times;</button>
+                </div>
+
+                <form class="cart-ask-form">
+                    <input type="hidden" class="cart-ask-product-id" name="product_id">
+                    <input type="hidden" name="context" value="cart_product_question">
+                    <div class="cart-ask-form-group">
+                        <textarea name="message" class="cart-ask-textarea" placeholder="Напишите ваш вопрос о товаре…" required></textarea>
+                    </div>
+                    <button type="submit" class="cart-ask-submit-btn">Отправить вопрос</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="cart-info" data-cart-empty="{{ 'true' if not cart_items else 'false' }}"></div>
 {% endblock %}
 
 {% block js %}

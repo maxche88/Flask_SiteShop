@@ -28,6 +28,8 @@ PUBLIC_ENDPOINTS = {
     # Публичные API
     'api.get_all_products', 
     'api.get_product_by_id', 
+    'chat_api.get_message_topics',
+    'chat_api.create_guest_dialog_api',
 
     # Аутентификация и восстановление
     'session.login',
@@ -143,5 +145,5 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True)
-    # app.run(debug=True)
+    # app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)

@@ -9,7 +9,7 @@ user_api_bp = Blueprint('user_api', __name__, url_prefix='/api/user')
 order_logger = logging.getLogger('app.orders')
 
 
-# === ДОБАВЛЕНИЕ В КОРЗИНУ ===
+# ДОБАВЛЕНИЕ В КОРЗИНУ
 @user_api_bp.route('/cart', methods=['POST'])
 def add_to_cart():
     user = g.current_user
@@ -59,7 +59,7 @@ def add_to_cart():
     return jsonify({"success": True})
 
 
-# === УДАЛЕНИЕ ИЗ КОРЗИНЫ ===
+# УДАЛЕНИЕ ИЗ КОРЗИНЫ
 @user_api_bp.route('/cart', methods=['DELETE'])
 def remove_from_cart():
     user = g.current_user

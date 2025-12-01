@@ -3,7 +3,6 @@
 
 
 {% block link %}
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/add_products_form.css') }}">
 {% endblock %}
 
@@ -22,29 +21,87 @@
 {% block content %}
 <div class="conteiner_forms">
     <form id="productForm" class="content_add_product" method="post" enctype="multipart/form-data">
-        <br>
-        <h2 class="title">Добавить товар</h2>
+
+        <!-- Чекбокс ВНЕ превью -->
+        <div class="form-group top-form-group">
+            <label class="toggle-switch">
+                <input type="checkbox" id="toggle-preview">
+                <span class="slider"></span>
+                <span class="toggle-label">Показать превью товара</span>
+            </label>
+        </div>
+
+        <!-- Превью карточки (изначально скрыто) -->
+        <div id="product-card-preview-wrapper" class="product-card-preview" style="display: none;">
+            <div class="product-card">
+                <div class="img_container">
+                    <img class="img_cont" id="preview-image" src="" alt="Превью фото">
+                    <div class="badge-preview hidden">Акция</div>
+                </div>
+
+                <div class="info_product">
+                    <div class="article_num">
+                        <p>Артикул: <span id="preview-article">—</span></p>
+                    </div>
+                    <div class="content_title">
+                        <div class="title_product">
+                            <a href="javascript:void(0)" id="preview-title-link">Товар</a>
+                        </div>
+                        <div class="description">
+                            <p id="preview-description">Описание отсутствует</p>
+                        </div>
+                    </div>
+
+                    <div class="block_buy">
+                        <div class="price_product">
+                            <div class="background_gradient">
+                                <p id="preview-price">—</p>
+                            </div>
+                        </div>
+
+                        <div class="user-actions disabled">
+                            <div class="btn_buy">Купить</div>
+                            <div class="cart-icon">
+                                {{ cart_add_mini(size=24, cls="add_cart") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="conteiner_title">
+            <h2 class="title">Добавить товар</h2>
+        </div>
 
         <div class="form_add_product">
-
             <!-- Артикул товара -->
             <div class="form-group">
+                <p>Артикул товара</p>
                 <input type="text" class="product_form" id="article-number" name="article-number" placeholder="Артикул товара" required>
             </div>
 
             <!-- Название товара -->
             <div class="form-group">
+                <p>Название товара</p>
                 <input type="text" class="product_form" id="product-name" name="name" placeholder="Название товара" required>
             </div>
 
             <!-- Цена и количество -->
             <div class="form-group form_add">
-                <input type="number" class="product_form" id="product-price" name="price" placeholder="Цена" min="0" step="0.01" required>
-                <input type="number" class="product_form" id="product-quantity" name="quantity" placeholder="Кол-во" min="0" step="1" required>
+                <div>
+                    <p>Цена</p>
+                    <input type="number" class="product_form" id="product-price" name="price" placeholder="Цена" min="0" step="0.01" required>
+                </div>
+                <div>
+                    <p>Кол-во</p>
+                    <input type="number" class="product_form" id="product-quantity" name="quantity" placeholder="Кол-во" min="0" step="1" required>
+                </div>
             </div>
 
             <!-- Выбор категории -->
             <div class="form-group">
+                <p>Выбор категории товара</p>
                 <div class="custom-select" id="category-select">
                     <div class="select-header">Выберите категорию</div>
                     <ul class="select-options" id="category-options">
@@ -61,6 +118,7 @@
 
             <!-- Описание товара -->
             <div class="form-group">
+                <p>Описание товара</p>
                 <textarea class="product_form product-description" id="product-description" name="description" placeholder="Описание товара" required></textarea>
             </div>
 
@@ -76,7 +134,7 @@
             <!-- Загрузка изображения -->
             <div class="form-group">
                 <label class="file-upload-label">
-                    <input type="file" id="product-image" name="image" class="file-input" accept=".jpg, .jpeg, .png" />
+                    <input type="file" id="product-image" name="image" class="file-input" accept=".jpg,.jpeg,.png">
                     <button type="button" class="custom-file-button">Загрузить фото товара</button>
                 </label>
                 <span id="file-name" class="file-name">Фото не выбрано</span>
@@ -85,8 +143,8 @@
             <!-- Сообщения об ошибках -->
             <div class="error" id="errorMessages"></div>
 
-            <!-- Кнопка -->
-            <button class="bt reg_bt" id="submitBtn" type="submit">Добавить товар</button>
+            <!-- Кнопка отправки -->
+            <button class="bt reg_bt" type="submit">Добавить товар</button>
         </div>
     </form>
 </div>

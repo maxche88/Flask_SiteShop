@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const row = document.createElement('tr');
             row.className = 'dialog-row';
             if (dialog.unread_count > 0) {
-                row.classList.add('has-unread'); // ← подсветка
+                row.classList.add('has-unread');
             }
             row.dataset.dialogId = dialog.id;
 
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const partnerLabel = dialog.last_sender_role === 'suser' ? 'Менеджер' :
                                 (dialog.last_sender_role === 'admin' ? 'Администратор' : 'Поддержка');
 
-            // Иконка закрытия (можно заменить на SVG или другую иконку)
+            // Иконка закрытия
             const closeIcon = `
                 <button class="dialog-close-btn" title="Закрыть диалог">
                     ✕
@@ -101,8 +101,6 @@ document.addEventListener('DOMContentLoaded', function () {
             row.innerHTML = `
                 <td class="dialog-actions">${closeIcon}</td>
                 <td>${escapeHtml(dialog.topic_name)}</td>
-                <td>${partnerLabel}</td>
-                <td class="last-message-preview">${escapeHtml(dialog.last_message_preview?.substring(0, 50) || '—')}</td>
                 <td>${formatDate(dialog.updated_at)}</td>
             `;
 
@@ -113,10 +111,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 openChatModal(dialog.id);
             });
 
-            // Обработчик клика по кнопке закрытия
+            // Обработчик по кнопке закрытия
             const closeBtn = row.querySelector('.dialog-close-btn');
             closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // не открывать чат
+                e.stopPropagation();
                 confirmCloseDialog(dialog.id);
             });
 
@@ -335,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function () {
         submitBtn.textContent = 'Отправка...';
 
         try {
-            const response = await fetch('/api/chat/dialogs', {
+            const response = await fetch('/api/chat/dialogs/user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',

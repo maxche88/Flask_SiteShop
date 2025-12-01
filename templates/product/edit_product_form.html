@@ -2,7 +2,6 @@
 
 
 {% block link %}
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/auth_form.css') }}">
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/add_products_form.css') }}">
 {% endblock %}
 
@@ -36,8 +35,14 @@
         <div id="product-card-preview-wrapper" class="product-card-preview hidden">
             <div class="product-card">
                 <div class="img_container">
-                    <img class="img_cont" src="/static{{ product.link_img }}" alt="Фото товара">
-                    <div class="badge">Акция</div>
+                    <img 
+                        class="img_cont" 
+                        id="preview-image"
+                        src="/static{{ product.link_img }}" 
+                        data-original-src="{{ product.link_img }}"
+                        alt="Фото товара"
+                    >
+                    <div class="badge-preview">Акция</div>
                 </div>
 
                 <div class="info_product">
@@ -55,7 +60,9 @@
 
                     <div class="block_buy">
                         <div class="price_product">
-                            <p id="preview-price">{{ product.price }} ₽</p>
+                            <div class="background_gradient">
+                                <p class="price-value" id="preview-price">{{ product.price }} ₽</p>
+                            </div>
                         </div>
 
                         <div class="user-actions disabled">
@@ -64,8 +71,7 @@
                                 Купить
                             </div>
                             <div class="cart-icon" title="Добавить в корзину">
-                                <img class="img_c" src="{{ url_for('static', filename='img/other/cart-add-mini.svg') }}"
-                                    alt="В корзину" width="25" height="25">
+                                {{ cart_add_mini(size=24, cls="add_cart") }}
                             </div>
                         </div>
 
@@ -165,5 +171,5 @@
 {% endblock %}
 
 {% block js %}
-<script src="{{ url_for('static', filename='js/form_edit_products.js') }}"></script>
+<script src="{{ url_for('static', filename='js/edit_products.js') }}"></script>
 {% endblock %}
