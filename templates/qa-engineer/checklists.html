@@ -69,7 +69,7 @@
     </div>
 </div>
 
-<!-- Модальное окно: создание / редактирование чек-листа -->
+<!-- Модальное окно: создание -->
 <div class="modal-backdrop" id="checklistModalBackdrop">
     <div class="modal-card">
         <div class="modal-header">
@@ -92,7 +92,6 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Пункты чек-листа</label>
                 <div id="checklistItemsContainer" class="checklist-items-container">
                     <!-- Динамически добавляются через JS -->
                 </div>
@@ -125,11 +124,16 @@
 <!-- Шаблон пункта чек-листа в форме -->
 <template id="checklist-item-template">
     <div class="checklist-item-row">
-        <input type="checkbox" class="item-done-checkbox" disabled>
         <input type="text" class="form-input item-text-input" placeholder="Описание пункта..." required minlength="3" maxlength="200">
-        <button type="button" class="remove-item-btn" title="Удалить пункт">{{ remove(size=18, cls="") }}</button>
+        <select class="form-select item-result-select" required>
+            <option value="passed">Passed</option>
+            <option value="failed">Failed</option>
+            <option value="blocked">Blocked</option>
+            <option value="skipped">Skipped</option>
+        </select>
+        <input type="text" class="form-input item-comment-input" placeholder="Комментарий">
+        <button type="button" class="remove-item-btn" title="Удалить пункт">{{ remove(size=32, cls="") }}</button>
     </div>
-
 </template>
 {% endblock %}
 

@@ -137,14 +137,18 @@ def update_checklist(checklist_id):
     if not isinstance(raw_items, list):
         return jsonify({'error': 'Пункты должны быть массивом'}), 400
 
+    valid_results = {'passed', 'failed', 'blocked', 'skipped'}
+
     items = []
     for item in raw_items:
         text = (item.get('text') or '').strip()
-        if text:
-            items.append({
-                'text': text,
-                'is_done': bool(item.get('is_done', False))
-            })
+        if not text:
+            continue
+        result = item.get('result')
+        if result not in valid_results:
+            result = 'passed'
+        comment = (item.get('comment') or '').strip()
+        items.append({'text': text, 'result': result, 'comment': comment})
 
     if not items:
         return jsonify({'error': 'Нет валидных пунктов'}), 400

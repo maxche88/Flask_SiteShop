@@ -168,22 +168,24 @@ document.addEventListener('DOMContentLoaded', () => {
         addItemBtn.addEventListener('click', () => addItemRow());
     }
 
-    function addItemRow(text = '', isDone = false) {
+    function addItemRow(text = '', result = 'passed', comment = '') {
         const template = document.getElementById('checklist-item-template');
         const row = template.content.cloneNode(true).querySelector('.checklist-item-row');
         const input = row.querySelector('.item-text-input');
-        const checkbox = row.querySelector('.item-done-checkbox');
+        const select = row.querySelector('.item-result-select');
+        const commentInput = row.querySelector('.item-comment-input');
         const removeBtn = row.querySelector('.remove-item-btn');
 
         input.value = text;
-        checkbox.checked = isDone;
-        checkbox.disabled = false;
+        select.value = result;
+        commentInput.value = comment;
 
         removeBtn.addEventListener('click', () => row.remove());
 
         if (itemsContainer) itemsContainer.appendChild(row);
     }
 
+    // В обработчике отправки формы:
     if (checklistForm) {
         checklistForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -197,8 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const rows = itemsContainer.querySelectorAll('.checklist-item-row');
             rows.forEach(row => {
                 const text = row.querySelector('.item-text-input').value.trim();
-                const done = row.querySelector('.item-done-checkbox').checked;
-                if (text) items.push({ text, is_done: done });
+                const result = row.querySelector('.item-result-select').value;
+                const comment = row.querySelector('.item-comment-input').value.trim();
+                if (text) {
+                    items.push({ text, result, comment });
+                }
             });
 
             if (items.length === 0) {
