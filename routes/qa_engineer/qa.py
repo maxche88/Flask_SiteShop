@@ -27,6 +27,7 @@ def checklists_page():
         return redirect(url_for('main.index'))
     return render_template('qa-engineer/checklists.html')
 
+
 # === GET: все чек-листы текущего пользователя ===
 @qa_bp.route('/api/checklists', methods=['GET'])
 def get_checklists():
@@ -52,6 +53,7 @@ def get_checklists():
 
     return jsonify(result), 200
 
+
 # === POST: создать чек-лист ===
 @qa_bp.route('/api/checklists', methods=['POST'])
 def create_checklist():
@@ -70,12 +72,14 @@ def create_checklist():
 
     # Валидация и фильтрация пунктов
     items = []
-    for item in raw_items:
-        text = (item.get('text') or '').strip()
-        if text:
+    for idx, item in enumerate(raw_items):
+        action_name = (item.get('action_name') or '').strip()
+        if action_name:
             items.append({
-                'text': text,
-                'is_done': bool(item.get('is_done', False))
+                'id_item': idx + 1,
+                'action_name': action_name,
+                'result': None,
+                'comment': '',
             })
 
     if not items:
@@ -117,9 +121,10 @@ def get_checklist(checklist_id):
         'updated_at': cl.updated_at.isoformat()
     }), 200
 
-# === PATCH: обновить чек-лист (название + пункты) ===
+
+# === PATCH: полное редактирование чек-листа с пересчётом ===
 @qa_bp.route('/api/checklists/<int:checklist_id>', methods=['PATCH'])
-def update_checklist(checklist_id):
+def update_checklist_full(checklist_id):
     user = g.current_user
     if user.role not in ['tester', 'admin']:
         return jsonify({'error': 'Доступ запрещён'}), 403
@@ -129,42 +134,128 @@ def update_checklist(checklist_id):
         return jsonify({'error': 'Чек-лист не найден'}), 404
 
     data = request.get_json()
-    title = (data.get('title') or '').strip()
-    raw_items = data.get('items', [])
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Ожидается объект'}), 400
 
-    if not title:
-        return jsonify({'error': 'Требуется название'}), 400
-    if not isinstance(raw_items, list):
-        return jsonify({'error': 'Пункты должны быть массивом'}), 400
+    changed = False
 
-    valid_results = {'passed', 'failed', 'blocked', 'skipped'}
+    # Обновляем title
+    if 'title' in data:
+        title = (data['title'] or '').strip()
+        if not title:
+            return jsonify({'error': 'Название не может быть пустым'}), 400
+        cl.title = title
+        changed = True
 
-    items = []
-    for item in raw_items:
-        text = (item.get('text') or '').strip()
-        if not text:
-            continue
-        result = item.get('result')
-        if result not in valid_results:
-            result = 'passed'
-        comment = (item.get('comment') or '').strip()
-        items.append({'text': text, 'result': result, 'comment': comment})
+    # Обновляем пункты
+    if 'items' in data:
+        raw_items = data['items']
+        if not isinstance(raw_items, list):
+            return jsonify({'error': 'Пункты должны быть массивом'}), 400
 
-    if not items:
-        return jsonify({'error': 'Нет валидных пунктов'}), 400
+        old_items = cl.items or []
+        new_items = []
+
+        for idx, item_update in enumerate(raw_items):
+            if not isinstance(item_update, dict):
+                return jsonify({'error': 'Каждый пункт должен быть объектом'}), 400
+
+            action_name = (item_update.get('action_name') or '').strip()
+            if not action_name:
+                return jsonify({'error': 'Название действия обязательно'}), 400
+
+            # Сопоставляем по индексу: если индекс в пределах старого массива — берём данные
+            if idx < len(old_items):
+                old_item = old_items[idx]
+                result = old_item.get('result')
+                comment = old_item.get('comment', '')
+            else:
+                result = None
+                comment = ''
+
+            new_items.append({
+                'id_item': idx + 1,
+                'action_name': action_name,
+                'result': result,
+                'comment': comment
+            })
+
+        cl.items = new_items
+        changed = True
+
+    if not changed:
+        return jsonify({'error': 'Нечего обновлять'}), 400
 
     try:
-        cl.title = title
-        cl.items = items
         db.session.commit()
         return jsonify({'message': 'Чек-лист обновлён'}), 200
-
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Ошибка обновления чек-листа {checklist_id}: {e}")
         return jsonify({'error': 'Ошибка сервера'}), 500
 
-# === PATCH: отметить все пункты как выполненные ===
+
+# === PATCH: обновить отдельный пункт чек-листа по индексу ===
+@qa_bp.route('/api/checklists/<int:checklist_id>/items/<int:index>', methods=['PATCH'])
+def update_checklist_item(checklist_id, index):
+    user = g.current_user
+    if user.role not in ['tester', 'admin']:
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    cl = Checklist.query.filter_by(id=checklist_id, author_id=g.current_user_id).first()
+    if not cl:
+        return jsonify({'error': 'Чек-лист не найден'}), 404
+
+    items = cl.items
+    if not isinstance(items, list) or index < 0 or index >= len(items):
+        return jsonify({'error': 'Неверный индекс пункта'}), 400
+
+    data = request.get_json()
+    if not isinstance(data, dict) or not data:
+        return jsonify({'error': 'Ожидается объект с полями для обновления'}), 400
+
+    item = items[index]
+    valid_results = {'passed', 'failed', 'blocked', 'skipped'}
+    updated = False
+
+    # Обновляем action_name
+    if 'action_name' in data:
+        action_name = (data['action_name'] or '').strip()
+        if not action_name:
+            return jsonify({'error': 'Название действия не может быть пустым'}), 400
+        item['action_name'] = action_name
+        updated = True
+
+    # Обновляем result
+    if 'result' in data:
+        result = data['result']
+        if result is not None and result not in valid_results:
+            return jsonify({'error': 'Недопустимое значение result'}), 400
+        item['result'] = result
+        updated = True
+
+    # Обновляем comment
+    if 'comment' in data:
+        comment = data['comment']
+        if not isinstance(comment, str):
+            return jsonify({'error': 'Комментарий должен быть строкой'}), 400
+        item['comment'] = comment.strip()
+        updated = True
+
+    if not updated:
+        return jsonify({'error': 'Нечего обновлять в пункте'}), 400
+
+    try:
+        cl.items = items
+        db.session.commit()
+        return jsonify({'message': 'Пункт обновлён'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Ошибка обновления пункта {index} в чек-листе {checklist_id}: {e}")
+        return jsonify({'error': 'Ошибка сервера'}), 500
+
+
+# === PATCH: отметить все пункты как выполненные (result = 'passed') ===
 @qa_bp.route('/api/checklists/<int:checklist_id>/mark-all-done', methods=['PATCH'])
 def mark_all_items_done(checklist_id):
     user = g.current_user
@@ -177,9 +268,13 @@ def mark_all_items_done(checklist_id):
 
     try:
         items = cl.items
+        if not isinstance(items, list):
+            return jsonify({'error': 'Некорректная структура пунктов'}), 500
+
         for item in items:
-            item['is_done'] = True
-        cl.items = items  # обновляет JSON и триггерит updated_at
+            item['result'] = 'passed'
+
+        cl.items = items
         db.session.commit()
         return jsonify({'message': 'Все пункты отмечены как выполненные'}), 200
 

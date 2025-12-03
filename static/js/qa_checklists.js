@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // =================================================
+    // 🔧 ИНИЦИАЛИЗАЦИЯ ЭЛЕМЕНТОВ
+    // =================================================
     const tableContainer = document.getElementById('checklistsTableContainer');
     const messageDiv = document.getElementById('checklistsMessage');
     const openCreateBtn = document.getElementById('openCreateChecklistModalBtn');
@@ -9,14 +12,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsContainer = document.getElementById('checklistItemsContainer');
     const addItemBtn = document.getElementById('addChecklistItemBtn');
     const cancelBtn = document.getElementById('cancelChecklistBtn');
-    const clearFormBtn = document.getElementById('clearChecklistFormBtn');
     const closeViewBtn = document.getElementById('closeViewChecklistModalBtn');
     const btnEditInModal = document.getElementById('btnEditChecklistInModal');
-    const btnMarkAllDone = document.getElementById('btnMarkAllDone');
     const selectAll = document.getElementById('selectAllChecklists');
 
     let currentChecklistId = null;
+    let currentChecklistData = null;
 
+    // =================================================
+    // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+    // =================================================
     function showMessage(text, isError = false) {
         if (!messageDiv) return;
         messageDiv.textContent = text;
@@ -52,6 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
     }
 
+    // =================================================
+    // ЗАГРУЗКА И ОТОБРАЖЕНИЕ СПИСКА ЧЕК-ЛИСТОВ
+    // =================================================
     async function loadChecklists() {
         try {
             const res = await fetch('/api/checklists');
@@ -88,13 +96,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // =================================================
+    // РЕЖИМ ВЫПОЛНЕНИЯ ЧЕК-ЛИСТА
+    // =================================================
     async function openViewChecklist(id) {
         try {
-            currentChecklistId = id;
             const res = await fetch(`/api/checklists/${id}`);
             if (!res.ok) throw new Error('Чек-лист не найден');
             const checklist = await res.json();
-            renderViewChecklist(checklist);
+            currentChecklistId = id;
+            currentChecklistData = checklist;
+            renderExecutionView(checklist);
             viewModal.classList.add('is-open');
         } catch (err) {
             console.error(err);
@@ -102,29 +114,148 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function renderViewChecklist(checklist) {
+    function renderExecutionView(checklist) {
         document.getElementById('viewChecklistId').textContent = checklist.id;
+        document.getElementById('viewChecklistTitle').textContent = checklist.title;
         const content = document.getElementById('viewChecklistContent');
         content.innerHTML = '';
 
-        checklist.items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = `checklist-item-view ${item.is_done ? 'completed' : ''}`;
-            div.innerHTML = `
-                <input type="checkbox" class="checklist-item-checkbox" ${item.is_done ? 'checked' : ''} disabled>
-                <span class="checklist-item-text">${escapeHtml(item.text)}</span>
-            `;
-            content.appendChild(div);
-        });
-
         if (checklist.items.length === 0) {
             content.innerHTML = '<em>Нет пунктов</em>';
+            return;
+        }
+
+        const template = document.getElementById('checklist-item-execution-template');
+
+        checklist.items.forEach((item, index) => {
+            const row = template.content.cloneNode(true).querySelector('.checklist-item-execution');
+            row.dataset.itemIndex = index;
+            
+            const commentInput = row.querySelector('.comment-input');
+            if (commentInput) {
+                commentInput.id = `comment-input-${currentChecklistId}-${index}`;
+                commentInput.name = `comment_${index}`;
+            }
+
+
+            // Отображаем номер пункта (из данных)
+            row.querySelector('.item-number').textContent = item.id_item || (index + 1);
+
+            // Отображаем название действия
+            row.querySelector('.checklist-item-text').textContent = escapeHtml(item.action_name);
+
+            // Отображаем название действия с tooltip
+            const textEl = row.querySelector('.checklist-item-text');
+            textEl.textContent = escapeHtml(item.action_name);
+            textEl.title = item.comment || 'Комментарий отсутствует';
+
+            // Статус
+            const statusBtns = row.querySelectorAll('.status-btn');
+            const currentResult = item.result || 'skipped';
+            statusBtns.forEach(btn => {
+                const btnStatus = btn.classList[1];
+                if (currentResult === btnStatus) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // Комментарий
+            const commentToggle = row.querySelector('.comment-toggle-btn');
+
+            // Обновляем состояние иконки
+            if (item.comment) {
+                commentToggle.classList.add('has-comment');
+                commentToggle.title = 'Редактировать комментарий';
+            } else {
+                commentToggle.classList.remove('has-comment');
+                commentToggle.title = 'Добавить комментарий';
+            }
+
+            commentInput.value = item.comment || '';
+
+            // Обработчики статусов
+            statusBtns.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const newStatus = btn.classList[1];
+                    await updateChecklistItem(index, { result: newStatus });
+
+                    // Обновляем UI
+                    statusBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // Обновляем кэш
+                    currentChecklistData.items[index].result = newStatus;
+                    loadChecklists();
+                });
+            });
+
+            // Комментарий: переключение
+            commentToggle.addEventListener('click', () => {
+                const commentSection = row.querySelector('.comment-section');
+                const isOpen = commentSection.style.display === 'block';
+                commentSection.style.display = isOpen ? 'none' : 'block';
+                if (!isOpen) commentInput.focus();
+            });
+
+            // Комментарий: отмена
+            row.querySelector('.comment-cancel').addEventListener('click', () => {
+                row.querySelector('.comment-section').style.display = 'none';
+            });
+
+            // Комментарий: сохранение
+            row.querySelector('.comment-save').addEventListener('click', async () => {
+                const newComment = commentInput.value.trim();
+                await updateChecklistItem(index, { comment: newComment });
+
+                // Обновляем UI
+                if (newComment) {
+                    commentToggle.classList.add('has-comment');
+                } else {
+                    commentToggle.classList.remove('has-comment');
+}
+
+                // Обновляем кэш
+                currentChecklistData.items[index].comment = newComment;
+                row.querySelector('.comment-section').style.display = 'none';
+                loadChecklists();
+            });
+
+            content.appendChild(row);
+        });
+    }
+
+    // =================================================
+    // ЧАСТИЧНОЕ ОБНОВЛЕНИЕ ПУНКТА (ПО ИНДЕКСУ)
+    // =================================================
+    async function updateChecklistItem(itemIndex, updateData) {
+        try {
+            const res = await fetch(`/api/checklists/${currentChecklistId}/items/${itemIndex}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateData)
+            });
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Неизвестная ошибка');
+            }
+
+            // Обновляем локальный кэш
+            if (currentChecklistData?.items[itemIndex]) {
+                Object.assign(currentChecklistData.items[itemIndex], updateData);
+            }
+        } catch (err) {
+            console.error('Ошибка сохранения пункта:', err);
+            alert('Не удалось сохранить изменения. Проверьте соединение.');
         }
     }
 
+    // =================================================
+    // СОЗДАНИЕ / РЕДАКТИРОВАНИЕ ЧЕК-ЛИСТА
+    // =================================================
     if (openCreateBtn && createModal) {
         openCreateBtn.addEventListener('click', () => {
             currentChecklistId = null;
+            currentChecklistData = null;
             document.getElementById('checklistModalTitle').textContent = 'Новый чек-лист';
             checklistForm.reset();
             if (itemsContainer) itemsContainer.innerHTML = '';
@@ -136,16 +267,30 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelBtn.addEventListener('click', () => createModal.classList.remove('is-open'));
     }
 
-    if (closeViewBtn && viewModal) {
-        closeViewBtn.addEventListener('click', () => viewModal.classList.remove('is-open'));
-    }
-
     if (btnEditInModal && createModal && viewModal) {
         btnEditInModal.addEventListener('click', () => {
             viewModal.classList.remove('is-open');
             createModal.classList.add('is-open');
             loadChecklistForEdit(currentChecklistId);
         });
+    }
+
+    if (addItemBtn) {
+        addItemBtn.addEventListener('click', () => addItemRow());
+    }
+
+    function addItemRow(text = '') {
+        const template = document.getElementById('checklist-item-template');
+        const row = template.content.cloneNode(true).querySelector('.checklist-item-row');
+        const input = row.querySelector('.item-text-input');
+        const removeBtn = row.querySelector('.remove-item-btn');
+
+        input.value = text;
+
+        // Удаление — только из DOM
+        removeBtn.addEventListener('click', () => row.remove());
+
+        if (itemsContainer) itemsContainer.appendChild(row);
     }
 
     async function loadChecklistForEdit(id) {
@@ -155,7 +300,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const cl = await res.json();
             checklistTitle.value = cl.title;
             if (itemsContainer) itemsContainer.innerHTML = '';
-            cl.items.forEach(item => addItemRow(item.text, item.is_done));
+            // Загружаем только текст пунктов
+            cl.items.forEach(item => addItemRow(item.action_name));
             document.getElementById('checklistModalTitle').textContent = `Редактировать чек-лист #${id}`;
             currentChecklistId = id;
         } catch (err) {
@@ -164,28 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (addItemBtn) {
-        addItemBtn.addEventListener('click', () => addItemRow());
-    }
-
-    function addItemRow(text = '', result = 'passed', comment = '') {
-        const template = document.getElementById('checklist-item-template');
-        const row = template.content.cloneNode(true).querySelector('.checklist-item-row');
-        const input = row.querySelector('.item-text-input');
-        const select = row.querySelector('.item-result-select');
-        const commentInput = row.querySelector('.item-comment-input');
-        const removeBtn = row.querySelector('.remove-item-btn');
-
-        input.value = text;
-        select.value = result;
-        commentInput.value = comment;
-
-        removeBtn.addEventListener('click', () => row.remove());
-
-        if (itemsContainer) itemsContainer.appendChild(row);
-    }
-
-    // В обработчике отправки формы:
     if (checklistForm) {
         checklistForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -199,10 +323,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const rows = itemsContainer.querySelectorAll('.checklist-item-row');
             rows.forEach(row => {
                 const text = row.querySelector('.item-text-input').value.trim();
-                const result = row.querySelector('.item-result-select').value;
-                const comment = row.querySelector('.item-comment-input').value.trim();
                 if (text) {
-                    items.push({ text, result, comment });
+                    items.push({ action_name: text });
                 }
             });
 
@@ -226,6 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
                 if (res.ok) {
                     alert(currentChecklistId ? 'Чек-лист обновлён!' : 'Чек-лист создан!');
                     createModal.classList.remove('is-open');
@@ -241,46 +364,57 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (clearFormBtn && itemsContainer) {
-        clearFormBtn.addEventListener('click', () => {
-            checklistForm.reset();
-            itemsContainer.innerHTML = '';
+    // =================================================
+    // ЗАКРЫТИЕ МОДАЛКИ И КНОПКИ "ОТМЕТИТЬ ВСЁ"
+    // =================================================
+    if (closeViewBtn && viewModal) {
+        closeViewBtn.addEventListener('click', () => {
+            viewModal.classList.remove('is-open');
         });
     }
 
-    if (btnMarkAllDone) {
-        btnMarkAllDone.addEventListener('click', async () => {
+    // Кнопка "Отметить всё" в хедере модалки
+    const headerMarkAllDoneBtn = document.getElementById('headerMarkAllDoneBtn');
+    if (headerMarkAllDoneBtn) {
+        headerMarkAllDoneBtn.addEventListener('click', async () => {
             if (!currentChecklistId) return;
             if (!confirm('Отметить все пункты как выполненные?')) return;
-            try {
-                const res = await fetch(`/api/checklists/${currentChecklistId}/mark-all-done`, {
-                    method: 'PATCH'
-                });
-                if (res.ok) {
-                    alert('Все пункты отмечены как выполненные');
-                    await openViewChecklist(currentChecklistId);
-                    loadChecklists();
-                } else {
-                    alert('Не удалось обновить');
-                }
-            } catch (err) {
-                alert('Ошибка сети');
-                console.error(err);
-            }
+            await markAllItemsAsDone();
         });
     }
 
+    async function markAllItemsAsDone() {
+        try {
+            const res = await fetch(`/api/checklists/${currentChecklistId}/mark-all-done`, {
+                method: 'PATCH'
+            });
+            if (res.ok) {
+                await openViewChecklist(currentChecklistId);
+                loadChecklists();
+            } else {
+                const data = await res.json();
+                alert('Ошибка: ' + (data.error || 'не удалось обновить'));
+            }
+        } catch (err) {
+            alert('Ошибка сети');
+            console.error(err);
+        }
+    }
+
+    // Открытие чек-листа по клику на название
     if (tableContainer) {
         tableContainer.addEventListener('click', (e) => {
             const titleCell = e.target.closest('.title-cell');
             if (!titleCell) return;
             const row = titleCell.closest('.checklist-row');
             const id = row.querySelector('.checklist-checkbox').dataset.id;
-            openViewChecklist(id);
+            openViewChecklist(Number(id));
         });
     }
 
-    // === Кнопка удаления выбранных чек-листов ===
+    // =================================================
+    // УДАЛЕНИЕ ЧЕК-ЛИСТОВ
+    // =================================================
     const btnDeleteSelected = document.getElementById('openDeleteChecklistBtn');
 
     function updateDeleteButton() {
@@ -289,7 +423,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnDeleteSelected.disabled = checked.length === 0;
     }
 
-    // Обновление состояния кнопки при изменении чекбоксов
     if (tableContainer) {
         tableContainer.addEventListener('change', updateDeleteButton);
     }
@@ -297,7 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
         selectAll.addEventListener('change', updateDeleteButton);
     }
 
-    // Обработчик удаления
     if (btnDeleteSelected) {
         btnDeleteSelected.addEventListener('click', async () => {
             const checked = tableContainer.querySelectorAll('.checklist-checkbox:checked');
