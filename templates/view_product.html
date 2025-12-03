@@ -77,7 +77,7 @@
             <!-- Блок кнопок -->
             <div class="product-actions-view">
                 <!-- Кнопки корзины ТОЛЬКО для авторизованных пользователей -->
-                {% if role %}
+                {% if role == 'user' %}
                 <div class="user-actions-view">
                     <div class="btn_buy" data-product-id="{{ product.id }}">
                         <div class="btn_text"></div>

@@ -1,0 +1,126 @@
+.profile-container {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.info-panel {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.info-panel h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+.profile-field {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.field-label {
+    flex: 0 0 120px;
+    font-weight: 600;
+    color: #444;
+    align-self: center;
+}
+
+.field-value {
+    flex: 1;
+    min-width: 0;
+    color: #222;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+/* Статус-бейдж */
+.status-badge {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.85rem;
+    font-weight: normal;
+}
+
+.status-confirmed {
+    color: #2e7d32;
+}
+
+.status-warning {
+    color: #d84315;
+}
+
+/* Группа: значение + кнопка редактирования */
+.field-value-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+
+/* Кнопка редактирования */
+.edit-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #555;
+    font-size: 12px;
+    opacity: 0.7;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+
+.edit-btn:hover {
+    opacity: 1;
+    background-color: #f0f0f0;
+}
+
+/* Кнопка "Изменить пароль" */
+.password-section .btn {
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    height: auto;
+}
+
+
+@media (max-width: 600px) {
+    .profile-field {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .field-label {
+        flex: none;
+    }
+
+    .edit-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+
+    .password-section .btn {
+        width: 100%;
+        margin-top: 8px;
+    }
+
+    .password-section .field-value-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

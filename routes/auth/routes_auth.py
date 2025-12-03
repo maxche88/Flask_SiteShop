@@ -1,7 +1,7 @@
 # Регистрация. Аутентификация и управление сессией.
 import logging
-from flask import Blueprint, request, redirect, url_for, render_template, jsonify, make_response
-from flask_jwt_extended import get_jwt_identity, get_jwt_identity, decode_token, verify_jwt_in_request, get_jwt, unset_jwt_cookies
+from flask import Blueprint, request, redirect, url_for, render_template, jsonify, make_response, g, current_app
+from flask_jwt_extended import get_jwt_identity, get_jwt_identity, decode_token, verify_jwt_in_request, get_jwt, unset_jwt_cookies, create_access_token
 from flask import request
 from extensions import db
 from models import User, UserToken, IPAttemptLog
@@ -10,7 +10,7 @@ from utils.mail import send_password_reset_email, send_confirm_email, normalize_
 from utils.ip_log import get_client_ip, get_or_create_ip_log, decrement_recovery_attempts, bind_ip_to_user_and_reset_attempts, update_ip_log_with_user_agent
 from utils.user_sessions import create_access_token_for_user
 from utils.responses import render_or_json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 auth_bp = Blueprint('session', __name__)
@@ -266,7 +266,7 @@ def logout():
 
 
 @auth_bp.route('/reset-password', methods=['GET', 'POST'])
-def reset_password_():
+def reset_password():
     """
     Восстановление пароля.
     Инициирует процесс сброса пароля: проверяет email,
@@ -398,3 +398,105 @@ def reset_password_with_token():
         
     return render_template('auth/reset_password_form.html', token=token)
 
+
+@auth_bp.route('/confirm-email-change', methods=['GET'])
+def confirm_email_change():
+    token = request.args.get('token')
+    if not token:
+        return render_template('auth/confirm_email.html', error="Токен не предоставлен."), 400
+
+    try:
+        from flask_jwt_extended import decode_token
+        decoded = decode_token(token)
+
+        if decoded.get('type') != 'email_change':
+            raise ValueError("Неверный тип токена")
+
+        user_id = decoded.get('user_id')
+        new_email = decoded.get('sub')
+
+        if not user_id or not new_email:
+            raise ValueError("Отсутствуют user_id или email")
+
+        user = User.query.get(user_id)
+        if not user or user.pending_email != new_email:
+            raise ValueError("Несоответствие данных")
+
+        if User.query.filter(User.id != user.id, User.email == new_email).first():
+            raise ValueError("Email уже занят")
+
+        # Применяем
+        old_email = user.email
+        user.email = user.pending_email
+        user.pending_email = None
+        db.session.commit()
+
+        auth_logger.info(f"Email изменён: {old_email} → {user.email}")
+        return render_template('auth/confirm_email.html', message="Email успешно изменён!")
+
+    except Exception as e:
+        auth_logger.warning(f"Ошибка подтверждения email: {str(e)}")
+        return render_template('auth/confirm_email.html', error="Неверный или просроченный токен."), 400
+
+
+@auth_bp.route('/change-email-request', methods=['POST'])
+def change_email_request():
+    """
+    Приватный роутер: запрашивает смену email.
+    Доступен только авторизованным пользователям.
+    """
+    user = g.current_user
+
+    data = request.get_json()
+    if not data or 'email' not in data:
+        return jsonify({'success': False, 'errors': ['Неверный формат данных']}), 400
+
+    new_raw_email = data['email'].strip()
+    if not new_raw_email:
+        return jsonify({'success': False, 'errors': ['Email обязателен']}), 400
+
+    # Простая валидация
+    if '@' not in new_raw_email or '.' not in new_raw_email.split('@')[-1]:
+        return jsonify({'success': False, 'errors': ['Некорректный email']}), 400
+
+    new_email = new_raw_email.lower()
+
+    # Нельзя изменить на тот же
+    if new_email == user.email:
+        return jsonify({'success': False, 'errors': ['Это текущий email']}), 400
+
+    # Проверка уникальности
+    if User.query.filter(User.email == new_email).first():
+        return jsonify({'success': False, 'errors': ['Email уже используется']}), 409
+
+    # Сохраняем во временное поле
+    user.pending_email = new_email
+    db.session.commit()
+
+    # Генерируем JWT-токен
+    ttl_minutes = current_app.config.get('UNCONFIRMED_USER_TTL_MINUTES', 1440)
+    token = create_access_token(
+        identity=new_email,
+        expires_delta=timedelta(minutes=ttl_minutes),
+        additional_claims={
+            'type': 'email_change',
+            'user_id': user.id
+        }
+    )
+
+    # Формируем ссылку
+    confirm_url = url_for('session.confirm_email_change', token=token, _external=True)
+
+    # Отправляем письмо на НОВЫЙ email
+    if not send_confirm_email(new_email, confirm_url):
+        # Откатываем при ошибке отправки
+        user.pending_email = None
+        db.session.commit()
+        auth_logger.error(f"Не удалось отправить письмо смены email на {new_email}, user_id={user.id}")
+        return jsonify({'success': False, 'errors': ['Не удалось отправить письмо. Проверьте email.']}), 500
+
+    auth_logger.info(f"Запрос смены email: user_id={user.id}, новый={new_email}")
+    return jsonify({
+        'success': True,
+        'message': 'На новый email отправлена ссылка для подтверждения. Перейдите по ней, чтобы завершить смену.'
+    })

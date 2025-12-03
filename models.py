@@ -18,6 +18,7 @@ class User(db.Model):
     role = db.Column(db.String(6), default="user")
     avatar_url = db.Column(db.String(255), default="/img/avatars/default_user.png")
     confirm_email = db.Column(db.Boolean, default=False)
+    pending_email = db.Column(db.String(120), unique=True, nullable=True)
     created_at = db.Column(db.DateTime(timezone=True), default=func.now(), nullable=False)
 
     def set_password(self, password):

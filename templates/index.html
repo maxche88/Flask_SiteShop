@@ -20,7 +20,7 @@
 
     <!-- Выпадающее меню администратора -->
     <div class="dropdown-menu" id="account-menu">
-        <a href="{{ url_for('panel_a.admin_acaunt') }}">Личный кабинет</a>
+        <a href="{{ url_for('user.profile') }}">Личный кабинет</a>
         <a href="{{ url_for('panel_a.admin_panel') }}">Admin panel</a>
         <!-- Вложенное меню "Тестирование" -->
         <li class="menu-item-has-submenu">
@@ -48,7 +48,7 @@
 
     <!-- Выпадающее меню менеджера -->
     <div class="dropdown-menu" id="account-menu">
-        <a href="{{ url_for('panel_s.suser_panel_acaunt') }}">Личный кабинет</a>
+        <a href="{{ url_for('user.profile') }}">Личный кабинет</a>
         <a href="{{ url_for('product_edit.product') }}">Управление товарами</a>
         <a href="{{ url_for('chat_ui.messages_panel') }}" class="menu-item-with-badge">
             Cообщения
@@ -67,7 +67,7 @@
 
     <!-- Выпадающее меню покупателя -->
     <div class="dropdown-menu" id="account-menu">
-        <a href="{{ url_for('user_ui.user_accaunt') }}">Личный кабинет</a>
+        <a href="{{ url_for('user.profile') }}">Личный кабинет</a>
         <a href="{{ url_for('user_ui.user_order') }}">Мои заказы</a>
         <a href="{{ url_for('chat_ui.my_messages') }}" class="menu-item-with-badge">
             Cообщения
@@ -85,7 +85,7 @@
 
     <!-- Контейнер иконки и тестировщика -->
     <div class="dropdown-menu" id="account-menu">
-        <a href="{{ url_for('user_ui.user_accaunt') }}">Личный кабинет</a>
+        <a href="{{ url_for('user.profile') }}">Личный кабинет</a>
         <!-- Вложенное меню "Тестирование" -->
         <li class="menu-item-has-submenu">
             <a href="#" class="submenu-trigger">Тестирование</a>
