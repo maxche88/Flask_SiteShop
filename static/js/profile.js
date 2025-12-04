@@ -1,23 +1,48 @@
+/**
+ * Модуль управления интерфейсом личного кабинета пользователя.
+ * Инициализирует обработчики для редактирования имени, email и смены пароля.
+ * Использует данные, переданные из шаблона через скрытый JSON-элемент.
+ */
 (function () {
+    // === Извлечение данных, переданных из бэкенда ===
     const PROFILE_DATA = JSON.parse(document.getElementById('profile-data').textContent);
+    const globalNotification = document.getElementById('globalNotification');
 
-    // === Смена пароля ===
-    const changePasswordBtn = document.getElementById('changePasswordBtn');
-    if (changePasswordBtn) {
-        changePasswordBtn.addEventListener('click', async function () {
-            const { email } = PROFILE_DATA;
-            if (!confirm(`Отправить ссылку для смены пароля на ваш email:\n${email}?`)) return;
+    // === Вспомогательная функция: отображение временного уведомления ===
+    function showNotification(element, message, isSuccess) {
+        if (!element) return;
 
-            const btn = this;
-            const notificationEl = document.getElementById('passwordNotification');
-            btn.disabled = true;
-            btn.title = "Отправка...";
+        element.textContent = message;
+        element.style.display = "block";
+        element.style.backgroundColor = isSuccess ? "#e8f5e9" : "#ffebee";
+        element.style.color = isSuccess ? "#2e7d32" : "#c62828";
+        element.style.border = isSuccess ? "1px solid #a5d6a7" : "1px solid #ffcdd2";
+
+        setTimeout(() => {
+            element.style.display = "none";
+        }, 5000);
+    }
+
+    // === === === БЛОК: СМЕНА ПАРОЛЯ === === ===
+    const changePasswordButton = document.getElementById('changePasswordBtn');
+    if (changePasswordButton) {
+        changePasswordButton.addEventListener('click', async function () {
+            const userEmail = PROFILE_DATA.email;
+
+            // Подтверждение
+            if (!confirm(`Отправить ссылку для смены пароля на ваш email:\n${userEmail}?`)) {
+                return;
+            }
+
+            const originalTitle = this.title;
+            this.disabled = true;
+            this.title = "Отправка...";
 
             try {
                 const response = await fetch("/reset-password", {
                     method: "POST",
                     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: `email=${encodeURIComponent(email)}`
+                    body: `email=${encodeURIComponent(userEmail)}`
                 });
 
                 const html = await response.text();
@@ -36,151 +61,241 @@
                     isSuccess = false;
                 }
 
-                showNotification(notificationEl, message, isSuccess);
+                showNotification(globalNotification, message, isSuccess);
             } catch (err) {
-                console.error("Ошибка сети:", err);
-                showNotification(notificationEl, "Ошибка подключения. Попробуйте позже.", false);
+                console.error("Ошибка сети при сбросе пароля:", err);
+                showNotification(globalNotification, "Ошибка подключения. Попробуйте позже.", false);
             } finally {
-                btn.disabled = false;
-                btn.title = "Сменить пароль";
+                this.disabled = false;
+                this.title = originalTitle;
             }
         });
     }
 
-    // === Редактирование имени ===
-    const editUsernameBtn = document.querySelector('[data-field="username"]');
-    if (editUsernameBtn) {
-        editUsernameBtn.addEventListener('click', function () {
-            const newValue = prompt("Введите новое имя:", PROFILE_DATA.username);
-            if (newValue && newValue !== PROFILE_DATA.username && newValue.trim().length >= 2) {
-                updateField('username', newValue.trim(), (updated) => {
-                    document.querySelector('[data-editable="username"]').textContent = updated;
-                    PROFILE_DATA.username = updated;
+    // === === === БЛОК: РЕДАКТИРОВАНИЕ ИМЕНИ === === ===
+    const editUsernameButton = document.querySelector('[data-field="username"]');
+    const usernameEditForm = document.getElementById('usernameEditView');
+    const newUsernameInput = document.getElementById('newUsernameInput');
+    const submitUsernameButton = document.getElementById('submitUsernameBtn');
+    const cancelUsernameButton = document.getElementById('cancelUsernameBtn');
+
+    if (editUsernameButton && usernameEditForm) {
+        editUsernameButton.addEventListener('click', () => {
+            newUsernameInput.value = PROFILE_DATA.username || '';
+            usernameEditForm.style.display = 'flex';
+            newUsernameInput.focus();
+            newUsernameInput.select();
+        });
+    }
+
+    if (cancelUsernameButton) {
+        cancelUsernameButton.addEventListener('click', () => {
+            usernameEditForm.style.display = 'none';
+            newUsernameInput.value = '';
+        });
+    }
+
+    if (submitUsernameButton) {
+        submitUsernameButton.addEventListener('click', async () => {
+            const rawValue = newUsernameInput.value.trim();
+            const currentName = PROFILE_DATA.username;
+
+            if (!rawValue) {
+                showNotification(globalNotification, "Имя не может быть пустым.", false);
+                return;
+            }
+            if (rawValue === currentName) {
+                showNotification(globalNotification, "Это текущее имя.", false);
+                return;
+            }
+            if (rawValue.length < 2) {
+                showNotification(globalNotification, "Имя должно содержать минимум 2 символа.", false);
+                return;
+            }
+
+            const originalText = submitUsernameButton.textContent;
+            submitUsernameButton.disabled = true;
+            submitUsernameButton.textContent = "Сохранение…";
+
+            try {
+                const response = await fetch("/api/user/update-username", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: rawValue })
                 });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.querySelector('[data-editable="username"]').textContent = result.username;
+                    PROFILE_DATA.username = result.username;
+                    usernameEditForm.style.display = 'none';
+                    newUsernameInput.value = '';
+                    showNotification(globalNotification, "Имя успешно изменено!", true);
+                } else {
+                    showNotification(globalNotification, result.error || "Ошибка при изменении имени.", false);
+                }
+            } catch (err) {
+                console.error("Ошибка сети при изменении имени:", err);
+                showNotification(globalNotification, "Не удалось подключиться к серверу.", false);
+            } finally {
+                submitUsernameButton.disabled = false;
+                submitUsernameButton.textContent = originalText;
             }
         });
     }
 
-    // === Редактирование email: инлайн-форма ===
-    const editEmailBtn = document.getElementById('editEmailBtn');
+    // === === === БЛОК: РЕДАКТИРОВАНИЕ EMAIL === === ===
+    const editEmailButton = document.getElementById('editEmailBtn');
     const emailStaticView = document.getElementById('emailStaticView');
-    const emailEditView = document.getElementById('emailEditView');
+    const pendingEmailView = document.getElementById('pendingEmailView');
+    const emailEditForm = document.getElementById('emailEditView');
     const newEmailInput = document.getElementById('newEmailInput');
-    const submitEmailBtn = document.getElementById('submitEmailBtn');
-    const cancelEmailBtn = document.getElementById('cancelEmailBtn');
+    const submitEmailButton = document.getElementById('submitEmailBtn');
+    const cancelEmailButton = document.getElementById('cancelEmailBtn');
+    const delPEmailButton = document.getElementById('delPEmailBtn');
 
-    if (editEmailBtn && emailStaticView && emailEditView) {
-        editEmailBtn.addEventListener('click', () => {
+    function updateEditEmailButtonState() {
+        if (!editEmailButton) return;
+        const isPending = Boolean(PROFILE_DATA.pending_email);
+        editEmailButton.disabled = isPending;
+        editEmailButton.style.opacity = isPending ? '0.5' : '0.7';
+        editEmailButton.style.pointerEvents = isPending ? 'none' : 'auto';
+        editEmailButton.title = isPending
+            ? 'Нельзя изменить: ожидается подтверждение email'
+            : 'Изменить email';
+    }
+
+    // Инициализация
+    if (PROFILE_DATA.pending_email && pendingEmailView) {
+        pendingEmailView.style.display = 'flex';
+        const valueEl = pendingEmailView.querySelector('.profile-pending-email-value');
+        if (valueEl) valueEl.textContent = PROFILE_DATA.pending_email;
+    } else if (pendingEmailView) {
+        pendingEmailView.style.display = 'none';
+    }
+    updateEditEmailButtonState();
+
+    if (editEmailButton && emailEditForm) {
+        editEmailButton.addEventListener('click', () => {
             if (PROFILE_DATA.pending_email) {
-                alert(`На ${PROFILE_DATA.pending_email} вам была отправлена ссылка для подтверждения, перейтите по ней.`);
+                // НЕОБХОДИМО ИЗМЕНИТЬ
+                alert(`На ${PROFILE_DATA.pending_email} вам была отправлена ссылка для подтверждения, перейдите по ней.`);
                 return;
             }
-
-            // Показываем форму редактирования
-            emailStaticView.style.display = 'none';
-            emailEditView.style.display = 'flex';
-            newEmailInput.value = PROFILE_DATA.email;
+            newEmailInput.value = '';
+            emailEditForm.style.display = 'flex';
             newEmailInput.focus();
-            newEmailInput.select();
         });
     }
 
-    if (cancelEmailBtn) {
-        cancelEmailBtn.addEventListener('click', () => {
-            emailStaticView.style.display = 'flex';
-            emailEditView.style.display = 'none';
+    if (cancelEmailButton) {
+        cancelEmailButton.addEventListener('click', () => {
+            emailEditForm.style.display = 'none';
+            newEmailInput.value = '';
         });
     }
 
-    if (submitEmailBtn) {
-        submitEmailBtn.addEventListener('click', async () => {
-            const newEmail = newEmailInput.value.trim();
-            if (!newEmail || newEmail === PROFILE_DATA.email || !newEmail.includes('@')) {
-                alert("Введите корректный новый email.");
+    if (submitEmailButton) {
+        submitEmailButton.addEventListener('click', async () => {
+            const rawValue = newEmailInput.value.trim();
+            const currentEmail = PROFILE_DATA.email;
+
+            if (!rawValue) {
+                showNotification(globalNotification, "Email не может быть пустым.", false);
+                return;
+            }
+            if (rawValue === currentEmail) {
+                showNotification(globalNotification, "Это текущий email.", false);
+                return;
+            }
+            if (!rawValue.includes('@')) {
+                showNotification(globalNotification, "Введите корректный email (должен содержать @).", false);
                 return;
             }
 
-            const btn = submitEmailBtn;
-            const originalText = btn.textContent;
-            const notificationEl = document.getElementById('emailNotification');
-
-            btn.disabled = true;
-            btn.textContent = "Отправка...";
+            const originalText = submitEmailButton.textContent;
+            submitEmailButton.disabled = true;
+            submitEmailButton.textContent = "Отправка…";
 
             try {
                 const response = await fetch("/change-email-request", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: newEmail })
+                    body: JSON.stringify({ email: rawValue })
                 });
 
-                const data = await response.json();
+                const result = await response.json();
 
-                if (data.success) {
-                    // Обновляем UI: добавляем бейдж pending_email
-                    const badge = document.createElement('span');
-                    badge.className = 'status-badge status-warning';
-                    badge.title = 'Ожидает подтверждения';
-                    badge.textContent = `⏳ ${newEmail}`;
+                if (result.success) {
+                    PROFILE_DATA.pending_email = rawValue;
 
-                    const group = document.querySelector('#emailField .field-value-group');
-                    const oldBadge = group.querySelector('.status-badge');
-                    if (oldBadge) oldBadge.remove();
-                    const editBtn = document.getElementById('editEmailBtn');
-                    if (editBtn) {
-                        group.insertBefore(badge, editBtn);
+                    if (pendingEmailView) {
+                        pendingEmailView.style.display = 'flex';
+                        const valueEl = pendingEmailView.querySelector('.profile-pending-email-value');
+                        if (valueEl) valueEl.textContent = rawValue;
                     }
 
-                    // Обновляем данные
-                    PROFILE_DATA.pending_email = newEmail;
-
-                    // Возвращаемся к просмотру
-                    emailStaticView.style.display = 'flex';
-                    emailEditView.style.display = 'none';
-
-                    showNotification(notificationEl, data.message, true);
+                    emailEditForm.style.display = 'none';
+                    newEmailInput.value = '';
+                    updateEditEmailButtonState();
+                    showNotification(globalNotification, result.message, true);
                 } else {
-                    showNotification(notificationEl, data.errors?.[0] || "Ошибка", false);
+                    showNotification(globalNotification, result.errors?.[0] || "Ошибка при отправке запроса.", false);
                 }
             } catch (err) {
-                console.error("Ошибка:", err);
-                showNotification(notificationEl, "Не удалось отправить запрос", false);
+                console.error("Ошибка при отправке email:", err);
+                showNotification(globalNotification, "Не удалось отправить запрос.", false);
             } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
+                submitEmailButton.disabled = false;
+                submitEmailButton.textContent = originalText;
             }
         });
     }
 
-    // === Вспомогательные функции ===
-    function showNotification(el, message, isSuccess) {
-        if (!el) return;
-        el.textContent = message;
-        el.style.display = "block";
-        el.style.backgroundColor = isSuccess ? "#e8f5e9" : "#ffebee";
-        el.style.color = isSuccess ? "#2e7d32" : "#c62828";
-        el.style.border = isSuccess ? "1px solid #a5d6a7" : "1px solid #ffcdd2";
-        setTimeout(() => { el.style.display = "none"; }, 5000);
-    }
-
-    async function updateField(field, value, onSuccess) {
-        const btn = document.querySelector(`[data-field="${field}"]`);
-        if (!btn) return;
-
-        try {
-            const response = await fetch(`/api/user/update-${field}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ [field]: value })
-            });
-            const data = await response.json();
-            if (data.success && onSuccess) {
-                onSuccess(data[field]);
-            } else {
-                alert("Ошибка: " + (data.error || "неизвестная"));
+    // --- Удаление неподтверждённого email ---
+    if (delPEmailButton) {
+        delPEmailButton.addEventListener('click', async () => {
+            if (!PROFILE_DATA.pending_email) {
+                // НЕОБХОДИМО ИЗМЕНИТЬ
+                alert("Нет активного запроса на смену email.");
+                return;
             }
-        } catch (err) {
-            alert("Не удалось обновить");
-        }
+
+            // Подтверждение остаётся
+            if (!confirm(`Отменить запрос на смену email на ${PROFILE_DATA.pending_email}?`)) {
+                return;
+            }
+
+            const originalTitle = delPEmailButton.title;
+            delPEmailButton.disabled = true;
+            delPEmailButton.title = "Отмена...";
+
+            try {
+                const response = await fetch("/cancel-email-change", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    PROFILE_DATA.pending_email = null;
+                    if (pendingEmailView) {
+                        pendingEmailView.style.display = 'none';
+                    }
+                    updateEditEmailButtonState();
+                    showNotification(globalNotification, result.message, true);
+                } else {
+                    showNotification(globalNotification, result.error || "Не удалось отменить запрос.", false);
+                }
+            } catch (err) {
+                console.error("Ошибка при отмене email:", err);
+                showNotification(globalNotification, "Ошибка подключения.", false);
+            } finally {
+                delPEmailButton.disabled = false;
+                delPEmailButton.title = originalTitle;
+            }
+        });
     }
 })();

@@ -443,7 +443,7 @@ def confirm_email_change():
 def change_email_request():
     """
     Приватный роутер: запрашивает смену email.
-    Доступен только авторизованным пользователям.
+    Доступен только для авторизованных пользователей.
     """
     user = g.current_user
 
@@ -499,4 +499,72 @@ def change_email_request():
     return jsonify({
         'success': True,
         'message': 'На новый email отправлена ссылка для подтверждения. Перейдите по ней, чтобы завершить смену.'
+    })
+
+
+@auth_bp.route('/cancel-email-change', methods=['POST'])
+def cancel_email_change():
+    """
+    Отменяет запрос на смену email.
+    Удаляет значение из поля pending_email у текущего пользователя.
+    """
+    user = g.current_user
+
+    if not user.pending_email:
+        return jsonify({
+            'success': False,
+            'error': 'Нет активного запроса на смену email'
+        }), 400
+
+    old_pending = user.pending_email
+    user.pending_email = None
+    db.session.commit()
+
+    auth_logger.info(f"Отменён запрос на смену email: user_id={user.id}, pending_email={old_pending}")
+    return jsonify({
+        'success': True,
+        'message': 'Запрос на смену email отменён'
+    })
+
+
+@auth_bp.route('/api/user/update-username', methods=['POST'])
+def update_username():
+    """
+    Обновляет имя (username) текущего пользователя.
+    Проверяет: длину, отличие от текущего, уникальность (регистронезависимо).
+    """
+    user = g.current_user  # Предполагается, что g.current_user установлен (например, через @jwt_required)
+
+    data = request.get_json()
+    if not data or 'username' not in data:
+        return jsonify({'success': False, 'error': 'Отсутствует имя'}), 400
+
+    new_username = data['username'].strip()
+
+    # Проверка длины
+    if len(new_username) < 2:
+        return jsonify({'success': False, 'error': 'Имя должно содержать минимум 2 символа'}), 400
+
+    # Проверка на совпадение с текущим (регистронезависимо)
+    if new_username.lower() == user.username.lower():
+        return jsonify({'success': False, 'error': 'Это текущее имя'}), 400
+
+    # Проверка уникальности: нет другого пользователя с таким именем (регистронезависимо)
+    existing = User.query.filter(
+        User.username.ilike(new_username),
+        User.id != user.id
+    ).first()
+
+    if existing:
+        return jsonify({'success': False, 'error': 'Пользователь с таким именем уже существует.'}), 400
+
+    # Обновление имени
+    old_username = user.username
+    user.username = new_username
+    db.session.commit()
+
+    auth_logger.info(f"Имя изменено: user_id={user.id}, {old_username} → {new_username}")
+    return jsonify({
+        'success': True,
+        'username': user.username
     })
