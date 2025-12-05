@@ -1,13 +1,13 @@
-import os
-import uuid
 from flask import current_app, Blueprint, render_template, redirect, url_for, g, request, jsonify
-from werkzeug.utils import secure_filename
 from models import BugReport, Checklist
 from extensions import db
 from sqlalchemy import case
+from utils.file_utils import save_uploaded_files, delete_uploaded_files
+import logging
 
 
 qa_bp = Blueprint('qa-engineer', __name__, template_folder='templates')
+sys_logger = logging.getLogger('app.system')
 
 
 @qa_bp.route('/qa-engineer')
@@ -18,8 +18,7 @@ def qa_dashboard():
     return render_template('qa-engineer/qa_bug_reports.html')
 
 
-#  ЧЕК-ЛИСТЫ
-# === Страница чек-листов ===
+#  Страница с чек-листами
 @qa_bp.route('/checklists')
 def checklists_page():
     user = g.current_user
@@ -28,7 +27,7 @@ def checklists_page():
     return render_template('qa-engineer/checklists.html')
 
 
-# === GET: все чек-листы текущего пользователя ===
+# Все чек-листы текущего пользователя
 @qa_bp.route('/api/checklists', methods=['GET'])
 def get_checklists():
     user = g.current_user
@@ -54,7 +53,7 @@ def get_checklists():
     return jsonify(result), 200
 
 
-# === POST: создать чек-лист ===
+# Создать чек-лист
 @qa_bp.route('/api/checklists', methods=['POST'])
 def create_checklist():
     user = g.current_user
@@ -101,7 +100,7 @@ def create_checklist():
         current_app.logger.error(f"Ошибка создания чек-листа: {e}")
         return jsonify({'error': 'Ошибка сервера'}), 500
 
-# === GET: один чек-лист ===
+# Один чек-лист
 @qa_bp.route('/api/checklists/<int:checklist_id>', methods=['GET'])
 def get_checklist(checklist_id):
     user = g.current_user
@@ -122,7 +121,7 @@ def get_checklist(checklist_id):
     }), 200
 
 
-# === PATCH: полное редактирование чек-листа с пересчётом ===
+# Полное редактирование чек-листа
 @qa_bp.route('/api/checklists/<int:checklist_id>', methods=['PATCH'])
 def update_checklist_full(checklist_id):
     user = g.current_user
@@ -195,7 +194,7 @@ def update_checklist_full(checklist_id):
         return jsonify({'error': 'Ошибка сервера'}), 500
 
 
-# === PATCH: обновить отдельный пункт чек-листа по индексу ===
+# Обновить отдельный пункт чек-листа по индексу
 @qa_bp.route('/api/checklists/<int:checklist_id>/items/<int:index>', methods=['PATCH'])
 def update_checklist_item(checklist_id, index):
     user = g.current_user
@@ -255,7 +254,7 @@ def update_checklist_item(checklist_id, index):
         return jsonify({'error': 'Ошибка сервера'}), 500
 
 
-# === PATCH: отметить все пункты как выполненные (result = 'passed') ===
+# Отметить все пункты как выполненные (result = 'passed')
 @qa_bp.route('/api/checklists/<int:checklist_id>/mark-all-done', methods=['PATCH'])
 def mark_all_items_done(checklist_id):
     user = g.current_user
@@ -284,7 +283,7 @@ def mark_all_items_done(checklist_id):
         return jsonify({'error': 'Ошибка сервера'}), 500
 
 
-# === DELETE: удалить чек-лист ===
+# Удалить чек-лист
 @qa_bp.route('/api/checklists/<int:checklist_id>', methods=['DELETE'])
 def delete_checklist(checklist_id):
     user = g.current_user
@@ -314,65 +313,73 @@ def delete_checklist(checklist_id):
 @qa_bp.route('/api/bug-reports', methods=['POST'])
 def create_bug_report():
     user = g.current_user
-    
-    if user.role not in ['tester', 'admin']:
+    if not user or user.role not in ['tester', 'admin']:
         return jsonify({'error': 'Доступ запрещён'}), 403
 
-    # Получаем настройки из конфига
-    upload_folder = current_app.config['BUG_REPORT_UPLOAD_FOLDER']
-    allowed_extensions = current_app.config['BUG_REPORT_ALLOWED_EXTENSIONS']
-
-    # Создаём папку, если не существует
-    os.makedirs(upload_folder, exist_ok=True)
-
-    def allowed_file(filename):
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
     try:
-        # Обработка ссылки
+        # Получаем внешнюю ссылку (если есть)
         attachment_link = request.form.get('attachment_link', '').strip()
+
         attachments_value = None
 
+        # Если есть внешняя ссылка — используем её
         if attachment_link:
-            # Cохраняем ссылку как строку
-            attachments_value = attachment_link
-        else:
-            # Обработка файлов
-            files = request.files.getlist('attachment_files')
-            saved_paths = []
-            for file in files:
-                if file and file.filename != '' and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    unique_filename = f"{uuid.uuid4().hex}.{filename.rsplit('.', 1)[1].lower()}"
-                    filepath = os.path.join(upload_folder, unique_filename)
-                    file.save(filepath)
-                    saved_paths.append(f"/static/uploads/bug_reports/{unique_filename}")
-            if saved_paths:
-                attachments_value = ','.join(saved_paths)
+            # Базовая валидация (например, что это URL)
+            if attachment_link.startswith(('http://', 'https://')):
+                attachments_value = attachment_link
+            else:
+                return jsonify({'error': 'Некорректный формат ссылки. Укажите полный URL.'}), 400
 
-        # Создание записи
+        # Иначе — проверяем, загружены ли файлы
+        else:
+            files = request.files.getlist('attachment_files')
+            # Фильтруем "пустые" файлы
+            actual_files = [f for f in files if f and f.filename]
+            
+            if actual_files:
+                # Сохраняем файлы через универсальную функцию
+                saved_urls = save_uploaded_files(
+                    files=request.files.getlist('attachment_files'),
+                    subfolder='bug_reports',
+                    allowed_extensions=current_app.config.get('BUG_REPORTS_ALLOWED_EXTENSIONS'),
+                    max_file_size=current_app.config.get('BUG_REPORTS_MAX_FILE_SIZE')
+                )
+                if saved_urls:
+                    attachments_value = ','.join(saved_urls)
+
+        # 4. Создаём баг-репорт
         new_report = BugReport(
-            title=request.form['bugTitle'],
+            title=request.form['bugTitle'].strip(),
             severity=request.form['bugSeverity'],
             status=request.form['bugStatus'],
             precondition=request.form.get('bugPrecondition') or None,
-            environment=request.form['bugEnvironment'],
-            steps_to_reproduce=request.form['bugSteps'],
-            actual_result=request.form['bugActual'],
-            expected_result=request.form['bugExpected'],
+            environment=request.form['bugEnvironment'].strip(),
+            steps_to_reproduce=request.form['bugSteps'].strip(),
+            actual_result=request.form['bugActual'].strip(),
+            expected_result=request.form['bugExpected'].strip(),
             attachments=attachments_value,
-            author_id=g.current_user_id
+            author_id=user.id
         )
 
         db.session.add(new_report)
         db.session.commit()
 
-        return jsonify({'message': 'Баг-репорт создан', 'id': new_report.id}), 201
+        return jsonify({
+            'message': 'Баг-репорт создан',
+            'id': new_report.id
+        }), 201
 
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+    except KeyError as e:
+        # Отсутствует обязательное поле в form
+        db.session.rollback()
+        return jsonify({'error': f'Отсутствует поле: {e.args[0]}'}), 400
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Ошибка при создании баг-репорта: {e}")
         return jsonify({'error': 'Ошибка сервера'}), 500
-
 
 
 @qa_bp.route('/api/bug-reports', methods=['GET'])
@@ -448,10 +455,7 @@ def update_bug_status():
 def get_bug_report(bug_id):
     """
     Получение деталей конкретного баг-репорта по его ID.
-    
-    Доступ разрешён только:
-      - Администраторам (могут читать любые репорты)
-    
+    Доступ разрешён только пользователям с ролью: admin и tester
     Возвращает 403 при недостатке прав, 404 если репорт не найден.
     """
     user = g.current_user
@@ -486,29 +490,60 @@ def get_bug_report(bug_id):
 @qa_bp.route('/api/bug-reports/delete-selected', methods=['DELETE'])
 def delete_selected_bug_reports():
     user = g.current_user
+
     if user.role not in ['tester', 'admin']:
+        sys_logger.warning(f"Попытка удаления баг-репортов без прав: user_id={user.id}, role={user.role}")
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     data = request.get_json()
     ids = data.get('ids')
+
     if not ids or not isinstance(ids, list):
+        sys_logger.warning(f"Некорректные данные при удалении баг-репортов от user_id={user.id}: {data}")
         return jsonify({'error': 'Некорректные данные'}), 400
 
-    # Формируем запрос
     query = BugReport.query.filter(BugReport.id.in_(ids))
+
     if user.role == 'tester':
-        # tester может удалять только свои
-        query = query.filter(BugReport.author_id == g.current_user_id)
+        query = query.filter(BugReport.author_id == user.id)
 
     reports_to_delete = query.all()
+    
     if not reports_to_delete:
+        sys_logger.info(f"Попытка удаления несуществующих или чужих баг-репортов: user_id={user.id}, ids={ids}")
         return jsonify({'error': 'Нет доступных баг-репортов для удаления'}), 400
 
+    # Собираем файлы
+    all_local_paths = []
+    for report in reports_to_delete:
+        att = report.attachments
+        if att and not att.startswith(('http://', 'https://')):
+            paths = [p.strip() for p in att.split(',') if p.strip()]
+            all_local_paths.extend(paths)
+
+    # Логируем намерение удалить файлы
+    if all_local_paths:
+        sys_logger.info(
+            f"Пользователь user_id={user.id} удаляет {len(reports_to_delete)} баг-репортов "
+            f"с {len(all_local_paths)} вложениями: {all_local_paths}"
+        )
+        failed_paths = delete_uploaded_files(all_local_paths)
+        if failed_paths:
+            sys_logger.warning(
+                f"Не удалось удалить {len(failed_paths)} файлов при удалении баг-репортов "
+                f"пользователем user_id={user.id}: {failed_paths}"
+            )
+    else:
+        sys_logger.info(f"Пользователь user_id={user.id} удаляет {len(reports_to_delete)} баг-репортов без вложений")
+
+    # Удаляем из БД
     deleted_ids = [r.id for r in reports_to_delete]
     for report in reports_to_delete:
         db.session.delete(report)
-
     db.session.commit()
+
+    sys_logger.info(f"Успешно удалено {len(deleted_ids)} баг-репортов: {deleted_ids} (user_id={user.id})")
+
     return jsonify({
         'message': 'Удалено успешно',
         'deleted_count': len(deleted_ids),

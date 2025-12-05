@@ -6,7 +6,6 @@ from routes.auth.routes_auth import auth_bp
 from routes.main.routes_index import main_bp
 from routes.admin.routes_ui import admin_bp
 from routes.admin.routes_system import admin_system_bp
-from routes.staff.routes import staff_bp
 from routes.product.routes_ui import product_bp
 from routes.user.routes_ui import user_ui_bp
 from routes.user.routes_api import user_api_bp
@@ -69,7 +68,6 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(admin_system_bp)
     app.register_blueprint(product_bp)
-    app.register_blueprint(staff_bp)
     app.register_blueprint(user_ui_bp) 
     app.register_blueprint(user_api_bp)
     app.register_blueprint(chat_bp)

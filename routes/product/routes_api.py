@@ -1,11 +1,10 @@
 import logging
-import os
 from flask import Blueprint, request, jsonify, current_app, g
 from models import User, Shop
 from extensions import db
-from utils.add_img import save_product_image
+from utils.file_utils import save_uploaded_files, delete_uploaded_files
 from datetime import datetime, timedelta
-from pathlib import Path
+from utils.validation import validate_price
 
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -45,24 +44,24 @@ def get_all_products():
     args = request.args
     query = Shop.query
 
-    # === Фильтр по владельцу (user_id) ===
+    # Фильтр по владельцу (user_id)
     user_id_param = args.get('user_id', type=int)
     if user_id_param is not None:
         query = query.filter(Shop.user_id == user_id_param)
 
-    # === Фильтр по категории ===
+    # Фильтр по категории
     categories = args.getlist('category')
     if categories:
         clean_categories = [c.strip() for c in categories if c.strip()]
         if clean_categories:
             query = query.filter(Shop.category.in_(clean_categories))
 
-    # === Фильтр по названию ===
+    # Фильтр по названию
     title = args.get('title')
     if title:
         query = query.filter(Shop.title.ilike(f"%{title}%"))
 
-    # === Фильтр по цене ===
+    # Фильтр по цене
     price_min = args.get('price_min', type=float)
     price_max = args.get('price_max', type=float)
     if price_min is not None and price_max is not None:
@@ -78,7 +77,7 @@ def get_all_products():
             return jsonify({"error": "price_max не может быть отрицательным"}), 400
         query = query.filter(Shop.price <= price_max)
 
-    # === Фильтр по количеству ===
+    # Фильтр по количеству
     quantity = args.get('quantity', type=int)
     quantity_min = args.get('quantity_min', type=int)
     quantity_max = args.get('quantity_max', type=int)
@@ -97,7 +96,7 @@ def get_all_products():
                 return jsonify({"error": "quantity_max не может быть отрицательным"}), 400
             query = query.filter(Shop.quantity <= quantity_max)
 
-    # === Фильтр по дате создания ===
+    # Фильтр по дате создания
     date_exact = args.get('date')
     date_from = args.get('date_from')
     date_to = args.get('date_to')
@@ -122,7 +121,7 @@ def get_all_products():
             except ValueError:
                 return jsonify({"error": "Неверный формат date_to. Используйте дд.мм.гггг"}), 400
 
-    # === Фильтр по акции ===
+    # Фильтр по акции
     sale = args.get('sale')
     if sale is not None:
         sale_lower = sale.lower()
@@ -133,7 +132,7 @@ def get_all_products():
         else:
             return jsonify({"error": "Параметр sale должен быть булевым (true/false, 1/0)"}), 400
 
-    # === Сортировка ===
+    # Сортировка
     sort_param = args.get('sort')
     sort_mapping = {
         'title_asc': Shop.title.asc(),
@@ -155,7 +154,7 @@ def get_all_products():
     else:
         query = query.order_by(Shop.created_at.desc())
 
-    # === Пагинация или все товары ===
+    # Пагинация или все товары
     if args.get('all') is not None:
         try:
             products = query.all()
@@ -225,10 +224,9 @@ def get_all_products():
 @api_bp.route('/products/assign-uid', methods=['POST'])
 def assign_user_to_products():
     """
-    Назначить user_id выбранным товарам.
+    Назначить user_id автором товара.
     Доступно только suser и admin.
     """
-    # Используем пользователя из g (уже проверен в before_request)
     current_user = g.current_user
 
     if current_user.role not in ('suser', 'admin'):
@@ -296,6 +294,7 @@ def add_product():
     sale = request.form.get('sale', '')
     image_file = request.files.get('image')
 
+    # Проверка обязательных полей
     required_fields = {
         'Название товара': title,
         'Описание товара': description,
@@ -304,19 +303,18 @@ def add_product():
         'Артикул': article_num,
         'Категория': category
     }
-    print(required_fields)
     missing = [field for field, value in required_fields.items() if not value]
     if missing:
         product_logger.info(f"Пропущены обязательные поля при добавлении товара от user_id={user.id}: {missing}")
         return jsonify({"error": f"Не заполнены обязательные поля: {', '.join(missing)}"}), 400
 
+    # Валидация цены
     try:
-        price = float(price_str)
-        if price < 0:
-            return jsonify({"error": "Цена не может быть отрицательной"}), 400
-    except ValueError:
-        return jsonify({"error": "Цена должна быть числом"}), 400
+        price = validate_price(price_str)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
+    # Валидация количества
     try:
         quantity = int(quantity_str)
         if quantity < 0:
@@ -324,24 +322,42 @@ def add_product():
     except ValueError:
         return jsonify({"error": "Количество должно быть целым числом"}), 400
 
+    # Проверка изображения
     if not image_file or not image_file.filename:
         return jsonify({"error": "Изображение не выбрано"}), 400
 
     try:
-        link_img = save_product_image(image_file)
+        allowed_extensions = current_app.config.get('CONTENT_ALLOWED_EXTENSIONS')
+        max_file_size = current_app.config.get('CONTENT_MAX_SIZE')
+
+        saved_urls = save_uploaded_files(
+            files=[image_file],
+            subfolder='products',
+            allowed_extensions=allowed_extensions,
+            max_file_size=max_file_size
+        )
+
+        if not saved_urls:
+            return jsonify({"error": "Не удалось сохранить изображение"}), 500
+
+        link_img = saved_urls[0]
+
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         product_logger.error(f"Ошибка сохранения изображения для user_id={user.id}: {e}")
         return jsonify({"error": "Ошибка при загрузке изображения"}), 500
 
+    # Обработка флага sale
     sale_lower = sale.lower() if sale else ''
     is_sale = sale_lower in ('true', '1', 'on', 'yes')
 
+    # Проверка уникальности артикула
     if Shop.query.filter_by(article_num=article_num).first():
         product_logger.warning(f"Попытка добавить товар с уже существующим артикулом '{article_num}' от user_id={user.id}")
         return jsonify({"error": "Товар с таким артикулом уже существует"}), 409
 
+    # Создание товара
     try:
         new_product = Shop(
             user_id=user.id,
@@ -379,7 +395,6 @@ def update_product(id):
       - application/json (тело с полями)
       - multipart/form-data (форма с изображением)
     """
-    # Пользователь уже аутентифицирован и доступен через g (проверено в before_request)
     user = g.current_user
 
     product = db.session.get(Shop, id)
@@ -388,8 +403,7 @@ def update_product(id):
         return jsonify({"error": "Товар не найден"}), 404
 
     # Проверка прав доступа
-    # Админ может обновлять любые товары. Продавец — только свои.
-    if user.role != 'admin' and int(product.user_id) != g.current_user_id:
+    if user.role != 'admin' and int(product.user_id) != user.id:
         product_logger.warning(f"Доступ запрещён: user_id={user.id} пытается обновить чужой товар product_id={id}")
         return jsonify({"error": "Товар не найден или недоступен"}), 404
 
@@ -438,12 +452,10 @@ def update_product(id):
         price_input = data.get('price') if is_json else request.form.get('price')
         if price_input is not None:
             try:
-                price = float(price_input)
-                if price < 0:
-                    return jsonify({"error": "Цена не может быть отрицательной"}), 400
-                product.price = price
-            except (ValueError, TypeError):
-                return jsonify({"error": "Цена должна быть числом"}), 400
+                product.price = validate_price(str(price_input))
+            except ValueError as e:
+                return jsonify({"error": str(e)}), 400
+            
 
         quantity_input = data.get('quantity') if is_json else request.form.get('quantity')
         if quantity_input is not None:
@@ -465,9 +477,29 @@ def update_product(id):
         else:
             product.sale = 'sale' in request.form
 
+        # Обновление изображения если изображение было отправлено в запросе
         if image_file and image_file.filename:
             try:
-                product.link_img = save_product_image(image_file)
+                # Удаляем старое изображение (если оно есть)
+                if product.link_img:
+                    delete_uploaded_files([product.link_img])
+
+                # Сохраняем новое изображение
+                allowed_extensions = current_app.config.get('CONTENT_ALLOWED_EXTENSIONS')
+                max_file_size = current_app.config.get('CONTENT_MAX_SIZE')
+
+                saved_urls = save_uploaded_files(
+                    files=[image_file],
+                    subfolder='products',
+                    allowed_extensions=allowed_extensions,
+                    max_file_size=max_file_size
+                )
+
+                if not saved_urls:
+                    return jsonify({"error": "Не удалось сохранить изображение"}), 500
+
+                product.link_img = saved_urls[0]
+
             except ValueError as e:
                 return jsonify({"error": str(e)}), 400
             except Exception as e:
@@ -505,35 +537,30 @@ def delete_product(id):
     """
     Удалить товар по ID.
     - Админ может удалить любой товар.
-    - Продавец — только свои. 
+    - Продавец — только свои.
     """
     user = g.current_user
     product = db.session.get(Shop, id)
     if not product:
-        product_logger.info(f"Попытка удаления несуществующего товара: product_id={id}, user_id={user}")
+        product_logger.info(f"Попытка удаления несуществующего товара: product_id={id}, user_id={user.id}")
         return jsonify({"error": "Товар не найден"}), 404
 
-    if user.role == 'suser' and int(product.user_id) != int(user.id):  # ← исправлено: user.id
+    if user.role == 'suser' and int(product.user_id) != int(user.id):
         product_logger.warning(f"Доступ запрещён: user_id={user.id} пытается удалить чужой товар product_id={id}")
         return jsonify({"error": "Нет прав доступа. Вы можете удалять только свои товары."}), 403
 
+    # Удаление файла
+    if product.link_img:
+        failed = delete_uploaded_files([product.link_img])
+        if not failed:
+            product_logger.info(f"Файл изображения успешно удалён: {product.link_img}")
+        else:
+            product_logger.warning(f"Не удалось удалить файл изображения: {product.link_img}")
+
+    # === Удаление товара из БД ===
     try:
         db.session.delete(product)
         db.session.commit()
-
-        # Теперь безопасно удаляем файл
-        if product.link_img:
-            try:
-                relative_path = product.link_img.lstrip("/")
-                full_path = Path(current_app.static_folder) / relative_path
-                if full_path.exists():
-                    os.remove(full_path)
-                    product_logger.info(f"Файл изображения удалён: {full_path}")
-                else:
-                    product_logger.warning(f"Файл изображения не найден при удалении товара: {full_path}")
-            except Exception as e:
-                product_logger.warning(f"Не удалось удалить файл изображения {product.link_img} для product_id={id}: {e}")
-
         product_logger.info(f"Товар успешно удалён: product_id={id}, user_id={user.id}")
         return jsonify({
             "success": True,
