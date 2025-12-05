@@ -212,7 +212,7 @@ class Dialog(db.Model):
     При удалении пользователя — весь диалог удаляется (включая сообщения и вложения).
     """
     __tablename__ = 'dialogs'
-
+    
     id = db.Column(db.Integer, primary_key=True)
     topic_id = db.Column(db.Integer, db.ForeignKey('message_topics.id'), nullable=False)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)

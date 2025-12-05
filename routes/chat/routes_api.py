@@ -664,3 +664,133 @@ def bulk_delete_dialogs():
         db.session.rollback()
         chat_logger.exception("Ошибка массового удаления диалогов")
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+    
+
+# UPDATED: Полный список тем (для админки)
+@chat_bp.route('/topics', methods=['GET'])
+def get_all_message_topics_for_admin():
+    """
+    Возвращает ВСЕ темы (включая неактивные) со всеми полями.
+    Доступен ТОЛЬКО для suser и admin.
+    """
+    user = g.current_user
+    if user.role not in ('suser', 'admin'):
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    topics = MessageTopic.query.order_by(MessageTopic.id).all()
+    return jsonify([
+        {
+            'id': t.id,
+            'name': t.name,
+            'description': t.description or '',
+            'is_active': t.is_active
+        }
+        for t in topics
+    ]), 200
+
+
+# Создание новой темы
+@chat_bp.route('/topics', methods=['POST'])
+def create_message_topic():
+    """
+    Создаёт новую тему.
+    Доступен ТОЛЬКО для admin.
+    """
+    user = g.current_user
+    if user.role != 'admin':
+        return jsonify({'error': 'Только администратор может создавать темы'}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Ожидается JSON'}), 400
+
+    name = (data.get('name') or '').strip()
+    description = (data.get('description') or '').strip()
+    is_active = bool(data.get('is_active', True))
+
+    if not name:
+        return jsonify({'error': 'Название обязательно'}), 400
+
+    if len(name) > 100:
+        return jsonify({'error': 'Название не должно превышать 100 символов'}), 400
+
+    if len(description) > 255:
+        return jsonify({'error': 'Описание не должно превышать 255 символов'}), 400
+
+    # Проверка уникальности
+    if MessageTopic.query.filter_by(name=name).first():
+        return jsonify({'error': 'Тема с таким названием уже существует'}), 400
+
+    topic = MessageTopic(
+        name=name,
+        description=description or None,
+        is_active=is_active
+    )
+    db.session.add(topic)
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        chat_logger.exception("Ошибка при создании темы")
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+
+    return jsonify({
+        'id': topic.id,
+        'name': topic.name,
+        'description': topic.description or '',
+        'is_active': topic.is_active
+    }), 201
+
+
+# Обновление темы по ID
+@chat_bp.route('/topics/<int:topic_id>', methods=['PATCH'])
+def update_message_topic(topic_id):
+    """
+    Обновляет поля темы: name, description, is_active.
+    Доступен для suser и admin.
+    """
+    user = g.current_user
+    if user.role not in ('suser', 'admin'):
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    topic = MessageTopic.query.get_or_404(topic_id)
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Ожидается JSON'}), 400
+
+    # Обновление name
+    if 'name' in data:
+        name = (data['name'] or '').strip()
+        if not name:
+            return jsonify({'error': 'Название не может быть пустым'}), 400
+        if len(name) > 100:
+            return jsonify({'error': 'Название не должно превышать 100 символов'}), 400
+        # Проверка уникальности, кроме самой себя
+        existing = MessageTopic.query.filter(
+            MessageTopic.name == name,
+            MessageTopic.id != topic_id
+        ).first()
+        if existing:
+            return jsonify({'error': 'Тема с таким названием уже существует'}), 400
+        topic.name = name
+
+    # Обновление description
+    if 'description' in data:
+        desc = (data['description'] or '').strip()
+        if len(desc) > 255:
+            return jsonify({'error': 'Описание не должно превышать 255 символов'}), 400
+        topic.description = desc or None
+
+    # Обновление is_active
+    if 'is_active' in data:
+        topic.is_active = bool(data['is_active'])
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        chat_logger.exception(f"Ошибка обновления темы {topic_id}")
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+
+    return jsonify({'status': 'ok'}), 200
