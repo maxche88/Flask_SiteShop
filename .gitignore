@@ -1,3 +1,8 @@
+# Файлы и картинки из static
+/static/uploads/bug_reports/*
+
+
+
 # Виртуальное окружение
 venv/
 env/
