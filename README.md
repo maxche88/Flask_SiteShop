@@ -72,8 +72,8 @@ mamoto-flask-site/
 ## 🚀 Запуск проекта
 
 1. Клонируйте репозиторий:
-  git clone https://github.com/maxche88/Flask_SiteShop.git
-  cd Flask_SiteShop
+  git clone https://github.com/maxche88/mamoto-flask-site.git
+  cd mamoto-flask-site
 
 2. Создайте и активируйте виртуальное окружение:
   python -m venv venv
@@ -88,8 +88,12 @@ mamoto-flask-site/
   SECRET_KEY=ваш_секретный_ключ
   MAIL_PASSWORD=ваш_пароль_от_mail.ru
 
+  **Подсказка**: Если у вас нет PostgreSQL:
+    Скачайте [PostgreSQL для Windows](https://www.postgresql.org/download/windows/)
+    Или используйте Docker: `docker run --name data-db -e POSTGRES_DB=data_db -e POSTGRES_USER=user -e POSTGRES_PASSWORD=pass -p 5432:5432 -d postgres`
+
 5. Выполните миграции:
-  flask db upgrade  
+  flask db upgrade
 
 6. Запустите:
   flask run
