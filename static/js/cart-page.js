@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // === Назначаем уникальные id чекбоксам ===
+    document.querySelectorAll('.item-checkbox:not([id])').forEach((checkbox, index) => {
+        const itemId = checkbox.value || `generated-${index}`;
+        checkbox.id = `item-checkbox-${itemId}`;
+    });
+
     // === Форматирование поля "Срок действия" ===
     const expiryInput = document.getElementById('expiry');
     if (expiryInput) {

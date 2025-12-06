@@ -32,6 +32,9 @@
     <!-- Кнопки управления диалогами -->
     <div class="dialog-actions-bar">
         <div class="status-dropdown-wrapper">
+            <button id="mess-topics-btn" class="btn-mess-topics">
+                Темы сообщений
+            </button>
             <button id="change-status-btn" class="btn-status-toggle" disabled>
                 Изменить статус
             </button>
@@ -42,6 +45,36 @@
                 <div class="status-option" data-status="open">Открыт</div>
                 <div class="status-option" data-status="closed">Закрыт</div>
                 <div class="status-option" data-status="archived">Архив</div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Модальное окно: Темы сообщений -->
+    <div id="topics-modal" class="topics-modal hidden">
+        <div class="topics-modal-overlay"></div>
+        <div class="topics-modal-content">
+            <div class="topics-modal-header">
+                <h3>Темы сообщений</h3>
+                <button id="close-topics-modal" class="topics-modal-close">&times;</button>
+            </div>
+            <div class="topics-table-container">
+                <table class="topics-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Название</th>
+                            <th>Описание</th>
+                            <th>Активна</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topics-table-body">
+                        <!-- Сюда будут подгружаться темы -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="topics-actions">
+                <button id="add-topic-btn" class="btn-add-topic">Добавить тему</button>
             </div>
         </div>
     </div>

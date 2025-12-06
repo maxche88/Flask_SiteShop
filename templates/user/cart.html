@@ -34,9 +34,9 @@
 
                 <!-- название + изображение -->
                 <div class="cart-card-top">
-                    <h3 class="cart-card-title">{{ item.product.title }}</h3>
+                    <div class="cart-card-title">{{ item.product.title }}</div>
                     <div class="cart-card-image">
-                        <img src="{{ url_for('static', filename=item.product.link_img) }}" alt="{{ item.product.title }}">
+                        <img src="{{ item.product.link_img }}" alt="{{ item.product.title }}">
                     </div>
                 </div>
 
@@ -85,7 +85,7 @@
 
         <!-- Модальное окно оплаты -->
         <div id="payment-modal" class="modal" style="display: none;">
-            <div class="modal-content">
+            <div class="cart-modal-content">
                 <span class="close">&times;</span>
 
                 <div class="payment-summary">

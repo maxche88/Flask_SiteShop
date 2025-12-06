@@ -2,10 +2,13 @@ import logging
 import os
 from flask import Blueprint, jsonify, request, current_app, abort, g
 from werkzeug.exceptions import NotFound
-from models import User, IPAttemptLog, UserToken
+from models import User, IPAttemptLog, UserToken, Message, BugReport, Dialog
 from extensions import db
 from utils.cleanup import get_unconfirmed_cutoff
 from datetime import datetime, timezone
+from typing import List
+from utils.file_utils import delete_uploaded_files
+
 
 
 admin_system_bp = Blueprint('admin_system', __name__, url_prefix='/admin/api')
@@ -159,15 +162,27 @@ def update_user_role(user_id):
 def delete_selected_users():
     """
     Удаляет выбранных пользователей.
-    Связанные данные обрабатываются каскадно на уровне БД:
-      - CartItem → удаляются полностью
-      - IPAttemptLog → удаляются полностью
-      - Shop.user_id → обнуляется (SET NULL), товары остаются
-    Токены отзываются (revoked=True).
+    Связанные данные обрабатываются следующим образом:
+
+    УДАЛЯЮТСЯ ПОЛНОСТЬЮ (CASCADE на уровне БД):
+      - CartItem (корзина)
+      - IPAttemptLog (логи IP)
+      - Dialog (диалоги, включая Message и вложения)
+      - BugReport (баг-репорты и их файлы — удаляются вручную до удаления пользователя)
+      - Checklist (чек-листы)
+
+    ОБНУЛЯЕТСЯ user_id = NULL (SET NULL на уровне БД):
+      - Shop (товары остаются, автор удаляется)
+      - Order (заказы остаются для аналитики)
+
+    Дополнительно:
+      - Отзываются JWT-токены (revoked = True)
+      - Удаляются физические файлы вложений из BugReport и Message (если есть)
     """
     user = g.current_user
 
     if user.role != 'admin':
+        sys_logger.warning(f"Попытка удаления пользователей без прав: user_id={user.id}")
         return jsonify({'error': 'Доступ запрещён'}), 403
 
     data = request.get_json()
@@ -183,16 +198,41 @@ def delete_selected_users():
     if user.id in user_ids:
         return jsonify({'error': 'Нельзя удалить самого себя'}), 400
 
-    # Отзываем токены (логическая операция — не удаляем физически)
+    # === Сбор путей к файлам для удаления вложенных файлов ===
+    file_paths_to_delete: List[str] = []
+
+    # 1. Вложения из баг-репортов
+    bug_reports = BugReport.query.filter(BugReport.author_id.in_(user_ids)).all()
+    for report in bug_reports:
+        att = report.attachments
+        if att and not att.startswith(('http://', 'https://')):
+            file_paths_to_delete.append(att.strip())
+
+    # 2. Вложения из сообщений (только локальные файлы)
+    messages = Message.query.join(Dialog).filter(Dialog.user_id.in_(user_ids)).all()
+    for msg in messages:
+        att = msg.attachment
+        if att and not att.startswith(('http://', 'https://')):
+            file_paths_to_delete.append(att.strip())
+
+    # Удаляем физические файлы (если есть)
+    if file_paths_to_delete:
+        sys_logger.info(f"Удаление файлов перед удалением пользователей: {len(file_paths_to_delete)} файлов")
+        failed = delete_uploaded_files(file_paths_to_delete)
+        if failed:
+            sys_logger.warning(f"Не удалось удалить {len(failed)} файлов: {failed}")
+
+    # === Отзыв токенов ===
     UserToken.query.filter(UserToken.user_id.in_(user_ids)).update(
         {'revoked': True}, synchronize_session=False
     )
 
-    # Удаляем пользователей — КАСКАД СДЕЛАЕТ ОСТАЛЬНОЕ!
+    # === Удаление пользователей (каскадно через PostgreSQL) ===
     deleted_count = User.query.filter(User.id.in_(user_ids)).delete(synchronize_session=False)
 
     try:
         db.session.commit()
+        sys_logger.info(f"Успешно удалено {deleted_count} пользователей: {user_ids} (инициатор: user_id={user.id})")
     except Exception as e:
         db.session.rollback()
         sys_logger.error("Ошибка при удалении пользователей: %s", str(e), exc_info=True)

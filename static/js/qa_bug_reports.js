@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusDropdown = document.getElementById('statusDropdown');
     const viewModal = document.getElementById('viewBugReportModalBackdrop');
     const closeViewBtn = document.getElementById('closeViewModalBtn');
+    const deleteBtn = document.getElementById('deleteBugReportBtn');
 
     // === Вспомогательные функции ===
     const escapeHtml = (text) => {
@@ -39,6 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleSelectAll = () => {
         const checkboxes = document.querySelectorAll('.report-checkbox');
         checkboxes.forEach(cb => cb.checked = selectAll.checked);
+        updateDeleteButton();
+    };
+
+    const updateDeleteButton = () => {
+        if (!deleteBtn || !tableBody) return;
+        const checked = tableBody.querySelectorAll('.report-checkbox:checked');
+        deleteBtn.disabled = checked.length === 0;
     };
 
     // === Загрузка баг-репортов ===
@@ -79,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (errorDiv) errorDiv.style.display = 'none';
+            updateDeleteButton();
         } catch (err) {
             console.error('Ошибка загрузки баг-репортов:', err);
             if (errorDiv) {
@@ -105,15 +114,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const response = await fetch(`api/bug-reports/${bugId}`);
-                
                 if (!response.ok) throw new Error('Баг-репорт не найден');
 
                 const report = await response.json();
                 renderViewModal(report);
                 viewModal.classList.add('is-open');
-
             } catch (err) {
-                alert(err);
+                alert(err.message || 'Ошибка загрузки баг-репорта');
                 console.error(err);
             }
         });
@@ -189,6 +196,47 @@ document.addEventListener('DOMContentLoaded', () => {
             return `<a href="${escapeHtml(path)}" target="_blank" rel="noopener">${escapeHtml(filename)}</a>`;
         }).join('<br>');
     };
+
+    // === Удаление выбранных баг-репортов ===
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+            const checkboxes = document.querySelectorAll('.report-checkbox:checked');
+            const ids = Array.from(checkboxes).map(cb => cb.dataset.id);
+
+            if (ids.length === 0) {
+                alert('Выберите хотя бы один баг-репорт для удаления.');
+                return;
+            }
+
+            if (!confirm(`Удалить ${ids.length} баг-репорт(а/ов)? Это действие нельзя отменить.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/bug-reports/delete-selected', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`Удалено баг-репортов: ${result.deleted_count}`);
+                    loadBugReports();
+                } else {
+                    const err = await response.json();
+                    alert('Ошибка: ' + (err.error || 'не удалось удалить'));
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении:', error);
+                alert('Ошибка сети');
+            }
+        });
+    }
+
+    if (tableBody) {
+        tableBody.addEventListener('change', updateDeleteButton);
+    }
 
     // === Массовое изменение статуса ===
     if (editStatusBtn && statusDropdown) {

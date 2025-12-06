@@ -360,28 +360,64 @@ html, body {
     display: inline-block;
 }
 
+/* === Вложенное меню (подменю) === */
 .dropdown-menu {
     display: none;
     position: absolute;
     top: 100%;
     right: 0;
-    background-color: #fff;
-    min-width: 200px;
-    box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     z-index: 1000;
-    border: 1px solid #ddd;
-    padding: 10px 0;
+    min-width: 200px;
+    padding: 8px 0;
+    list-style: none;
+    margin: 0;
 }
 
-.dropdown-menu a {
+.dropdown-menu a,
+.dropdown-menu .menu-item-has-submenu > a {
+    display: block;
+    padding: 10px 16px;
     color: #333;
-    padding: 10px 15px;
     text-decoration: none;
+    font-size: 14px;
+}
+
+.dropdown-menu a:hover,
+.dropdown-menu .submenu-trigger:hover {
+    background-color: #f0f8ff;
+}
+
+/* Элемент с подменю */
+.menu-item-has-submenu {
+    position: relative;
+    list-style: none;
+}
+
+/* Подменю */
+.submenu {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 96%;
+    width: 180px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 8px 0;
+    z-index: 1001;
+}
+
+.menu-item-has-submenu:hover .submenu {
     display: block;
 }
 
-.dropdown-menu a:hover {
-    background-color: #f1f1f1;
+.submenu a {
+    padding: 10px 16px;
 }
 
 /* Значок количества не прочитанных сообщений */
@@ -994,5 +1030,11 @@ html, body {
         margin: 0 auto;
         width: calc(100vw - 32px);
         max-width: 400px;
+    }
+}
+
+@media (max-width: 400px) {
+    .submenu {
+        width: 120px;
     }
 }

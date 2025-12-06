@@ -1,0 +1,166 @@
+<!-- QA-инженер: Чек-листы -->
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/checklist.css') }}">
+{% endblock %}
+
+{% block title %}
+Чек-листы
+{% endblock %}
+
+{% block header %}
+<div class="back">
+    <a href="/" title="Вернуться назад">
+        {{ custom_icon(size=35, cls="back") }}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="title_check_info">
+    <h4>Чек-листы</h4>
+</div>
+
+<div class="button_container">
+    <button type="button" id="openCreateChecklistModalBtn" class="btn-control">Добавить</button>
+    <button type="button" id="openDeleteChecklistBtn" class="btn-control">Удалить</button>
+</div>
+
+<!-- Сетка чек-листов -->
+<div class="table-container full-width-table">
+    <div class="checklists-grid-table" id="checklistsTableContainer">
+        <!-- Заголовок -->
+        <div class="grid-header">
+            <div class="checkbox-cell-header">
+                <input type="checkbox" id="selectAllChecklists" title="Выбрать все">
+            </div>
+            <div class="id-id-header">ID</div>
+            <div class="title-header">Название</div>
+            <div class="author-id-header">Автор (ID)</div>
+            <div class="total-items-header">Пунктов</div>
+            <div class="completed-items-header">Выполнено</div>
+            <div class="created-at-header">Создано</div>
+        </div>
+        <!-- Строки будут добавляться сюда -->
+    </div>
+</div>
+
+<!-- Модальное окно: выполнение чек-листа -->
+<div class="modal-backdrop" id="viewChecklistModalBackdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title-wrapper">
+                <h2 class="modal-title">Чек-лист #<span id="viewChecklistId"></span></h2>
+                <div class="modal-subtitle" id="viewChecklistTitle"></div>
+            </div>
+        
+            <div class="modal-actions">
+                <button type="button" class="icon-btn" id="btnEditChecklistInModal" title="Редактировать чек-лист">
+                    {{ edit_product(size=24, cls="") }}
+                </button>
+
+                <button type="button" class="icon-btn" id="headerMarkAllDoneBtn" title="Отметить все пункты как выполненные">
+                    {{ check_ok(size=24, cls="") }}
+                </button>
+
+                <button type="button" class="icon-btn" id="closeViewChecklistModalBtn" title="Закрыть" >
+                    {{ remove(size=24, cls="") }}
+                </button>
+            </div>
+
+        </div>
+        <div class="view-checklist-content" id="viewChecklistContent">
+            <!-- Контент подгружается через JS -->
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно: создание чек листа -->
+<div class="modal-backdrop" id="checklistModalBackdrop">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title-wrapper">
+                <h2 class="modal-title" id="checklistModalTitle">Новый чек-лист</h2>
+            </div>
+        </div>
+
+        <form id="checklistForm">
+            <div class="form-group">
+                <label class="form-label" for="checklistTitle">
+                    Название чек-листа <span class="required-asterisk">*</span>
+                </label>
+                <input type="text" id="checklistTitle" class="form-input" required maxlength="120">
+            </div>
+
+            <div class="form-group">
+                <div id="checklistItemsContainer" class="checklist-items-container">
+                    <!-- Динамически добавляются через JS -->
+                </div>
+                <button type="button" id="addChecklistItemBtn" class="btn-add-item" style="margin-top: 8px;">+ Добавить пункт</button>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-outline" id="cancelChecklistBtn">Отмена</button>
+                <button type="submit" class="btn btn-primary" id="saveChecklistBtn">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Шаблон строки чек-листа в списке -->
+<template id="checklist-row-template">
+    <div class="checklist-row">
+        <div class="checkbox-cell">
+            <input type="checkbox" class="checklist-checkbox" title="Выбрать">
+        </div>
+        <div class="cell id-cell"></div>
+        <div class="cell title-cell"></div>
+        <div class="cell author-id-cell"></div>
+        <div class="cell total-items-cell"></div>
+        <div class="cell completed-items-cell"></div>
+        <div class="cell created-at-cell"></div>
+    </div>
+</template>
+
+<!-- Шаблон пункта чек-листа в форме -->
+<template id="checklist-item-template">
+    <div class="checklist-item-row">
+        <input type="text" class="form-input item-text-input" placeholder="Описание пункта..." required minlength="3" maxlength="200">
+        <button type="button" class="remove-item-btn" title="Удалить пункт">{{ remove(size=32, cls="icon-btn") }}</button>
+    </div>
+</template>
+
+<!-- Шаблон пункта чек-листа в режиме ВЫПОЛНЕНИЯ -->
+<template id="checklist-item-execution-template">
+    <div class="checklist-item-execution" data-item-index="">
+        <div class="item-text-container">
+            <span class="item-number"></span>
+            <span class="checklist-item-text" title=""></span>
+        </div>
+        <div class="item-actions">
+            <button type="button" class="status-btn passed" title="Passed">P</button>
+            <button type="button" class="status-btn failed" title="Failed">F</button>
+            <button type="button" class="status-btn blocked" title="Blocked">B</button>
+            <button type="button" class="status-btn skipped" title="Skipped">S</button>
+            <!-- Обёртка для иконки и всплывающего окна -->
+            <div class="comment-wrapper">
+                <button type="button" class="comment-toggle-btn" title="Добавить комментарий">
+                    {{ comment_send(size=24, cls="") }}
+                </button>
+                <div class="comment-section" style="display: none;">
+                    <textarea class="comment-input" placeholder="Введите комментарий..." maxlength="500"></textarea>
+                    <div class="comment-actions">
+                        <button type="button" class="btn btn-small btn-outline comment-cancel">Отмена</button>
+                        <button type="button" class="btn btn-small btn-primary comment-save">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/qa_checklists.js') }}"></script>
+{% endblock %}

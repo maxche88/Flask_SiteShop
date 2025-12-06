@@ -36,11 +36,6 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # === Загрузка файлов ===
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'img', 'products')
-    ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
-
     # === Почта ===
     MAIL_SERVER = 'smtp.mail.ru'
     MAIL_PORT = 465
@@ -56,14 +51,20 @@ class Config:
     LOG_BACKUP_COUNT = 5
     LOG_LEVEL = 'INFO'
 
+    # === Загрузка изображений товаров ===
+    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'products')
+    CONTENT_ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}
+    CONTENT_MAX_SIZE = 16 * 1024 * 1024  # 16 MB
+
     # === Вложения в чате ===
-    CHAT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads', 'chat')
+    CHAT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'chat')
     CHAT_ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'GIF'}
     CHAT_MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
     # === Вложения в баг-репортах ===
-    BUG_REPORT_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'bug_reports')
-    BUG_REPORT_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'txt', 'log'}
+    BUG_REPORTS_UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads', 'bug_reports')
+    BUG_REPORTS_ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'txt', 'log'}
+    BUG_REPORTS_MAX_FILE_SIZE = 16 * 1024 * 1024  # 16 MB
 
 
 """

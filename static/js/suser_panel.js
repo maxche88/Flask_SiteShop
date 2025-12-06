@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const img = row.querySelector('.thumbnail');
                     if (img) {
                         if (product.img_url) {
-                            img.src = `/static${product.img_url}`;
+                            img.src = `${product.img_url}`;
                             img.alt = product.title || 'Товар';
                             img.style.display = 'block';
                         } else {

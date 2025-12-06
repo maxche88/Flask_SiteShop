@@ -1,11 +1,11 @@
 from flask import Flask, jsonify, request, g, make_response, redirect, url_for
 from flask_jwt_extended import unset_jwt_cookies
+from routes.main.routes_profile import user_bp
 from routes.product.routes_api import api_bp
 from routes.auth.routes_auth import auth_bp
 from routes.main.routes_index import main_bp
 from routes.admin.routes_ui import admin_bp
 from routes.admin.routes_system import admin_system_bp
-from routes.staff.routes import staff_bp
 from routes.product.routes_ui import product_bp
 from routes.user.routes_ui import user_ui_bp
 from routes.user.routes_api import user_api_bp
@@ -34,7 +34,7 @@ PUBLIC_ENDPOINTS = {
     # Аутентификация и восстановление
     'session.login',
     'session.register',
-    'session.reset_password_',
+    'session.reset_password',
     'session.reset_password_with_token',
     'session.confirm_email',
 
@@ -61,13 +61,13 @@ def create_app():
     app_loggers(app)
 
     # Регистрация blueprint'ов
+    app.register_blueprint(user_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(admin_system_bp)
     app.register_blueprint(product_bp)
-    app.register_blueprint(staff_bp)
     app.register_blueprint(user_ui_bp) 
     app.register_blueprint(user_api_bp)
     app.register_blueprint(chat_bp)
@@ -118,7 +118,7 @@ def create_app():
 
         user_id = get_safe_user_id()
         if user_id is None:
-            # Определяем, является ли запрос API (все остальные API — приватные)
+            # Определяем, является ли запрос API
             if request.endpoint and '.' in request.endpoint:
                 return jsonify({"error": "Unauthorized", "message": "Требуется аутентификация"}), 401
             else:
@@ -132,6 +132,7 @@ def create_app():
             user = db.session.get(User, user_id)
             if not user:
                 raise ValueError("User not found in DB")
+            
         except (TypeError, ValueError):
             response = make_response(redirect(url_for('session.login')))
             unset_jwt_cookies(response)
@@ -145,5 +146,5 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    # app.run(host='0.0.0.0', port=5000, debug=True)
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+    # app.run(debug=True)

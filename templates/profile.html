@@ -1,0 +1,116 @@
+<!-- Личный кабинет -->
+{% extends 'base.html' %}
+
+{% block link %}
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block title %}
+Личный кабинет
+{% endblock %}
+
+{% block header %}
+<div class="profile-back">
+    <a href="/" title="Вернуться назад">
+        {{ custom_icon(size=35, cls="back") }}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-info-panel">
+        <h3>Личный кабинет</h3>
+    </div>
+
+    <!-- Роль -->
+    <div class="profile-field">
+        <span class="profile-field-label">Роль:</span>
+        <div class="profile-field-value">{{ role }}</div>
+    </div>
+
+    <!-- Имя -->
+    <div class="profile-field">
+        <span class="profile-field-label">Имя:</span>
+        <div class="profile-field-value-group">
+            <span class="profile-field-value" data-editable="username">{{ username }}</span>
+            <button type="button" class="profile-edit-btn" data-field="username" title="Редактировать имя">
+                {{ edit_product(size=24, cls="") }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Форма редактирования имени -->
+    <div class="profile-username-edit-form" id="usernameEditView">
+        <input type="text" id="newUsernameInput" class="profile-form-input" placeholder="Введите новое имя">
+        <button type="button" class="profile-btn profile-btn-primary" id="submitUsernameBtn">Изменить имя</button>
+        <button type="button" class="profile-btn profile-btn-outline" id="cancelUsernameBtn">Отмена</button>
+    </div>
+
+    <!-- Email -->
+    <div class="profile-field" id="emailField">
+        <span class="profile-field-label">Email:</span>
+        <div class="profile-email-container">
+            <div class="profile-field-value-group" id="emailStaticView">
+                <span class="profile-field-value" id="emailValue">{{ email }}</span>
+            </div>
+            <button type="button" class="profile-edit-btn" id="editEmailBtn" title="Изменить email">
+                {{ edit_product(size=24, cls="") }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Неподтверждённый email -->
+    <div class="profile-pending-email" id="pendingEmailView">
+        <span class="profile-pending-email-value">{{ pending_email }}</span>
+        <span class="profile-pending-email-hint"
+            title="Для подтверждения нового email и его замены, вам необходимо перейти по ссылке которая была отправленна на новый email.">
+            Не подтверждённый email</span>
+        <button type="button" class="profile-edit-btn btn-del" id="delPEmailBtn" title="Отменить изменение email">
+            {{ remove(size=24, cls="") }}
+        </button>
+    </div>
+
+    <!-- Форма редактирования email -->
+    <div class="profile-email-edit-form" id="emailEditView">
+        <input type="email" id="newEmailInput" class="profile-form-input" placeholder="Введите новый email">
+        <button type="button" class="profile-btn profile-btn-primary" id="submitEmailBtn">Изменить email</button>
+        <button type="button" class="profile-btn profile-btn-outline" id="cancelEmailBtn">Отмена</button>
+    </div>
+
+    <!-- Смена пароля -->
+    <div class="profile-field profile-field-password">
+        <span class="profile-field-label">Пароль:</span>
+        <div class="profile-field-value-group">
+            <span class="profile-field-value">••••••••</span>
+            <button type="button" class="profile-edit-btn" id="changePasswordBtn" title="Сменить пароль">
+                {{ edit_product(size=24, cls="") }}
+            </button>
+        </div>
+    </div>
+
+    <form id="resetPasswordForm" method="POST" action="{{ url_for('session.reset_password') }}">
+        <input type="hidden" name="email" value="{{ email }}">
+    </form>
+
+    <!-- Дата регистрации -->
+    <div class="profile-field">
+        <span class="profile-field-label">Зарегистрирован:</span>
+        <div class="profile-field-value">{{ created_at.strftime('%d.%m.%Y') }}</div>
+    </div>
+
+    <!-- Уведомления -->
+    <div id="globalNotification" class="profile-notification"></div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script id="profile-data" type="application/json">
+{
+    "email": {{ email | tojson }},
+    "username": {{ username | tojson }},
+    "pending_email": {{ pending_email | tojson }}
+}
+</script>
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}

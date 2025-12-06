@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const price = clone.querySelector('.price_product p');
                 const badge = clone.querySelector('.badge');
 
-                img.src = `/static${product.img_url}`;
+                img.src = `${product.img_url}`;
                 img.alt = product.title;
                 articleNum.textContent = `Артикул: ${product.article_num}`;
                 titleLink.textContent = product.title;

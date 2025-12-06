@@ -10,6 +10,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const sendChatMessageBtn = document.getElementById('send-chat-message');
     const infoPanel = document.getElementById('messages-info-panel');
 
+
+    // === Темы сообщений ===
+    const topicsModal = document.getElementById('topics-modal');
+    const closeTopicsModalBtn = document.getElementById('close-topics-modal');
+    const topicsTableBody = document.getElementById('topics-table-body');
+    const addTopicBtn = document.getElementById('add-topic-btn');
+
+    let editingCell = null;
+
     let currentDialogId = null;
     let currentDialogStatus = null;
     let isGuestDialog = false;
@@ -142,6 +151,195 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Ошибка удаления диалогов:', error);
             showMessage(`Ошибка: ${error.message}`, 'error');
         }
+    });
+
+    // Открытие модалки тем
+    document.getElementById('mess-topics-btn').addEventListener('click', async () => {
+        topicsModal.classList.remove('hidden');
+        await loadTopics();
+    });
+
+    // Закрытие модалки
+    closeTopicsModalBtn.addEventListener('click', () => {
+        topicsModal.classList.add('hidden');
+    });
+
+    topicsModal.querySelector('.topics-modal-overlay').addEventListener('click', (e) => {
+        if (e.target === topicsModal.querySelector('.topics-modal-overlay')) {
+            topicsModal.classList.add('hidden');
+        }
+    });
+
+    // Загрузка тем
+    async function loadTopics() {
+        try {
+            const response = await fetch('/api/chat/topics', {
+                method: 'GET',
+                credentials: 'same-origin'
+            });
+            if (!response.ok) throw new Error('Не удалось загрузить темы');
+            const topics = await response.json();
+            renderTopics(topics);
+        } catch (err) {
+            console.error('Ошибка загрузки тем:', err);
+            topicsTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Ошибка загрузки</td></tr>';
+        }
+    }
+
+    // Отображение тем
+    function renderTopics(topics) {
+        topicsTableBody.innerHTML = '';
+        if (topics.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `<td colspan="4" style="text-align:center;color:#777;">Нет тем</td>`;
+            topicsTableBody.appendChild(row);
+            return;
+        }
+
+        topics.forEach(topic => {
+            const row = document.createElement('tr');
+            row.dataset.topicId = topic.id;
+
+            const isActiveHtml = `
+                <input type="checkbox" ${topic.is_active ? 'checked' : ''} data-field="is_active">
+            `;
+
+            row.innerHTML = `
+                <td>${topic.id}</td>
+                <td class="editable" data-field="name">${escapeHtml(topic.name)}</td>
+                <td class="editable" data-field="description">${escapeHtml(topic.description || '')}</td>
+                <td>${isActiveHtml}</td>
+            `;
+            topicsTableBody.appendChild(row);
+        });
+
+        // Навешиваем обработчики
+        topicsTableBody.querySelectorAll('.editable').forEach(cell => {
+            cell.addEventListener('click', startEditing);
+        });
+
+        topicsTableBody.querySelectorAll('input[type="checkbox"][data-field="is_active"]').forEach(cb => {
+            cb.addEventListener('change', function () {
+                const row = this.closest('tr');
+                const topicId = row.dataset.topicId;
+                const value = this.checked;
+                saveTopicField(topicId, 'is_active', value);
+            });
+        });
+    }
+
+    // Начало редактирования
+    function startEditing(e) {
+        if (editingCell) return; // Защита от нескольких одновременных редактирований
+
+        const cell = e.target;
+        const field = cell.dataset.field;
+        const currentValue = cell.textContent;
+
+        editingCell = cell;
+
+        const input = document.createElement('input');
+        input.type = field === 'description' ? 'text' : 'text';
+        input.value = currentValue;
+        input.className = 'inline-edit-input';
+        input.style.width = '100%';
+        input.style.padding = '4px';
+        input.style.border = '1px solid #ccc';
+        input.style.borderRadius = '3px';
+
+        cell.innerHTML = '';
+        cell.appendChild(input);
+        input.focus();
+
+        const save = () => {
+            const newValue = input.value.trim();
+            const row = cell.closest('tr');
+            const topicId = row.dataset.topicId;
+
+            if (newValue !== currentValue) {
+                saveTopicField(topicId, field, newValue);
+            }
+
+            // Вернуть обратно текст
+            cell.textContent = escapeHtml(newValue || '');
+            editingCell = null;
+        };
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                save();
+                input.blur();
+            }
+        });
+    }
+
+    // Сохранение одного поля темы
+    async function saveTopicField(topicId, field, value) {
+        try {
+            const response = await fetch(`/api/chat/topics/${topicId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ [field]: value })
+            });
+            if (!response.ok) {
+                throw new Error('Не удалось сохранить');
+            }
+            // Успешно — можно ничего не делать, т.к. UI уже обновлён
+        } catch (err) {
+            console.error('Ошибка сохранения:', err);
+            showMessage(`Ошибка сохранения: ${err.message}`, 'error');
+        }
+    }
+
+    // Добавление новой темы
+    addTopicBtn.addEventListener('click', async () => {
+        const newRow = document.createElement('tr');
+        newRow.dataset.topicId = 'new'; // временный ID
+
+        newRow.innerHTML = `
+            <td>—</td>
+            <td class="editable" data-field="name"></td>
+            <td class="editable" data-field="description"></td>
+            <td><input type="checkbox" checked data-field="is_active"></td>
+        `;
+
+        topicsTableBody.appendChild(newRow);
+
+        // Активируем редактирование в имени
+        const nameCell = newRow.querySelector('[data-field="name"]');
+        nameCell.click();
+
+        // Обработчик для чекбокса (сохранение при изменении)
+        const cb = newRow.querySelector('input[type="checkbox"]');
+        cb.addEventListener('change', async () => {
+            // Создаём тему при первом изменении
+            const name = newRow.querySelector('[data-field="name"]').textContent.trim();
+            if (!name) return;
+
+            try {
+                const res = await fetch('/api/chat/topics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        name: name,
+                        description: newRow.querySelector('[data-field="description"]').textContent.trim(),
+                        is_active: cb.checked
+                    })
+                });
+                if (!res.ok) throw new Error('Не удалось создать тему');
+                const saved = await res.json();
+                newRow.dataset.topicId = saved.id;
+                newRow.querySelector('td:first-child').textContent = saved.id;
+                showMessage('Тема добавлена', 'success');
+            } catch (err) {
+                console.error('Ошибка создания темы:', err);
+                showMessage(`Ошибка: ${err.message}`, 'error');
+                newRow.remove();
+            }
+        });
     });
 
     // Утилиты

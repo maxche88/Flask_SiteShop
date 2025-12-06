@@ -1,0 +1,537 @@
+/* === Сброс === */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* === Заголовок === */
+.title_check_info {
+    height: 15px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* === Кнопки управления === */
+.button_container {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 32px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #0d6efd;
+    border: 1px solid #0b5ed7;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25),
+                0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+    outline: none;
+}
+
+.btn-control:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    box-shadow: 0 4px 8px rgba(13, 110, 253, 0.35),
+                0 2px 4px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+}
+
+.btn-control:focus {
+    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25),
+                0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+
+/* === Таблица чек-листов === */
+.table-container {
+    width: 100%;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.checklists-grid-table {
+    display: grid;
+    grid-template-columns: 40px 60px minmax(180px, 1fr) 100px 80px 80px 140px;
+    width: 100%;
+}
+
+.checklists-grid-table > .grid-header,
+.checklists-grid-table > .checklist-row {
+    display: contents;
+}
+
+.checklist-row {
+    cursor: pointer;
+}
+
+.grid-header > div,
+.checklist-row > .cell,
+.checklist-row > .checkbox-cell {
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #eee;
+}
+
+.grid-header > div {
+    background-color: #f1f3f5;
+    font-weight: bold;
+    text-align: center;
+}
+
+.checklist-row .title-cell,
+.checklist-row .author-id-cell,
+.grid-header .title-cell,
+.grid-header .author-id-cell {
+    justify-content: flex-start;
+    text-align: left;
+}
+
+.checkbox-cell-header,
+.checkbox-cell {
+    justify-content: center;
+}
+
+.checkbox-cell-header input,
+.checkbox-cell input {
+    margin: 0;
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.checklist-row:hover > .cell,
+.checklist-row:hover > .checkbox-cell {
+    background-color: #b7dbff;
+}
+
+/* === Сообщения === */
+#checklistsError {
+    margin-top: 16px;
+    padding: 12px;
+    font-size: 14px;
+    text-align: center;
+    border-radius: 6px;
+    display: none;
+}
+
+#checklistsError.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+#checklistsError.info {
+    background-color: #e9ecef;
+    color: #212529;
+    border: 1px solid #ced4da;
+}
+
+/* === Модальные окна === */
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-backdrop.is-open {
+    display: flex;
+}
+
+.modal-card {
+    background: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 800px;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 2001;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-title-wrapper h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+}
+
+.modal-subtitle {
+    font-size: 14px;
+    color: #666;
+    margin-top: 4px;
+    font-weight: normal;
+    line-height: 1.3;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Кнопка закрытия модалки */
+.icon-btn {
+    width: auto;
+    height: auto;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #555;
+    padding: 4px;
+}
+
+.icon-btn:hover {
+    color: #4a6cf7;
+}
+
+/* === Форма создания/редактирования чек-листа === */
+#checklistForm {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(100vh - 180px);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.required-asterisk {
+    color: #e74c3c;
+}
+
+.form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.checklist-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checklist-item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.checklist-item-row .item-text-input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.checklist-item-row .remove-item-btn {
+    width: auto;
+    height: auto;
+    border: none;
+    background: transparent;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #555;
+}
+
+.checklist-item-row .remove-item-btn:hover {
+    background-color: #f0f0f0;
+}
+
+.btn-add-item {
+    padding: 6px 12px;
+    background-color: #e9ecef;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-add-item:hover {
+    background-color: #dee2e6;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn-outline {
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.btn-outline:hover {
+    background-color: #e9ecef;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+}
+
+/* === Модальное окно: просмотр / выполнение чек-листа === */
+.view-checklist-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    line-height: 1.5;
+}
+
+.checklist-item-execution {
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.checklist-item-execution:last-child {
+    border-bottom: none;
+}
+
+.item-text-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 15px;
+    word-break: break-word;
+}
+
+.checklist-item-text {
+    cursor: pointer;
+    max-width: 500px;
+}
+
+.item-number::after {
+    content: ".";
+}
+.item-number {
+    font-weight: bold;
+    min-width: 18px;
+    text-align: right;
+    color: #555;
+}
+
+.item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.status-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.comment-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    color: #555;
+    position: relative;
+}
+
+.comment-toggle-btn.has-comment::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-btn.passed { background-color: #e6f4ea; color: #137333; border-color: #81c39a; }
+.status-btn.failed { background-color: #fce8e6; color: #c5221f; border-color: #d97a76; }
+.status-btn.blocked { background-color: #fef7e0; color: #955c07; border-color: #d9b45c; }
+.status-btn.skipped { background-color: #f1f3f4; color: #5f6368; border-color: #c6c9cc; }
+
+.status-btn.active {
+    box-shadow: 0 0 0 2px #4285f4;
+}
+
+
+.comment-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Контейнер комментария — растягивается влево */
+.comment-section {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 280px;
+    min-width: 220px;
+    max-width: 400px;
+    min-height: 120px;
+    max-height: 300px;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 2002;
+    display: flex;
+}
+
+.comment-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: none;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+.comment-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+/* === Адаптивность === */
+@media (max-width: 1024px) {
+    .checklists-grid-table {
+        grid-template-columns:
+        30px 
+        60px minmax(140px, 1fr) 
+        70px 
+        80px 
+        85px 
+        120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .checklists-grid-table {
+        grid-template-columns: 
+        30px 
+        60px minmax(100px, 1fr) 
+        70px 
+        80px 
+    }
+
+    .checklist-row .author-id-cell,
+    .checklist-row .created-at-cell,
+    .grid-header .author-id-header,
+    .grid-header .created-at-header {
+        display: none;
+    }
+
+    .checklist-item-execution {
+        flex-direction: column;
+    }
+
+    .item-actions {
+        justify-content: center;
+    }
+    
+}
+
+@media (max-width: 480px) {
+    .checklists-grid-table {
+        grid-template-columns: 
+        40px 
+        60px minmax(140px, 1fr) 
+        70px 
+        80px;
+    }
+
+    .checklist-row .author-id-cell,
+    .checklist-row .created-at-cell {
+        display: none;
+    }
+}

@@ -1,0 +1,267 @@
+/* ==========================================================================
+   Общая обёртка профиля
+   ========================================================================== */
+
+.profile-container {
+    max-width: 800px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ==========================================================================
+   Кнопка "назад"
+   ========================================================================== */
+
+.profile-back {
+    text-align: left;
+}
+
+/* ==========================================================================
+   Заголовок секции
+   ========================================================================== */
+
+.profile-info-panel {
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.profile-info-panel h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #333;
+}
+
+/* ==========================================================================
+   Общее поле профиля (роль, имя, email, пароль и т.д.)
+   ========================================================================== */
+
+.profile-field {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    align-items: flex-start;
+}
+
+/* ==========================================================================
+   Метка поля (слева)
+   ========================================================================== */
+
+.profile-field-label {
+    flex: 0 0 160px;
+    font-weight: 600;
+    color: #444;
+    align-self: center;
+}
+
+/* ==========================================================================
+   Значение поля (справа)
+   ========================================================================== */
+
+.profile-field-value {
+    flex: 1;
+    min-width: 0;
+    color: #222;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+/* ==========================================================================
+   Группа: значение + кнопка редактирования
+   ========================================================================== */
+
+.profile-field-value-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* ==========================================================================
+   Контейнер email (включает значение, бейдж и кнопку)
+   ========================================================================== */
+
+.profile-email-container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
+}
+
+/* ==========================================================================
+   Кнопка редактирования (иконка)
+   ========================================================================== */
+
+.profile-edit-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #555;
+    font-size: 12px;
+    opacity: 0.7;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+
+.profile-edit-btn:hover {
+    opacity: 1;
+    background-color: #f0f0f0;
+}
+
+/* ==========================================================================
+   Форма редактирования email и имени
+   ========================================================================== */
+
+.profile-email-edit-form,
+.profile-username-edit-form {
+    display: none;
+    margin-top: 8px;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Форма редактирования email и имени (инпут + кнопки)
+   ========================================================================== */
+
+.profile-form-input {
+    flex: 1;
+    min-width: 200px;
+    max-width: 320px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+    color: #333;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.profile-form-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* ==========================================================================
+   Кнопки в форме редактирования email и имени
+   ========================================================================== */
+
+.profile-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.profile-btn-primary,
+.profile-btn-outline {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.profile-btn-primary:hover,
+.profile-btn-outline:hover {
+    background-color: #0b5ed7;
+}
+
+/* ==========================================================================
+   Блок неподтверждённого email (красный)
+   ========================================================================== */
+
+.profile-pending-email {
+    display: none;
+    background-color: #ffebee;
+    margin-top: 6px;
+    color: #383838;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.profile-pending-email-value {
+    font-weight: 500;
+}
+
+.profile-pending-email-hint {
+    font-size: 0.9em;
+    color: #000000;
+    
+}
+
+.btn-del {
+    color: #ff0000;
+    border: 1px solid #ff0000;
+}
+
+/* ==========================================================================
+   Уведомления (успех/ошибка)
+   ========================================================================== */
+
+.profile-notification {
+    display: none;
+    margin-top: 8px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   Адаптив: мобильные устройства (до 600px)
+   ========================================================================== */
+
+@media (max-width: 600px) {
+    .profile-field {
+        flex-direction: column;
+        gap: 6px;
+        align-items: stretch;
+    }
+
+    .profile-field-label {
+        flex: none;
+        align-self: flex-start;
+    }
+
+    .profile-edit-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+
+    .profile-field-password .profile-field-value-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .profile-email-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .profile-email-edit-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
