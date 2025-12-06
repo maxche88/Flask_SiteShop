@@ -36,7 +36,7 @@
                 <div class="cart-card-top">
                     <div class="cart-card-title">{{ item.product.title }}</div>
                     <div class="cart-card-image">
-                        <img src="{{ url_for('static', filename=item.product.link_img) }}" alt="{{ item.product.title }}">
+                        <img src="{{ item.product.link_img }}" alt="{{ item.product.title }}">
                     </div>
                 </div>
 
