@@ -2,6 +2,8 @@
 
 Интернет-магазин на **Flask** с расширенной функциональностью: полная система управления пользователями, админка, управление товарами, инструменты для QA-тестирования (создание чек-листов и баг-репортов).
 
+Учебно-боевой проект, интернет-магазин, сочетающий e-commerce и инструменты QA-инженера для сквозного тестирования и отчётности.
+
 ---
 
 ## 🔧 Основные возможности
@@ -31,7 +33,7 @@
   - Комментарии к пунктам чек-листа с всплывающими подсказками
   - Поддержка динамического обновления без перезагрузки (JS)
   - Отправка баг-репортов с вложениями (логи, скриншоты, ссылки)
-  - Валидация расширений и размера файлов (задаётся в congig.py)    
+  - Валидация расширений и размера файлов (задаётся в config.py) 
 - **Безопасность и надёжность**:
   - Уникальные имена файлов через UUID
   - Удаление старых файлов при обновлении
@@ -43,10 +45,11 @@
 
 - **Backend**: Python 3.10+, Flask, Flask-JWT-Extended, Flask-SQLAlchemy, FlaskMail
 - **Frontend**: HTML(jinja2), CSS(flex, grid), JS (динамические формы, модальные окна, AJAX)
+- **API**: RESTful API для получения товаров, управления корзиной и других операций.
 - **Database**: PostgreSQL
 - **Migrations**: Flask-Migrate (Alembic)
 - **Deployment-ready**: поддержка `DATABASE_URL`, `MAIL_SERVER` через переменные окружения
-
+  
 ---
 
 ## 🚀 Запуск проекта
@@ -69,7 +72,7 @@
   MAIL_PASSWORD=ваш_пароль_от_mail.ru
 
   **Подсказка**: Если у вас нет PostgreSQL:
-    Скачайте [PostgreSQL для Windows](https://www.postgresql.org/download/windows/)
+    Скачайте [PostgreSQL для Windows](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads?spm=a2ty_o01.29997173.0.0.66455171tJUXdX)
     Или используйте Docker: `docker run --name data-db -e POSTGRES_DB=data_db -e POSTGRES_USER=user -e POSTGRES_PASSWORD=pass -p 5432:5432 -d postgres`
 
 5. Выполните миграции:
