@@ -11,16 +11,174 @@ chat_bp = Blueprint('chat_api', __name__, url_prefix='/api/chat')
 chat_logger = logging.getLogger('app.chat')
 
 
+# ========================
+# ТЕМЫ ОБРАЩЕНИЙ (Message Topics)
+# ========================
+
+# === ПУБЛИЧНЫЙ: для гостей и пользователей (только активные) ===
 @chat_bp.route('/topics', methods=['GET'])
 def get_message_topics():
     """Возвращает список активных тем обращений. Доступен без авторизации."""
     topics = MessageTopic.query.filter_by(is_active=True).order_by(MessageTopic.name).all()
-
     return jsonify([
         {'id': topic.id, 'name': topic.name}
         for topic in topics
     ]), 200
 
+
+# === ПРИВАТНЫЙ: для админки (все темы, со всеми полями) ===
+@chat_bp.route('/admin/topics', methods=['GET'])
+def get_all_message_topics_for_admin():
+    """
+    Возвращает ВСЕ темы (включая неактивные) со всеми полями.
+    Доступен ТОЛЬКО для suser и admin.
+    """
+    user = getattr(g, 'current_user', None)
+    if not user or user.role not in ('suser', 'admin'):
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    topics = MessageTopic.query.order_by(MessageTopic.id).all()
+    return jsonify([
+        {
+            'id': t.id,
+            'name': t.name,
+            'description': t.description or '',
+            'is_active': t.is_active
+        }
+        for t in topics
+    ]), 200
+
+
+@chat_bp.route('/topics', methods=['POST'])
+def create_message_topic():
+    """
+    Создаёт новую тему.
+    Доступен ТОЛЬКО для admin.
+    """
+    user = g.current_user
+    if user.role != 'admin':
+        return jsonify({'error': 'Только администратор может создавать темы'}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Ожидается JSON'}), 400
+
+    name = (data.get('name') or '').strip()
+    description = (data.get('description') or '').strip()
+    is_active = bool(data.get('is_active', True))
+
+    if not name:
+        return jsonify({'error': 'Название обязательно'}), 400
+
+    if len(name) > 100:
+        return jsonify({'error': 'Название не должно превышать 100 символов'}), 400
+
+    if len(description) > 255:
+        return jsonify({'error': 'Описание не должно превышать 255 символов'}), 400
+
+    # Проверка уникальности
+    if MessageTopic.query.filter_by(name=name).first():
+        return jsonify({'error': 'Тема с таким названием уже существует'}), 400
+
+    topic = MessageTopic(
+        name=name,
+        description=description or None,
+        is_active=is_active
+    )
+    db.session.add(topic)
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        chat_logger.exception("Ошибка при создании темы")
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+
+    return jsonify({
+        'id': topic.id,
+        'name': topic.name,
+        'description': topic.description or '',
+        'is_active': topic.is_active
+    }), 201
+
+
+@chat_bp.route('/topics/<int:topic_id>', methods=['PATCH'])
+def update_message_topic(topic_id):
+    """
+    Обновляет поля темы: name, description, is_active.
+    Доступен для suser и admin.
+    """
+    user = g.current_user
+    if user.role not in ('suser', 'admin'):
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    topic = MessageTopic.query.get_or_404(topic_id)
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'Ожидается JSON'}), 400
+
+    # Обновление name
+    if 'name' in data:
+        name = (data['name'] or '').strip()
+        if not name:
+            return jsonify({'error': 'Название не может быть пустым'}), 400
+        if len(name) > 100:
+            return jsonify({'error': 'Название не должно превышать 100 символов'}), 400
+        # Проверка уникальности, кроме самой себя
+        existing = MessageTopic.query.filter(
+            MessageTopic.name == name,
+            MessageTopic.id != topic_id
+        ).first()
+        if existing:
+            return jsonify({'error': 'Тема с таким названием уже существует'}), 400
+        topic.name = name
+
+    # Обновление description
+    if 'description' in data:
+        desc = (data['description'] or '').strip()
+        if len(desc) > 255:
+            return jsonify({'error': 'Описание не должно превышать 255 символов'}), 400
+        topic.description = desc or None
+
+    # Обновление is_active
+    if 'is_active' in data:
+        topic.is_active = bool(data['is_active'])
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        chat_logger.exception(f"Ошибка обновления темы {topic_id}")
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+
+    return jsonify({'status': 'ok'}), 200
+
+
+@chat_bp.route('/topics/<int:topic_id>', methods=['DELETE'])
+def delete_message_topic(topic_id):
+    """
+    Удаляет тему обращения.
+    Доступен ТОЛЬКО для admin.
+    Запрещено, если существуют привязанные диалоги.
+    """
+    user = g.current_user
+    if user.role != 'admin':
+        return jsonify({'error': 'Только администратор может удалять темы'}), 403
+
+    topic = MessageTopic.query.get_or_404(topic_id)
+
+    # Защита от удаления, если есть связанные диалоги
+    if Dialog.query.filter_by(topic_id=topic_id).first():
+        return jsonify({'error': 'Невозможно удалить тему: существуют привязанные диалоги'}), 400
+
+    db.session.delete(topic)
+    db.session.commit()
+    return jsonify({'success': True}), 200
+
+
+# ========================
+# ДИАЛОГИ: ПРОСМОТР И УПРАВЛЕНИЕ
+# ========================
 
 @chat_bp.route('/unread-count', methods=['GET'])
 def get_unread_message_count():
@@ -58,6 +216,185 @@ def get_unread_message_count():
         chat_logger.exception("Ошибка при подсчёте непрочитанных сообщений")
         return jsonify({'unread_count': 0}), 200
 
+
+@chat_bp.route('/dialogs', methods=['GET'])
+def get_all_dialogs():
+    """
+    Универсальный роут для получения списка диалогов.
+    Сортировка: сначала непрочитанные, затем прочитанные, по дате обновления (новые выше).
+    """
+    user = g.current_user
+
+    if user.role == 'user':
+        dialogs = Dialog.query.filter(
+            Dialog.user_id == user.id,
+            Dialog.status == 'open'
+        ).all()
+    elif user.role == 'suser':
+        dialogs = Dialog.query.filter(Dialog.topic_id == 1).all()
+    elif user.role == 'admin':
+        dialogs = Dialog.query.all()
+    else:
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    if user.role == 'user':
+        incoming_sender_roles = ['suser', 'admin']
+    else:
+        incoming_sender_roles = ['user', 'guest']
+
+    # Сначала подготовим данные с объектами datetime для сортировки
+    dialog_data = []
+    for dialog in dialogs:
+        messages = Message.query.filter_by(dialog_id=dialog.id).all()
+        message_count = len(messages)
+        
+        last_message = messages[0] if messages else None
+        last_sender_role = last_message.sender_role if last_message else None
+        
+        last_message_preview = ''
+        if last_message and last_message.text:
+            preview = last_message.text.strip()
+            last_message_preview = (preview[:100] + '…') if len(preview) > 100 else preview
+
+        unread_count = sum(
+            1 for msg in messages
+            if msg.sender_role in incoming_sender_roles and not msg.is_read
+        )
+
+        # Сохраняем RAW данные, включая datetime объект
+        dialog_data.append({
+            'dialog': dialog,
+            'messages': messages,
+            'message_count': message_count,
+            'last_message': last_message,
+            'last_sender_role': last_sender_role,
+            'last_message_preview': last_message_preview,
+            'unread_count': unread_count
+        })
+
+    # === СОРТИРУЕМ ПО RAW ДАННЫМ ===
+    dialog_data.sort(key=lambda item: (
+        0 if item['unread_count'] > 0 else 1,  # непрочитанные вверх
+        - (item['dialog'].updated_at.timestamp() if item['dialog'].updated_at else 0)  # новые выше
+    ))
+
+    # === Теперь формируем JSON-ответ ===
+    result = []
+    for item in dialog_data:
+        dialog = item['dialog']
+        result.append({
+            'id': dialog.id,
+            'user_id': dialog.user_id,
+            'name': dialog.name,
+            'email': dialog.email,
+            'username': dialog.user.username if dialog.user else None,
+            'topic_name': dialog.topic.name if dialog.topic else '—',
+            'order_id': dialog.order_id,
+            'product_id': dialog.product_id,
+            'status': dialog.status,
+            'updated_at': dialog.updated_at.isoformat() if dialog.updated_at else None,
+            'message_count': item['message_count'],
+            'last_sender_role': item['last_sender_role'],
+            'last_message_preview': item['last_message_preview'],
+            'unread_count': item['unread_count']
+        })
+
+    return jsonify(result), 200
+
+
+@chat_bp.route('/dialogs/<int:dialog_id>/messages', methods=['GET'])
+def get_dialog_messages(dialog_id):
+    """
+    Возвращает все сообщения в указанном диалоге.
+    
+    Доступ: только для авторизованных suser/admin.
+    При открытии диалога автоматически помечает сообщения от пользователя как прочитанные.
+    """
+    user = g.current_user
+    if user.role not in ('suser', 'admin'):
+        chat_logger.warning(
+            f"Попытка доступа к диалогу {dialog_id} от недопустимой роли: {user.role} (user_id={user.id})"
+        )
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    try:
+        dialog = db.session.get(Dialog, dialog_id)
+        if not dialog:
+            return jsonify({'error': 'Диалог не найден'}), 404
+
+        unread_user_messages = Message.query.filter(
+            Message.dialog_id == dialog_id,
+            Message.sender_role.in_(['user', 'guest']),
+            Message.is_read == False
+        ).all()
+
+        for msg in unread_user_messages:
+            msg.is_read = True
+
+        db.session.commit()
+
+        messages = Message.query.filter_by(
+            dialog_id=dialog_id
+        ).order_by(
+            Message.created_at.asc()
+        ).all()
+
+        return jsonify([{
+            'id': msg.id,
+            'sender_role': msg.sender_role,
+            'text': msg.text,
+            'created_at': msg.created_at.isoformat(),
+            'is_read': msg.is_read
+        } for msg in messages]), 200
+
+    except Exception as e:
+        db.session.rollback()
+        chat_logger.exception(f"Ошибка при загрузке сообщений диалога {dialog_id}")
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+
+
+@chat_bp.route('/user-dialogs/<int:dialog_id>/messages', methods=['GET'])
+def get_user_dialog_messages(dialog_id):
+    """
+    Возвращает сообщения диалога ТОЛЬКО если он принадлежит текущему пользователю.
+    """
+    user = g.current_user
+    
+    if user.role != 'user':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    dialog = Dialog.query.filter_by(id=dialog_id, user_id=user.id).first()
+    if not dialog:
+        return jsonify({'error': 'Диалог не найден или недоступен'}), 404
+
+    try:
+        unread_support_messages = Message.query.filter(
+            Message.dialog_id == dialog_id,
+            Message.sender_role.in_(['suser', 'admin']),
+            Message.is_read == False
+        ).all()
+
+        for msg in unread_support_messages:
+            msg.is_read = True
+
+        db.session.commit()
+
+        messages = Message.query.filter_by(dialog_id=dialog_id).order_by(Message.created_at.asc()).all()
+        return jsonify([{
+            'id': msg.id,
+            'sender_role': msg.sender_role,
+            'text': msg.text,
+            'created_at': msg.created_at.isoformat()
+        } for msg in messages]), 200
+
+    except Exception as e:
+        chat_logger.exception(f"Ошибка загрузки сообщений диалога {dialog_id}")
+        return jsonify({'error': 'Ошибка сервера'}), 500
+
+
+# ========================
+# СОЗДАНИЕ ДИАЛОГОВ
+# ========================
 
 @chat_bp.route('/dialogs/guest', methods=['POST'])
 def create_guest_dialog_api():
@@ -243,223 +580,9 @@ def create_user_dialog_api():
         return jsonify({'success': False, 'errors': ['Внутренняя ошибка сервера.']}), 500
 
 
-@chat_bp.route('/user-dialogs/<int:dialog_id>/messages', methods=['GET'])
-def get_user_dialog_messages(dialog_id):
-    """
-    Возвращает сообщения диалога ТОЛЬКО если он принадлежит текущему пользователю.
-    """
-    user = g.current_user
-    
-    if user.role != 'user':
-        return jsonify({'error': 'Доступ запрещён'}), 403
-
-    dialog = Dialog.query.filter_by(id=dialog_id, user_id=user.id).first()
-    if not dialog:
-        return jsonify({'error': 'Диалог не найден или недоступен'}), 404
-
-    try:
-        unread_support_messages = Message.query.filter(
-            Message.dialog_id == dialog_id,
-            Message.sender_role.in_(['suser', 'admin']),
-            Message.is_read == False
-        ).all()
-
-        for msg in unread_support_messages:
-            msg.is_read = True
-
-        db.session.commit()
-
-        messages = Message.query.filter_by(dialog_id=dialog_id).order_by(Message.created_at.asc()).all()
-        return jsonify([{
-            'id': msg.id,
-            'sender_role': msg.sender_role,
-            'text': msg.text,
-            'created_at': msg.created_at.isoformat()
-        } for msg in messages]), 200
-
-    except Exception as e:
-        chat_logger.exception(f"Ошибка загрузки сообщений диалога {dialog_id}")
-        return jsonify({'error': 'Ошибка сервера'}), 500
-
-
-@chat_bp.route('/dialogs/<int:dialog_id>/messages', methods=['GET'])
-def get_dialog_messages(dialog_id):
-    """
-    Возвращает все сообщения в указанном диалоге.
-    
-    Доступ: только для авторизованных suser/admin.
-    При открытии диалога автоматически помечает сообщения от пользователя как прочитанные.
-    """
-    user = g.current_user
-    if user.role not in ('suser', 'admin'):
-        chat_logger.warning(
-            f"Попытка доступа к диалогу {dialog_id} от недопустимой роли: {user.role} (user_id={user.id})"
-        )
-        return jsonify({'error': 'Доступ запрещён'}), 403
-
-    try:
-        dialog = db.session.get(Dialog, dialog_id)
-        if not dialog:
-            return jsonify({'error': 'Диалог не найден'}), 404
-
-        unread_user_messages = Message.query.filter(
-            Message.dialog_id == dialog_id,
-            Message.sender_role.in_(['user', 'guest']),
-            Message.is_read == False
-        ).all()
-
-        for msg in unread_user_messages:
-            msg.is_read = True
-
-        db.session.commit()
-
-        messages = Message.query.filter_by(
-            dialog_id=dialog_id
-        ).order_by(
-            Message.created_at.asc()
-        ).all()
-
-        return jsonify([{
-            'id': msg.id,
-            'sender_role': msg.sender_role,
-            'text': msg.text,
-            'created_at': msg.created_at.isoformat(),
-            'is_read': msg.is_read
-        } for msg in messages]), 200
-
-    except Exception as e:
-        db.session.rollback()
-        chat_logger.exception(f"Ошибка при загрузке сообщений диалога {dialog_id}")
-        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
-
-
-@chat_bp.route('/user-dialogs/<int:dialog_id>/reply', methods=['POST'])
-def send_user_reply(dialog_id):
-    """Отправка сообщения от пользователя в свой диалог."""
-    user = g.current_user
-    if user.role != 'user':
-        return jsonify({'error': 'Доступ запрещён'}), 403
-
-    dialog = Dialog.query.filter_by(id=dialog_id, user_id=user.id).first()
-    if not dialog:
-        return jsonify({'error': 'Диалог не найден'}), 404
-
-    if dialog.status != 'open':
-        return jsonify({'error': 'Нельзя отвечать в закрытый диалог'}), 400
-
-    data = request.get_json()
-    text = data.get('text', '').strip() if data else ''
-    if not text:
-        return jsonify({'error': 'Сообщение не может быть пустым'}), 400
-
-    try:
-        message = send_message_in_dialog(
-            dialog_id=dialog_id,
-            sender_user_id=user.id,
-            sender_role='user',
-            text=text
-        )
-        return jsonify({
-            'success': True,
-            'message_id': message.id,
-            'sent_at': message.created_at.isoformat()
-        }), 201
-
-    except ValueError as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        db.session.rollback()
-        chat_logger.exception("Ошибка при отправке сообщения пользователем")
-        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
-
-
-from datetime import datetime
-
-@chat_bp.route('/dialogs', methods=['GET'])
-def get_all_dialogs():
-    """
-    Универсальный роут для получения списка диалогов.
-    Сортировка: сначала непрочитанные, затем прочитанные, по дате обновления (новые выше).
-    """
-    user = g.current_user
-
-    if user.role == 'user':
-        dialogs = Dialog.query.filter(
-            Dialog.user_id == user.id,
-            Dialog.status == 'open'
-        ).all()
-    elif user.role == 'suser':
-        dialogs = Dialog.query.filter(Dialog.topic_id == 1).all()
-    elif user.role == 'admin':
-        dialogs = Dialog.query.all()
-    else:
-        return jsonify({'error': 'Доступ запрещён'}), 403
-
-    if user.role == 'user':
-        incoming_sender_roles = ['suser', 'admin']
-    else:
-        incoming_sender_roles = ['user', 'guest']
-
-    # Сначала подготовим данные с объектами datetime для сортировки
-    dialog_data = []
-    for dialog in dialogs:
-        messages = Message.query.filter_by(dialog_id=dialog.id).all()
-        message_count = len(messages)
-        
-        last_message = messages[0] if messages else None
-        last_sender_role = last_message.sender_role if last_message else None
-        
-        last_message_preview = ''
-        if last_message and last_message.text:
-            preview = last_message.text.strip()
-            last_message_preview = (preview[:100] + '…') if len(preview) > 100 else preview
-
-        unread_count = sum(
-            1 for msg in messages
-            if msg.sender_role in incoming_sender_roles and not msg.is_read
-        )
-
-        # Сохраняем RAW данные, включая datetime объект
-        dialog_data.append({
-            'dialog': dialog,
-            'messages': messages,
-            'message_count': message_count,
-            'last_message': last_message,
-            'last_sender_role': last_sender_role,
-            'last_message_preview': last_message_preview,
-            'unread_count': unread_count
-        })
-
-    # === СОРТИРУЕМ ПО RAW ДАННЫМ ===
-    dialog_data.sort(key=lambda item: (
-        0 if item['unread_count'] > 0 else 1,  # непрочитанные вверх
-        - (item['dialog'].updated_at.timestamp() if item['dialog'].updated_at else 0)  # новые выше
-    ))
-
-    # === Теперь формируем JSON-ответ ===
-    result = []
-    for item in dialog_data:
-        dialog = item['dialog']
-        result.append({
-            'id': dialog.id,
-            'user_id': dialog.user_id,
-            'name': dialog.name,
-            'email': dialog.email,
-            'username': dialog.user.username if dialog.user else None,
-            'topic_name': dialog.topic.name if dialog.topic else '—',
-            'order_id': dialog.order_id,
-            'product_id': dialog.product_id,
-            'status': dialog.status,
-            'updated_at': dialog.updated_at.isoformat() if dialog.updated_at else None,
-            'message_count': item['message_count'],
-            'last_sender_role': item['last_sender_role'],
-            'last_message_preview': item['last_message_preview'],
-            'unread_count': item['unread_count']
-        })
-
-    return jsonify(result), 200
-
+# ========================
+# ОТПРАВКА СООБЩЕНИЙ
+# ========================
 
 @chat_bp.route('/dialogs/<int:dialog_id>/reply', methods=['POST'])
 def send_reply_to_dialog(dialog_id):
@@ -522,6 +645,51 @@ def send_reply_to_dialog(dialog_id):
         chat_logger.exception(f"Критическая ошибка при отправке ответа в диалог {dialog_id}")
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
     
+
+@chat_bp.route('/user-dialogs/<int:dialog_id>/reply', methods=['POST'])
+def send_user_reply(dialog_id):
+    """Отправка сообщения от пользователя в свой диалог."""
+    user = g.current_user
+    if user.role != 'user':
+        return jsonify({'error': 'Доступ запрещён'}), 403
+
+    dialog = Dialog.query.filter_by(id=dialog_id, user_id=user.id).first()
+    if not dialog:
+        return jsonify({'error': 'Диалог не найден'}), 404
+
+    if dialog.status != 'open':
+        return jsonify({'error': 'Нельзя отвечать в закрытый диалог'}), 400
+
+    data = request.get_json()
+    text = data.get('text', '').strip() if data else ''
+    if not text:
+        return jsonify({'error': 'Сообщение не может быть пустым'}), 400
+
+    try:
+        message = send_message_in_dialog(
+            dialog_id=dialog_id,
+            sender_user_id=user.id,
+            sender_role='user',
+            text=text
+        )
+        return jsonify({
+            'success': True,
+            'message_id': message.id,
+            'sent_at': message.created_at.isoformat()
+        }), 201
+
+    except ValueError as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        db.session.rollback()
+        chat_logger.exception("Ошибка при отправке сообщения пользователем")
+        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
+
+
+# ========================
+# УПРАВЛЕНИЕ СТАТУСОМ И УДАЛЕНИЕ ДИАЛОГОВ
+# ========================
 
 @chat_bp.route('/dialogs/<int:dialog_id>/close', methods=['POST'])
 def close_dialog(dialog_id):
@@ -664,133 +832,3 @@ def bulk_delete_dialogs():
         db.session.rollback()
         chat_logger.exception("Ошибка массового удаления диалогов")
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
-    
-
-# UPDATED: Полный список тем (для админки)
-@chat_bp.route('/topics', methods=['GET'])
-def get_all_message_topics_for_admin():
-    """
-    Возвращает ВСЕ темы (включая неактивные) со всеми полями.
-    Доступен ТОЛЬКО для suser и admin.
-    """
-    user = g.current_user
-    if user.role not in ('suser', 'admin'):
-        return jsonify({'error': 'Доступ запрещён'}), 403
-
-    topics = MessageTopic.query.order_by(MessageTopic.id).all()
-    return jsonify([
-        {
-            'id': t.id,
-            'name': t.name,
-            'description': t.description or '',
-            'is_active': t.is_active
-        }
-        for t in topics
-    ]), 200
-
-
-# Создание новой темы
-@chat_bp.route('/topics', methods=['POST'])
-def create_message_topic():
-    """
-    Создаёт новую тему.
-    Доступен ТОЛЬКО для admin.
-    """
-    user = g.current_user
-    if user.role != 'admin':
-        return jsonify({'error': 'Только администратор может создавать темы'}), 403
-
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'Ожидается JSON'}), 400
-
-    name = (data.get('name') or '').strip()
-    description = (data.get('description') or '').strip()
-    is_active = bool(data.get('is_active', True))
-
-    if not name:
-        return jsonify({'error': 'Название обязательно'}), 400
-
-    if len(name) > 100:
-        return jsonify({'error': 'Название не должно превышать 100 символов'}), 400
-
-    if len(description) > 255:
-        return jsonify({'error': 'Описание не должно превышать 255 символов'}), 400
-
-    # Проверка уникальности
-    if MessageTopic.query.filter_by(name=name).first():
-        return jsonify({'error': 'Тема с таким названием уже существует'}), 400
-
-    topic = MessageTopic(
-        name=name,
-        description=description or None,
-        is_active=is_active
-    )
-    db.session.add(topic)
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        chat_logger.exception("Ошибка при создании темы")
-        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
-
-    return jsonify({
-        'id': topic.id,
-        'name': topic.name,
-        'description': topic.description or '',
-        'is_active': topic.is_active
-    }), 201
-
-
-# Обновление темы по ID
-@chat_bp.route('/topics/<int:topic_id>', methods=['PATCH'])
-def update_message_topic(topic_id):
-    """
-    Обновляет поля темы: name, description, is_active.
-    Доступен для suser и admin.
-    """
-    user = g.current_user
-    if user.role not in ('suser', 'admin'):
-        return jsonify({'error': 'Доступ запрещён'}), 403
-
-    topic = MessageTopic.query.get_or_404(topic_id)
-
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'Ожидается JSON'}), 400
-
-    # Обновление name
-    if 'name' in data:
-        name = (data['name'] or '').strip()
-        if not name:
-            return jsonify({'error': 'Название не может быть пустым'}), 400
-        if len(name) > 100:
-            return jsonify({'error': 'Название не должно превышать 100 символов'}), 400
-        # Проверка уникальности, кроме самой себя
-        existing = MessageTopic.query.filter(
-            MessageTopic.name == name,
-            MessageTopic.id != topic_id
-        ).first()
-        if existing:
-            return jsonify({'error': 'Тема с таким названием уже существует'}), 400
-        topic.name = name
-
-    # Обновление description
-    if 'description' in data:
-        desc = (data['description'] or '').strip()
-        if len(desc) > 255:
-            return jsonify({'error': 'Описание не должно превышать 255 символов'}), 400
-        topic.description = desc or None
-
-    # Обновление is_active
-    if 'is_active' in data:
-        topic.is_active = bool(data['is_active'])
-
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        chat_logger.exception(f"Ошибка обновления темы {topic_id}")
-        return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
-
-    return jsonify({'status': 'ok'}), 200
