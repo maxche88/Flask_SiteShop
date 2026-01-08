@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderViewModal(report);
                 viewModal.classList.add('is-open');
             } catch (err) {
-                alert(err.message || 'Ошибка загрузки баг-репорта');
+                showNotification(err.message || 'Ошибка загрузки баг-репорта');
                 console.error(err);
             }
         });
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const ids = Array.from(checkboxes).map(cb => cb.dataset.id);
 
             if (ids.length === 0) {
-                alert('Выберите хотя бы один баг-репорт для удаления.');
+                showNotification('Выберите хотя бы один баг-репорт для удаления.');
                 return;
             }
 
@@ -221,15 +221,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok) {
                     const result = await response.json();
-                    alert(`Удалено баг-репортов: ${result.deleted_count}`);
+                    showNotification(`Удалено баг-репортов: ${result.deleted_count}`);
                     loadBugReports();
                 } else {
                     const err = await response.json();
-                    alert('Ошибка: ' + (err.error || 'не удалось удалить'));
+                    showNotification('Ошибка: ' + (err.error || 'не удалось удалить'));
                 }
             } catch (error) {
                 console.error('Ошибка при удалении:', error);
-                alert('Ошибка сети');
+                showNotification('Ошибка сети');
             }
         });
     }
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editStatusBtn.addEventListener('click', () => {
             const checked = document.querySelectorAll('.report-checkbox:checked');
             if (checked.length === 0) {
-                alert('Выберите хотя бы один баг-репорт.');
+                showNotification('Выберите хотя бы один баг-репорт.');
                 return;
             }
             positionDropdown();
@@ -295,15 +295,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (res.ok) {
-                    alert('Статус успешно обновлён.');
+                    showNotification('Статус успешно обновлён.');
                     loadBugReports();
                 } else {
                     const err = await res.json();
-                    alert('Ошибка: ' + (err.error || 'не удалось обновить'));
+                    showNotification('Ошибка: ' + (err.error || 'не удалось обновить'));
                 }
             } catch (err) {
                 console.error('Ошибка обновления:', err);
-                alert('Ошибка сети');
+                showNotification('Ошибка сети');
             } finally {
                 hideDropdown();
             }
@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch('api/bug-reports', { method: 'POST', body: formData });
                 if (response.ok) {
-                    alert('Баг-репорт успешно создан!');
+                    showNotification('Баг-репорт успешно создан!');
                     form.reset();
                     if (fileInput) fileInput.value = '';
                     if (filePreview) filePreview.textContent = '';
@@ -412,10 +412,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadBugReports();
                 } else {
                     const result = await response.json();
-                    alert('Ошибка: ' + (result.error || 'неизвестная'));
+                    showNotification('Ошибка: ' + (result.error || 'неизвестная'));
                 }
             } catch (err) {
-                alert('Ошибка сети');
+                showNotification('Ошибка сети');
                 console.error(err);
             }
         });

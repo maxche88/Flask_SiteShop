@@ -314,11 +314,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const text = formData.get('text').trim();
 
         if (!text) {
-            alert('Сообщение не может быть пустым.');
+            showNotification('Сообщение не может быть пустым.');
             return;
         }
         if (!topicId || topicId === "" || isNaN(topicId)) {
-            alert('Пожалуйста, выберите категорию.');
+            showNotification('Пожалуйста, выберите категорию.');
             return;
         }
 
@@ -344,17 +344,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!response.ok) {
                 const errorMsg = result.errors?.join('\n') || result.error || 'Неизвестная ошибка';
-                alert(`Ошибка: ${errorMsg}`);
+                showNotification(`Ошибка: ${errorMsg}`);
                 return;
             }
 
-            alert('Ваше сообщение отправлено!');
+            showNotification('Ваше сообщение отправлено!');
             closeCreateDialogModal();
             loadDialogs();
 
         } catch (error) {
             console.error('Ошибка при создании диалога:', error);
-            alert('Не удалось отправить сообщение. Попробуйте позже.');
+            showNotification('Не удалось отправить сообщение. Попробуйте позже.');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = originalText;

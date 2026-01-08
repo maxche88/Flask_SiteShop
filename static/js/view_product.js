@@ -10,8 +10,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const userRole = window.userRole || 'guest';
     const productId = window.product_id || '';
 
-    // alert('Текущая роль пользователя: ' + userRole);
-
     // Устанавливаем product_id в скрытое поле формы (если есть)
     const productIdInput = form.querySelector('[name="product_id"]');
     if (productIdInput && productId) {
@@ -43,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const message = messageInput?.value.trim() || '';
 
         if (!message) {
-            alert('Введите сообщение.');
+            showNotification('Введите сообщение.');
             return;
         }
 
@@ -63,11 +61,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const email = emailInput?.value.trim() || '';
 
             if (!name) {
-                alert('Введите имя.');
+                showNotification('Введите имя.');
                 return;
             }
             if (!email) {
-                alert('Введите email.');
+                showNotification('Введите email.');
                 return;
             }
 
@@ -83,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
             url = '/api/chat/dialogs/user';
         } else {
             // suser, admin и другие — запрещено
-            alert('У вас нет прав для отправки вопросов о товаре.');
+            showNotification('У вас нет прав для отправки вопросов о товаре.');
             return;
         }
 
@@ -99,16 +97,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await response.json();
 
             if (response.ok) {
-                alert('Ваш вопрос отправлен!');
+                showNotification('Ваш вопрос отправлен!');
                 modal.classList.add('hidden');
                 form.reset();
             } else {
                 const errorMsg = res.errors?.join('\n') || res.message || 'Не удалось отправить вопрос';
-                alert('Ошибка: ' + errorMsg);
+                showNotification('Ошибка: ' + errorMsg);
             }
         } catch (err) {
             console.error('Ошибка сети:', err);
-            alert('Ошибка подключения к серверу.');
+            showNotification('Ошибка подключения к серверу.');
         }
     });
 });

@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             viewModal.classList.add('is-open');
         } catch (err) {
             console.error(err);
-            alert(err.message || 'Ошибка загрузки чек-листа');
+            showNotification(err.message || 'Ошибка загрузки чек-листа');
         }
     }
 
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error('Ошибка сохранения пункта:', err);
-            alert('Не удалось сохранить изменения. Проверьте соединение.');
+            showNotification('Не удалось сохранить изменения. Проверьте соединение.');
         }
     }
 
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('checklistModalTitle').textContent = `Редактировать чек-лист #${id}`;
             currentChecklistId = id;
         } catch (err) {
-            alert('Ошибка при загрузке для редактирования');
+            showNotification('Ошибка при загрузке для редактирования');
             console.error(err);
         }
     }
@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const title = checklistTitle.value.trim();
             if (!title) {
-                alert('Укажите название чек-листа');
+                showNotification('Укажите название чек-листа');
                 return;
             }
 
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (items.length === 0) {
-                alert('Добавьте хотя бы один пункт');
+                showNotification('Добавьте хотя бы один пункт');
                 return;
             }
 
@@ -350,15 +350,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (res.ok) {
-                    alert(currentChecklistId ? 'Чек-лист обновлён!' : 'Чек-лист создан!');
+                    showNotification(currentChecklistId ? 'Чек-лист обновлён!' : 'Чек-лист создан!');
                     createModal.classList.remove('is-open');
                     loadChecklists();
                 } else {
                     const data = await res.json();
-                    alert('Ошибка: ' + (data.error || 'неизвестная'));
+                    showNotification('Ошибка: ' + (data.error || 'неизвестная'));
                 }
             } catch (err) {
-                alert('Ошибка сети');
+                showNotification('Ошибка сети');
                 console.error(err);
             }
         });
@@ -393,10 +393,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadChecklists();
             } else {
                 const data = await res.json();
-                alert('Ошибка: ' + (data.error || 'не удалось обновить'));
+                showNotification('Ошибка: ' + (data.error || 'не удалось обновить'));
             }
         } catch (err) {
-            alert('Ошибка сети');
+            showNotification('Ошибка сети');
             console.error(err);
         }
     }

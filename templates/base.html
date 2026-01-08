@@ -29,7 +29,15 @@
     <footer class="footer">
         <p>© МаМото, 2025</p>
     </footer>
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
     {% block js %}{% endblock %}   
+
+    <!-- Кастомное уведомление -->
+    <div id="custom-notification" class="notification hidden">
+        <div class="notification-content">
+            <span id="notification-message"></span>
+        </div>
+    </div>
 
 </body>
 </html>

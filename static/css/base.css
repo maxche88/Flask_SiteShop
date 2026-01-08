@@ -1023,6 +1023,43 @@ html, body {
     fill: #2196F3;
 } 
 
+/*===================================*/
+
+/* Уведомление */
+.notification {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* затемнение фона */
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Центрирует по вертикали */
+    z-index: 10000;
+}
+
+.notification.hidden {
+    display: none;
+}
+
+.notification-content {
+    background: white;
+    color: #333;
+    padding: 20px 24px;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    max-width: 90%;
+    width: auto;
+    font-size: 16px;
+    line-height: 1.5;
+    text-align: center; /* опционально: выравнивание текста по центру */
+    min-width: 280px;   /* минимальная ширина для маленьких сообщений */
+    max-width: 500px;   /* ограничение на больших экранах */
+}
+
+/*===================================*/
+
 @media (max-width: 768px) {
     .guest-contact-wrapper {
         right: 0;

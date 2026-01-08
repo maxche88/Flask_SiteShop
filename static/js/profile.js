@@ -180,7 +180,7 @@
         editEmailButton.addEventListener('click', () => {
             if (PROFILE_DATA.pending_email) {
                 // НЕОБХОДИМО ИЗМЕНИТЬ
-                alert(`На ${PROFILE_DATA.pending_email} вам была отправлена ссылка для подтверждения, перейдите по ней.`);
+                showNotification(`На ${PROFILE_DATA.pending_email} вам была отправлена ссылка для подтверждения, перейдите по ней.`);
                 return;
             }
             newEmailInput.value = '';
@@ -258,7 +258,7 @@
         delPEmailButton.addEventListener('click', async () => {
             if (!PROFILE_DATA.pending_email) {
                 // НЕОБХОДИМО ИЗМЕНИТЬ
-                alert("Нет активного запроса на смену email.");
+                showNotification("Нет активного запроса на смену email.");
                 return;
             }
 

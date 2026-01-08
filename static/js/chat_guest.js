@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const message = document.getElementById('guest-message')?.value.trim();
 
             if (!name || !email || !category || !message) {
-                alert('Пожалуйста, заполните все поля.');
+                showNotification('Пожалуйста, заполните все поля.');
                 return;
             }
 
@@ -137,15 +137,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(result.message);
+                    showNotification(result.message);
                     form.reset();
                     closeWindow();
                 } else {
-                    alert('Ошибка: ' + (result.errors?.[0] || 'Неизвестная ошибка'));
+                    showNotification('Ошибка: ' + (result.errors?.[0] || 'Неизвестная ошибка'));
                 }
             } catch (err) {
                 console.error('Ошибка отправки:', err);
-                alert('Не удалось отправить сообщение. Проверьте подключение.');
+                showNotification('Не удалось отправить сообщение. Проверьте подключение.');
             }
         });
     }

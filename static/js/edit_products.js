@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
             errorContainer.textContent = message;
             errorContainer.style.display = "block";
         } else {
-            alert(message); // fallback
+            showNotification(message); // fallback
         }
     }
 

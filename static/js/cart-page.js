@@ -129,7 +129,7 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
             const itemId = this.getAttribute("data-id");
             if (!itemId || itemId === '#') {
-                if (itemId !== '#') alert("Неверный ID товара");
+                if (itemId !== '#') showNotification("Неверный ID товара");
                 return;
             }
 
@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", function () {
             })
             .catch(error => {
                 console.error("Ошибка при удалении:", error);
-                alert("Не удалось удалить: " + error.message);
+                showNotification("Не удалось удалить: " + error.message);
             });
         });
     });
@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function () {
             e.preventDefault();
             const totalPrice = parseInt(document.getElementById('total-price').textContent);
             if (totalPrice <= 0) {
-                alert("Выберите хотя бы один товар.");
+                showNotification("Выберите хотя бы один товар.");
                 return;
             }
             document.getElementById('modal-total-price').textContent = totalPrice + ' ₽';
@@ -228,19 +228,19 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             if (cardNumber.length !== 16 || !/^\d{16}$/.test(cardNumber)) {
-                alert("Номер карты должен содержать 16 цифр");
+                showNotification("Номер карты должен содержать 16 цифр");
                 return;
             }
             if (!cardholderName) {
-                alert("Введите имя владельца");
+                showNotification("Введите имя владельца");
                 return;
             }
             if (!validateExpiry(expiry)) {
-                alert("Укажите корректный срок действия (ММ/ГГ)");
+                showNotification("Укажите корректный срок действия (ММ/ГГ)");
                 return;
             }
             if (selectedItems.length === 0) {
-                alert("Нет выбранных товаров");
+                showNotification("Нет выбранных товаров");
                 return;
             }
 
@@ -258,7 +258,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert("Заказ успешно оформлен!");
+                    showNotification("Заказ успешно оформлен!");
                     modal.style.display = "none";
                     window.location.reload();
                 } else {
@@ -266,12 +266,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (data.details && Array.isArray(data.details)) {
                         errorMsg += "\n\n" + data.details.join("\n");
                     }
-                    alert("Ошибка: " + errorMsg);
+                    showNotification("Ошибка: " + errorMsg);
                 }
             })
             .catch(err => {
                 console.error("Ошибка сети:", err);
-                alert("Не удалось отправить заказ.");
+                showNotification("Не удалось отправить заказ.");
             });
         });
     }
@@ -316,11 +316,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const productId = askForm.querySelector('[name="product_id"]')?.value || '';
 
             if (!message) {
-                alert('Введите ваш вопрос.');
+                showNotification('Введите ваш вопрос.');
                 return;
             }
             if (!productId) {
-                alert('Не удалось определить товар.');
+                showNotification('Не удалось определить товар.');
                 return;
             }
 
@@ -340,15 +340,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 const res = await response.json();
                 if (response.ok) {
-                    alert('Ваш вопрос отправлен!');
+                    showNotification('Ваш вопрос отправлен!');
                     askModal.classList.add('hidden');
                     askForm.reset();
                 } else {
-                    alert('Ошибка: ' + (res.errors?.[0] || res.message || 'Не удалось отправить вопрос'));
+                    showNotification('Ошибка: ' + (res.errors?.[0] || res.message || 'Не удалось отправить вопрос'));
                 }
             } catch (err) {
                 console.error('Ошибка при отправке вопроса:', err);
-                alert('Не удалось отправить вопрос. Попробуйте позже.');
+                showNotification('Не удалось отправить вопрос. Попробуйте позже.');
             }
         });
     }

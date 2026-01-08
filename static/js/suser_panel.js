@@ -76,13 +76,13 @@ document.addEventListener('DOMContentLoaded', function () {
         btnUpdateUid.addEventListener('click', async function () {
             const uidValue = uidInput?.value?.trim();
             if (!uidValue) {
-                alert('Пожалуйста, введите ID пользователя');
+                showNotification('Пожалуйста, введите ID пользователя');
                 return;
             }
 
             const uid = parseInt(uidValue, 10);
             if (uid <= 0 || !Number.isInteger(uid)) {
-                alert('ID должен быть положительным целым числом');
+                showNotification('ID должен быть положительным целым числом');
                 return;
             }
 
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 .filter(id => id); // игнорируем строки без data-product-id
 
             if (productIds.length === 0) {
-                alert('Не выбрано ни одного товара');
+                showNotification('Не выбрано ни одного товара');
                 return;
             }
 
@@ -112,14 +112,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const data = await response.json();
 
                 if (response.ok) {
-                    alert('UID успешно назначен');
+                    showNotification('UID успешно назначен');
                     loadProducts(); // перезагрузить список
                 } else {
-                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    showNotification('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
                 }
             } catch (error) {
                 console.error('Ошибка при назначении UID:', error);
-                alert('Ошибка сети. Проверьте консоль.');
+                showNotification('Ошибка сети. Проверьте консоль.');
             }
         });
     }
@@ -316,11 +316,11 @@ document.addEventListener('DOMContentLoaded', function () {
                                         currentProductCount > 0 ? 'info' : 'warning'
                                     );
                                 } else {
-                                    alert('Ошибка: ' + (result.error || res.status));
+                                    showNotification('Ошибка: ' + (result.error || res.status));
                                 }
                             } catch (err) {
                                 console.error('Ошибка удаления:', err);
-                                alert('Не удалось подключиться к серверу');
+                                showNotification('Не удалось подключиться к серверу');
                             }
                         });
                     }

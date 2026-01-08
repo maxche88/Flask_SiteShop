@@ -64,7 +64,7 @@ function addToCart(productId) {
 function buyNow(productId) {
     if (!productId || productId <= 0 || isNaN(productId)) {
         console.error("Некорректный ID товара:", productId);
-        alert("Невозможно купить товар: неверный ID.");
+        showNotification("Невозможно купить товар: неверный ID.");
         return;
     }
 
@@ -73,12 +73,12 @@ function buyNow(productId) {
             if (data.success) {
                 window.location.href = "/user/cart"; 
             } else {
-                alert("Ошибка при добавлении товара");
+                showNotification("Ошибка при добавлении товара");
             }
         })
         .catch(error => {
             console.error("Ошибка при покупке:", error);
-            alert("Ошибка: " + (error.message || "Неизвестная ошибка"));
+            showNotification("Ошибка: " + (error.message || "Неизвестная ошибка"));
         });
 }
 
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (buyBtn) {
             e.preventDefault();
             if (userRole !== 'user') {
-                alert("Только для авторизованных пользователей");
+                showNotification("Только для авторизованных пользователей");
                 return;
             }
 
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 buyNow(productId);
             } else {
                 console.error("Некорректный ID товара:", id);
-                alert("Не удалось определить товар для покупки.");
+                showNotification("Не удалось определить товар для покупки.");
             }
         }
     });
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cartIcon) {
             e.preventDefault();
             if (userRole !== 'user') {
-                alert("Только для авторизованных пользователей");
+                showNotification("Только для авторизованных пользователей");
                 return;
             }
 
@@ -140,16 +140,16 @@ document.addEventListener('DOMContentLoaded', function () {
                             updateCartBadge();
                             console.log("Товар добавлен в корзину");
                         } else {
-                            alert("Не удалось добавить товар");
+                            showNotification("Не удалось добавить товар");
                         }
                     })
                     .catch(error => {
                         console.error("Ошибка при добавлении:", error);
-                        alert("Ошибка: " + (error.message || "Неизвестная ошибка"));
+                        showNotification("Ошибка: " + (error.message || "Неизвестная ошибка"));
                     });
             } else {
                 console.error("Не найден ID товара");
-                alert("Не удалось добавить товар.");
+                showNotification("Не удалось добавить товар.");
             }
         }
     });
